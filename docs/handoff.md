@@ -84,7 +84,8 @@ a0858cb Bootstrap WCX modernization project
   - IMG Sound_DX8 metadata value preview,
   - preview string-key auto-detection across no-op/KMS/GMS modes,
   - top-level IMG object value previews for supported non-`Property` object
-    types.
+    types,
+  - Lua image block preview for `.lua` entries.
 
 ## Important Decisions
 
@@ -108,7 +109,9 @@ type, while `--depth 2` can expand one nested `Property` layer. Deeper previews
 can expose Canvas metadata and Vector child values in local UI files.
 `preview-dir` and `preview-img` support `--key auto` to select among
 no-op/KMS/GMS directory string decoding. Canvas pixel decoding and
-RawData/Video/Sound payload decoding are not implemented yet.
+RawData/Video/Sound payload decoding are not implemented yet. Lua image entries
+preview block count, payload length, and a short UTF-8 snippet, but full script
+export is not implemented yet.
 
 ## Suggested Next Prompt
 

@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Text;
 
 namespace WzComparerX.WzLib;
 
@@ -55,6 +56,11 @@ public sealed class WzImagePreviewReader
         }
 
         stream.Position = offset;
+        if (IsLuaEntry(entry))
+        {
+            return ReadLuaPreview(stream, header, entry, selector, imageEndOffset);
+        }
+
         var objectType = ReadImageObjectTypeName(stream, offset);
         int? propertyCount = null;
         IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
@@ -72,6 +78,75 @@ public sealed class WzImagePreviewReader
         }
 
         return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties, objectValue);
+    }
+
+    private WzImagePreview ReadLuaPreview(
+        Stream stream,
+        WzPackageHeader header,
+        WzDirectoryEntryPreview entry,
+        string selector,
+        long imageEndOffset)
+    {
+        const string objectType = "Lua";
+        int? propertyCount = null;
+        IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
+        object? objectValue = null;
+
+        if (maxPropertyDepth > 0)
+        {
+            var luaEntries = ReadLuaEntries(stream, imageEndOffset);
+            propertyCount = luaEntries.Count;
+            properties = luaEntries;
+            if (luaEntries.Count == 1)
+            {
+                objectValue = luaEntries[0].Value;
+            }
+        }
+
+        return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties, objectValue);
+    }
+
+    private List<WzImagePropertyPreviewEntry> ReadLuaEntries(Stream stream, long imageEndOffset)
+    {
+        var entries = new List<WzImagePropertyPreviewEntry>();
+        while (stream.Position < imageEndOffset)
+        {
+            var flag = ReadByte(stream);
+            if (flag != 0x01)
+            {
+                throw new InvalidDataException($"Unknown Lua flag 0x{flag:X2}.");
+            }
+
+            var length = ReadCompressedInt32(stream);
+            if (length < 0)
+            {
+                throw new InvalidDataException($"Cannot read a negative Lua payload length: {length}.");
+            }
+
+            if (stream.Position + length > imageEndOffset)
+            {
+                throw new InvalidDataException($"Lua payload extends past the image stream: {stream.Position + length}.");
+            }
+
+            var payload = stringDecryptor.DecryptPayload(ReadBytes(stream, length));
+            var script = Encoding.UTF8.GetString(payload);
+            var preview = new WzImageLuaPreview(payload.Length, CreateLuaPreview(script));
+            entries.Add(new WzImagePropertyPreviewEntry(entries.Count, null, flag, "lua", preview));
+        }
+
+        return entries;
+    }
+
+    private static bool IsLuaEntry(WzDirectoryEntryPreview entry)
+    {
+        return (entry.Path ?? entry.Name)?.EndsWith(".lua", StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static string CreateLuaPreview(string script)
+    {
+        const int maxLength = 80;
+        var normalized = script.ReplaceLineEndings("\\n");
+        return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
     }
 
     private string ReadImageObjectTypeName(Stream stream, long imageBaseOffset)

@@ -29,10 +29,16 @@ public sealed class WzStringDecryptor
 
     public WzStringEncryptionKind Kind => kind;
 
-    public string Decode(ReadOnlySpan<byte> bytes, bool unicode)
+    public byte[] DecryptPayload(ReadOnlySpan<byte> bytes)
     {
         var buffer = bytes.ToArray();
         DecryptKeyStream(buffer);
+        return buffer;
+    }
+
+    public string Decode(ReadOnlySpan<byte> bytes, bool unicode)
+    {
+        var buffer = DecryptPayload(bytes);
 
         if (unicode)
         {

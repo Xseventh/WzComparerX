@@ -245,6 +245,49 @@ public class WzImagePreviewReaderTests
     }
 
     [Fact]
+    public void Read_ReturnsLuaPreviewForLuaImage()
+    {
+        var bytes = CreateLuaImage("return 42\n");
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var preview = reader.Read(
+            stream,
+            CreateHeader(),
+            CreateImageEntry(offset: 4, dataSize: bytes.Length - 4, name: "Synthetic.lua"),
+            "0");
+
+        Assert.Equal("Lua", preview.ObjectType);
+        Assert.Equal(1, preview.PropertyCount);
+        var lua = Assert.IsType<WzImageLuaPreview>(preview.ObjectValue);
+        Assert.Equal(10, lua.ScriptLength);
+        Assert.Equal("return 42\\n", lua.Preview);
+        Assert.NotNull(preview.Properties);
+        Assert.Equal("lua", Assert.Single(preview.Properties).Kind);
+    }
+
+    [Fact]
+    public void Read_DoesNotReadLuaPayloadWhenDepthIsZero()
+    {
+        var bytes = CreateLuaImage("return 42\n");
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 0);
+
+        var preview = reader.Read(
+            stream,
+            CreateHeader(),
+            CreateImageEntry(offset: 4, dataSize: bytes.Length - 4, name: "Synthetic.lua"),
+            "0");
+
+        Assert.Equal("Lua", preview.ObjectType);
+        Assert.Null(preview.ObjectValue);
+        Assert.Null(preview.PropertyCount);
+        Assert.Null(preview.Properties);
+    }
+
+    [Fact]
     public void Read_ReturnsConvexObjectValue()
     {
         var bytes = CreatePropertyImage(CreateObjectProperty(
@@ -473,13 +516,16 @@ public class WzImagePreviewReaderTests
             DirectoryStartPosition: 0);
     }
 
-    private static WzDirectoryEntryPreview CreateImageEntry(long offset, int dataSize = 10)
+    private static WzDirectoryEntryPreview CreateImageEntry(
+        long offset,
+        int dataSize = 10,
+        string name = "Synthetic.img")
     {
         return new WzDirectoryEntryPreview(
             Index: 0,
             NodeType: 0x04,
             WzDirectoryEntryKind.Image,
-            Name: "Synthetic.img",
+            Name: name,
             DataSize: dataSize,
             Checksum: 0,
             HashOffsetPosition: 0,
@@ -498,6 +544,15 @@ public class WzImagePreviewReaderTests
             bytes.AddRange(entry);
         }
 
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateLuaImage(string script)
+    {
+        var payload = System.Text.Encoding.UTF8.GetBytes(script);
+        var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00, 0x01 };
+        bytes.Add((byte)payload.Length);
+        bytes.AddRange(payload);
         return bytes.ToArray();
     }
 

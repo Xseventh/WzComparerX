@@ -117,6 +117,14 @@ non-`Property` type. For example, top-level Canvas and `Shape2D#Vector2D`
 objects produce direct `objectValue` metadata instead of only printing their
 object type.
 
+WC treats entries whose image names end in `.lua` as a separate stream shape
+instead of the normal IMG object-tag stream. Lua blocks use flag `0x01`,
+compressed payload length, key-stream-only decryption, and UTF-8 text. WCX now
+previews Lua block count, payload length, and a short text snippet, but does not
+export full scripts yet. The local client contains WZ2Lua and `_Canvas` packages
+with Lua-related strings, but the currently supported directory preview paths do
+not yet expose a direct local `.lua` smoke entry.
+
 `Data/Sound/Sound_000.wz` contains sound image entries such as
 `AchievementEff.img` and `Bgm00.img`. With `preview-img --depth 2`, their
 `Sound_DX8` values preview as metadata including duration, sound declaration,

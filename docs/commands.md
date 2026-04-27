@@ -133,6 +133,10 @@ not implemented yet. When the IMG root object is one of those supported
 non-`Property` object types, `preview-img` prints its top-level `objectValue`
 metadata directly.
 
+Lua image entries (`*.lua`) are previewed as `objectType: Lua` with block count,
+payload length, and a short UTF-8 snippet. Full Lua script export is not
+implemented yet.
+
 ## Run Avalonia App
 
 ```bash
