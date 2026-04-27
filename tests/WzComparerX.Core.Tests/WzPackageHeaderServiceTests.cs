@@ -115,10 +115,45 @@ public class WzPackageHeaderServiceTests
         }
     }
 
+    [Fact]
+    public async Task PreviewDir_FormatsDirectoryPreview()
+    {
+        var path = WriteTemporaryPkg1DirectoryFile();
+        var service = new WzDirectoryPreviewService();
+        var formatter = new WzDirectoryPreviewFormatter();
+
+        try
+        {
+            var preview = await service.ReadAsync(path);
+            var output = formatter.Format(preview);
+
+            Assert.Contains("entries: 1", output);
+            Assert.Contains("0 | directory | type=0x03 | size=5 | checksum=1 | hashOffset=305419896", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string WriteTemporaryPkg1File()
     {
         var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+        return path;
+    }
+
+    private static string WriteTemporaryPkg1DirectoryFile()
+    {
+        byte[] directoryData =
+        [
+            0x01,
+            0x03, 0xfd, 0x61, 0x62, 0x63, 0x05, 0x01, 0x78, 0x56, 0x34, 0x12
+        ];
+        byte[] encryptedVersion = [0x7b, 0x00];
+        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");
+        var header = CreateHeader("PKG1", "Copyright", dataSize: encryptedVersion.Length + directoryData.Length);
+        File.WriteAllBytes(path, [.. header, .. encryptedVersion, .. directoryData]);
         return path;
     }
 

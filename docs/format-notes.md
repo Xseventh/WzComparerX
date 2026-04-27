@@ -80,3 +80,8 @@ A local MapleStoryNA client was found at:
 This path is useful for manual smoke tests only. Do not commit files from it.
 Initial header scans show current local files use `PKG1` headers with 60-byte
 package headers, including `Data/Base/Base.wz` and `Data/Base/Base_000.wz`.
+
+`Data/Base/Base.wz` can be raw-previewed without name decryption. It currently
+contains 16 top-level directory entries (`nodeType` `0x03`) with zero data size
+and checksum fields. This confirms the PKG1 directory entry shape before WZ
+version/hash and string decryption are migrated.

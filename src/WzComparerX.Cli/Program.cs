@@ -70,6 +70,17 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             return headers.All(header => header.IsValid) ? 0 : 1;
         }
 
+        if (string.Equals(command, "preview-dir", StringComparison.OrdinalIgnoreCase))
+        {
+            var previewService = new WzDirectoryPreviewService();
+
+            var preview = await previewService.ReadAsync(path);
+            output.Write(json
+                ? new WzDirectoryPreviewJsonFormatter().Format(preview)
+                : new WzDirectoryPreviewFormatter().Format(preview));
+            return 0;
+        }
+
         WriteUsage(error);
         return 2;
     }
@@ -86,4 +97,5 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
+    error.WriteLine("  wcx preview-dir [--json] <pkg1-wz-file>");
 }

@@ -88,6 +88,14 @@ dotnet run --project src/WzComparerX.Cli --no-build -- headers path/to/Data/Base
 dotnet run --project src/WzComparerX.Cli --no-build -- headers --json path/to/Data/Base
 ```
 
+To preview raw PKG1 top-level directory entries without decrypting names or
+calculating real offsets:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Base.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --json path/to/Base.wz
+```
+
 ## Run Avalonia App
 
 ```bash
