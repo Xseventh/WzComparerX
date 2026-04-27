@@ -95,3 +95,7 @@ PKG1 version detection resolves the local `Data/Base/Base.wz` header as WZ
 version `264` with hash version `54037`. Its top-level directory offsets resolve
 to byte positions `360` through `375`, a compact sequence of empty child
 directory tables immediately after the top-level directory table.
+
+`Data/Base/Base_000.wz` contains image entries such as `smap.img`,
+`StandardPDD.img`, and `zmap.img`. Their calculated offsets point to IMG
+payloads whose top-level object type currently reads as `Property`.

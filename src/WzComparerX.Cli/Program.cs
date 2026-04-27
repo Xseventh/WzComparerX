@@ -15,6 +15,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
     var json = false;
     var stringKey = WzStringEncryptionKind.None;
     string? path = null;
+    string? selector = null;
     for (var i = 1; i < args.Length; i++)
     {
         if (string.Equals(args[i], "--json", StringComparison.OrdinalIgnoreCase))
@@ -35,13 +36,20 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             continue;
         }
 
-        if (path is not null)
+        if (path is null)
         {
-            WriteUsage(error);
-            return 2;
+            path = args[i];
+            continue;
         }
 
-        path = args[i];
+        if (selector is null && string.Equals(command, "preview-img", StringComparison.OrdinalIgnoreCase))
+        {
+            selector = args[i];
+            continue;
+        }
+
+        WriteUsage(error);
+        return 2;
     }
 
     if (path is null)
@@ -105,6 +113,23 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             return preview.Header.IsValid ? 0 : 1;
         }
 
+        if (string.Equals(command, "preview-img", StringComparison.OrdinalIgnoreCase))
+        {
+            if (selector is null)
+            {
+                WriteUsage(error);
+                return 2;
+            }
+
+            var previewService = new WzImagePreviewService(stringKey);
+
+            var preview = await previewService.ReadAsync(path, selector);
+            output.Write(json
+                ? new WzImagePreviewJsonFormatter().Format(preview)
+                : new WzImagePreviewFormatter().Format(preview));
+            return preview.IsValid ? 0 : 1;
+        }
+
         WriteUsage(error);
         return 2;
     }
@@ -122,6 +147,7 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
     error.WriteLine("  wcx preview-dir [--json] [--key none|kms|gms] <pkg1-wz-file>");
+    error.WriteLine("  wcx preview-img [--json] [--key none|kms|gms] <pkg1-wz-file> <image-name-or-index>");
 }
 
 static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)

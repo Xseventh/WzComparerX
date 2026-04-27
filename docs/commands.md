@@ -107,6 +107,15 @@ When PKG1 version detection succeeds, `preview-dir` also prints `wzVersion`,
 If nested directory tables are present, `preview-dir` prints all discovered
 entries in linear read order and adds `totalEntries`.
 
+To preview the top-level IMG object type for a PKG1 image entry:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Base_000.wz smap.img
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --json path/to/Base_000.wz 1
+```
+
+The selector can be an image name, image path, or preview entry index.
+
 ## Run Avalonia App
 
 ```bash

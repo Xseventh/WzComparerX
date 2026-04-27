@@ -64,7 +64,8 @@ a0858cb Bootstrap WCX modernization project
   - PKG1 directory-name decoding with no-op/KMS/GMS key modes,
   - PKG1 version hash and entry offset calculation,
   - PKG1 `0x02` string-reference name decoding,
-  - PKG1 recursive directory-table pre-read and preview enumeration.
+  - PKG1 recursive directory-table pre-read and preview enumeration,
+  - minimal IMG payload preview for top-level object type.
 
 ## Important Decisions
 
@@ -80,6 +81,8 @@ Milestone 1 is implemented. Milestone 2 is in progress with real WZ package
 header detection and PKG1 directory preview working against the local
 MapleStoryNA client. `preview-dir` can decode names, detect PKG1 version/hash,
 calculate entry offsets, and enumerate recursively nested directory tables.
+`preview-img` can select an image by name/path/index and read its top-level IMG
+object type.
 
 ## Suggested Next Prompt
 
@@ -89,7 +92,7 @@ Use this in a new Codex project conversation:
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Then continue Milestone 2 by migrating
-the smallest IMG payload reader using the previewed PKG1 image offsets. Add
+minimal IMG property/value parsing below the top-level object type. Add
 fixture-backed tests, run build/test, update docs/logs, and commit the work on
 the current branch.
 ```
