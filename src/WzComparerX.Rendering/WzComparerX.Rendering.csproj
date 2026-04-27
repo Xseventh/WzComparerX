@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\WzComparerX.Core\WzComparerX.Core.csproj" />
+    <ProjectReference Include="..\WzComparerX.Domain\WzComparerX.Domain.csproj" />
+    <ProjectReference Include="..\WzComparerX.WzLib\WzComparerX.WzLib.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WzComparerX.App/WzComparerX.App.csproj" />
+    <Project Path="src/WzComparerX.Cli/WzComparerX.Cli.csproj" />
+    <Project Path="src/WzComparerX.Core/WzComparerX.Core.csproj" />
+    <Project Path="src/WzComparerX.Domain/WzComparerX.Domain.csproj" />
+    <Project Path="src/WzComparerX.Rendering/WzComparerX.Rendering.csproj" />
+    <Project Path="src/WzComparerX.WzLib/WzComparerX.WzLib.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WzComparerX.Core.Tests/WzComparerX.Core.Tests.csproj" />
+    <Project Path="tests/WzComparerX.WzLib.Tests/WzComparerX.WzLib.Tests.csproj" />
+  </Folder>
+</Solution>
