@@ -131,7 +131,14 @@ public sealed class WzImageInspectionReader
             propertyCount = count;
         }
 
-        return new WzImageInspection(header, selector, entry, "Property", propertyCount, properties);
+        return new WzImageInspection(
+            header,
+            selector,
+            entry,
+            "Property",
+            propertyCount,
+            properties,
+            new WzImageTextInspection("v1", Encoding.UTF8.GetByteCount(text), text));
     }
 
     private WzImageInspection ReadTextPropertyV2Inspection(
@@ -151,7 +158,14 @@ public sealed class WzImageInspectionReader
             propertyCount = count;
         }
 
-        return new WzImageInspection(header, selector, entry, "Property", propertyCount, properties);
+        return new WzImageInspection(
+            header,
+            selector,
+            entry,
+            "Property",
+            propertyCount,
+            properties,
+            new WzImageTextInspection("v2", Encoding.UTF8.GetByteCount(text), text));
     }
 
     private WzImageInspection ReadLuaInspection(
@@ -204,7 +218,7 @@ public sealed class WzImageInspectionReader
 
             var payload = stringDecryptor.DecryptPayload(ReadBytes(stream, length));
             var script = Encoding.UTF8.GetString(payload);
-            var inspection = new WzImageLuaInspection(payload.Length, CreateLuaSnippet(script));
+            var inspection = new WzImageLuaInspection(payload.Length, CreateLuaSnippet(script), script);
             entries.Add(new WzImagePropertyInspectionEntry(entries.Count, null, flag, "lua", inspection));
         }
 

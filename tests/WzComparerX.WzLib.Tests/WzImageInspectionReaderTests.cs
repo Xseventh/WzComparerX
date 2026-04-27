@@ -298,6 +298,7 @@ public class WzImageInspectionReaderTests
         var lua = Assert.IsType<WzImageLuaInspection>(inspection.ObjectValue);
         Assert.Equal(10, lua.ScriptLength);
         Assert.Equal("return 42\\n", lua.Snippet);
+        Assert.Equal("return 42\n", lua.Script);
         Assert.NotNull(inspection.Properties);
         Assert.Equal("lua", Assert.Single(inspection.Properties).Kind);
     }
@@ -342,6 +343,9 @@ public class WzImageInspectionReaderTests
         var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
         Assert.Equal("Property", inspection.ObjectType);
+        var text = Assert.IsType<WzImageTextInspection>(inspection.ObjectValue);
+        Assert.Equal("v1", text.Format);
+        Assert.Contains("Beginner Cap", text.Text);
         Assert.Equal(3, inspection.PropertyCount);
         Assert.NotNull(inspection.Properties);
         Assert.Equal("name", inspection.Properties[0].Name);
@@ -373,6 +377,9 @@ public class WzImageInspectionReaderTests
         var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
         Assert.Equal("Property", inspection.ObjectType);
+        var text = Assert.IsType<WzImageTextInspection>(inspection.ObjectValue);
+        Assert.Equal("v2", text.Format);
+        Assert.Contains("Root <Property>", text.Text);
         Assert.Equal(3, inspection.PropertyCount);
         Assert.NotNull(inspection.Properties);
         Assert.Equal(new WzImageVectorInspection(12, 34), inspection.Properties[0].Value);

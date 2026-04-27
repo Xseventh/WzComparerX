@@ -127,9 +127,22 @@ Sound payload offsets and lengths.
 Canvas metadata includes payload compression kind and expected uncompressed byte
 length when the texture format is known. Pixel conversion/export is still a
 later step. Lua image entries (`*.lua`) report script length and a short UTF-8
-snippet; full Lua script export is not implemented yet. WC text-format IMG
-streams are also recognized when their payload starts with `#Property` or
-`Root <Property>` and are inspected as bounded `Property` trees.
+snippet. WC text-format IMG streams are also recognized when their payload
+starts with `#Property` or `Root <Property>` and are inspected as bounded
+`Property` trees.
+
+To export data through the Core export abstraction:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type metadata fixtures/synthetic/basic-tree.json
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type text --key auto path/to/String.wz SomeText.img
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key auto path/to/UI.wz SomeScript.lua
+```
+
+`export --type metadata` writes the same stable inspection JSON shape used by
+`inspect --debug --json`. `export --type text` currently supports WC text-format
+IMG streams. `export --type lua` writes the full decoded Lua script for
+supported Lua IMG blocks.
 
 ## Run Avalonia App
 

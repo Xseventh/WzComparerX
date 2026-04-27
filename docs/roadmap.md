@@ -78,7 +78,7 @@ Tasks:
 - Add WZ package header CLI output.
 - Add JSON dump. In progress for `list` and `header`.
 - Add XML dump if parser coverage allows.
-- Add export abstraction in Core.
+- Add export abstraction in Core. Started for metadata, text IMG, and Lua.
 - Add error diagnostics model.
 
 Exit criteria:

@@ -250,6 +250,61 @@ public class CliApplicationTests
         Assert.DoesNotContain("preview-img", result.Error);
     }
 
+    [Fact]
+    public async Task ExportMetadataSynthetic_MatchesInspectDebugJson()
+    {
+        var fixture = FixturePath("basic-tree.json");
+
+        var inspect = await RunCliAsync("inspect", "--debug", "--json", fixture);
+        var export = await RunCliAsync("export", "--type", "metadata", fixture);
+
+        Assert.Equal(0, export.ExitCode);
+        Assert.Equal(string.Empty, export.Error);
+        Assert.Equal(
+            NormalizePath(inspect.Output, fixture, "<fixture>"),
+            NormalizePath(export.Output, fixture, "<fixture>"));
+    }
+
+    [Fact]
+    public async Task ExportTextImage_ReturnsOriginalTextImgStream()
+    {
+        const string text = "#Property\nname=hello\ncount=2\n";
+        var path = WriteTemporaryPkg1ImageFile("Text.img", CreateTextImage(text));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "text", "--key", "none", path, "Text.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(text, result.Output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExportLuaImage_ReturnsFullScript()
+    {
+        const string script = "return 42\nprint(\"ok\")\n";
+        var path = WriteTemporaryPkg1ImageFile("Script.lua", CreateLuaImage(script));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "lua", "--key", "none", path, "Script.lua");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(script, result.Output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static async Task<CliResult> RunCliAsync(params string[] args)
     {
         using var output = new StringWriter();
@@ -300,7 +355,12 @@ public class CliApplicationTests
 
     private static string WriteTemporaryPkg1ImageFile(byte[] imageBytes)
     {
-        var directoryData = CreateDirectoryDataForImage("Canvas.img", imageBytes.Length - 4);
+        return WriteTemporaryPkg1ImageFile("Canvas.img", imageBytes);
+    }
+
+    private static string WriteTemporaryPkg1ImageFile(string imageName, byte[] imageBytes)
+    {
+        var directoryData = CreateDirectoryDataForImage(imageName, imageBytes.Length - 4);
         var header = CreateHeader("PKG1", string.Empty, dataSize: directoryData.Length + imageBytes.Length);
         var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-image-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, [.. header, .. directoryData, .. imageBytes]);
@@ -350,6 +410,22 @@ public class CliApplicationTests
         }
 
         return bytes.ToArray();
+    }
+
+    private static byte[] CreateTextImage(string text)
+    {
+        return [0x00, 0x00, 0x00, 0x00, .. Encoding.UTF8.GetBytes(text)];
+    }
+
+    private static byte[] CreateLuaImage(string script)
+    {
+        var payload = Encoding.UTF8.GetBytes(script);
+        if (payload.Length > sbyte.MaxValue)
+        {
+            throw new ArgumentOutOfRangeException(nameof(script), "Test Lua payload must fit in one compressed-int byte.");
+        }
+
+        return [0x00, 0x00, 0x00, 0x00, 0x01, (byte)payload.Length, .. payload];
     }
 
     private static byte[] CreateObjectProperty(string name, byte[] objectValue)

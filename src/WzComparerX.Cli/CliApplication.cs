@@ -16,6 +16,7 @@ public static class CliApplication
         var command = args[0];
         var json = false;
         var debug = false;
+        var exportKind = ResourceExportKind.Metadata;
         WzStringEncryptionKind? stringKey = WzStringEncryptionKind.None;
         var imagePropertyDepth = 1;
         string? path = null;
@@ -37,6 +38,18 @@ public static class CliApplication
             if (string.Equals(args[i], "--key", StringComparison.OrdinalIgnoreCase))
             {
                 if (i + 1 >= args.Length || !TryParseStringKey(args[i + 1], out stringKey))
+                {
+                    WriteUsage(error);
+                    return 2;
+                }
+
+                i++;
+                continue;
+            }
+
+            if (string.Equals(args[i], "--type", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i + 1 >= args.Length || !TryParseExportKind(args[i + 1], out exportKind))
                 {
                     WriteUsage(error);
                     return 2;
@@ -68,7 +81,9 @@ public static class CliApplication
                 continue;
             }
 
-            if (selector is null && string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase))
+            if (selector is null &&
+                (string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(command, "export", StringComparison.OrdinalIgnoreCase)))
             {
                 selector = args[i];
                 continue;
@@ -140,6 +155,16 @@ public static class CliApplication
                 return 0;
             }
 
+            if (string.Equals(command, "export", StringComparison.OrdinalIgnoreCase))
+            {
+                var service = new ResourceExportService();
+
+                var options = new ResourceExportOptions(exportKind, stringKey, imagePropertyDepth);
+                var document = await service.ExportAsync(path, selector, options);
+                output.Write(document.Content);
+                return 0;
+            }
+
             WriteUsage(error);
             return 2;
         }
@@ -157,6 +182,7 @@ public static class CliApplication
         error.WriteLine("  wcx header [--json] <wz-file>");
         error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
         error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+        error.WriteLine("  wcx export [--type metadata|text|lua] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
     }
 
     private static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)
@@ -189,6 +215,30 @@ public static class CliApplication
         }
 
         kind = WzStringEncryptionKind.None;
+        return false;
+    }
+
+    private static bool TryParseExportKind(string value, out ResourceExportKind kind)
+    {
+        if (string.Equals(value, "metadata", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = ResourceExportKind.Metadata;
+            return true;
+        }
+
+        if (string.Equals(value, "text", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = ResourceExportKind.Text;
+            return true;
+        }
+
+        if (string.Equals(value, "lua", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = ResourceExportKind.Lua;
+            return true;
+        }
+
+        kind = ResourceExportKind.Metadata;
         return false;
     }
 }

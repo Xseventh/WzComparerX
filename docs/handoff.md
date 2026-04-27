@@ -81,7 +81,9 @@ a0858cb Bootstrap WCX modernization project
   - initial Core `inspect` model and CLI command,
   - `inspect --debug` with structured directory and IMG diagnostics,
   - CLI-level golden tests for representative `inspect` and `inspect --debug`
-    text/JSON output.
+    text/JSON output,
+  - initial Core export abstraction and CLI `export` command for metadata, WC
+    text-format IMG streams, and Lua IMG scripts.
 
 ## Important Decisions
 
@@ -115,9 +117,10 @@ steps, but the supported surface is now `inspect` and `inspect --debug`.
 
 Canvas pixel decoding and RawData/Video/Sound payload decoding are not
 implemented yet. Lua image entries report script length and a short UTF-8
-snippet, but full script export is not implemented yet. Text-format IMG streams
-starting with `#Property` or `Root <Property>` inspect as bounded `Property`
-trees.
+snippet; `export --type lua` writes the full decoded script for supported Lua
+IMG blocks. Text-format IMG streams starting with `#Property` or
+`Root <Property>` inspect as bounded `Property` trees and can be exported with
+`export --type text`.
 
 ## Suggested Next Prompt
 

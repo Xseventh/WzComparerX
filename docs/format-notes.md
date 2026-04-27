@@ -122,10 +122,11 @@ object type.
 WC treats entries whose image names end in `.lua` as a separate stream shape
 instead of the normal IMG object-tag stream. Lua blocks use flag `0x01`,
 compressed payload length, key-stream-only decryption, and UTF-8 text. WCX now
-inspects Lua block count, payload length, and a short text snippet, but does not
-export full scripts yet. The local client contains WZ2Lua and `_Canvas` packages
-with Lua-related strings, but the currently supported directory inspection paths do
-not yet expose a direct local `.lua` smoke entry.
+inspects Lua block count, payload length, and a short text snippet.
+`export --type lua` writes the full decoded script for supported Lua IMG blocks.
+The local client contains WZ2Lua and `_Canvas` packages with Lua-related
+strings, but the currently supported directory inspection paths do not yet
+expose a direct local `.lua` smoke entry.
 
 WC also supports text-format IMG streams. V1 starts with `#Property` and uses
 `key = value` lines with `{ ... }` property blocks. V2 starts with

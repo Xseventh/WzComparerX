@@ -181,7 +181,6 @@ For each migrated feature, record:
   - Text IMG v1/v2 scalar and nested property inspection.
 - Known unsupported cases:
   - Full unbounded IMG property/value parsing is not implemented yet.
-  - Full Lua script export is not implemented yet.
   - Text IMG v2 multiline string parsing is not implemented yet.
   - Canvas pixel decoding is not implemented yet.
   - RawData payload decoding is not implemented yet.
