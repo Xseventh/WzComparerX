@@ -13,7 +13,7 @@ public class WzDirectoryPreviewReaderTests
         var headerReader = new WzPackageHeaderReader();
         var previewReader = new WzDirectoryPreviewReader(
             headerReader,
-            new WzStringDecryptor(WzStringEncryptionKind.Bms));
+            new WzStringDecryptor(WzStringEncryptionKind.None));
         using var stream = new MemoryStream(bytes);
         var header = headerReader.Read(stream, "Base.wz");
 

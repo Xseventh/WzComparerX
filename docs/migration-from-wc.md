@@ -132,14 +132,14 @@ For each migrated feature, record:
   - Read PKG1 compressed entry count.
   - Read top-level directory/image entry type, size, checksum, and raw hash
     offset fields.
-  - Decode inline PKG1 ASCII/UTF-16 directory strings with BMS/no-op, KMS, and
+  - Decode inline PKG1 ASCII/UTF-16 directory strings with no-op, KMS, and
     GMS key modes.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
   - Local-only MapleStoryNA smoke file `Data/Base/Base.wz`.
 - Test coverage added:
-  - PKG1 directory entry pre-read with encoded BMS/no-op strings.
+  - PKG1 directory entry pre-read with encoded no-op strings.
   - Core text formatter output for decoded preview entries.
 - Known unsupported cases:
   - `0x02` string-reference names are not decoded yet.

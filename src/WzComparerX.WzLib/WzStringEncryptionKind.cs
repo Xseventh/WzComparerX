@@ -2,8 +2,7 @@ namespace WzComparerX.WzLib;
 
 public enum WzStringEncryptionKind
 {
-    Bms,
+    None,
     Kms,
     Gms
 }
-

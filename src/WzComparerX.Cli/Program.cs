@@ -13,7 +13,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
 
     var command = args[0];
     var json = false;
-    var stringKey = WzStringEncryptionKind.Bms;
+    var stringKey = WzStringEncryptionKind.None;
     string? path = null;
     for (var i = 1; i < args.Length; i++)
     {
@@ -121,14 +121,17 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
-    error.WriteLine("  wcx preview-dir [--json] [--key bms|kms|gms] <pkg1-wz-file>");
+    error.WriteLine("  wcx preview-dir [--json] [--key none|kms|gms] <pkg1-wz-file>");
 }
 
 static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)
 {
-    if (string.Equals(value, "bms", StringComparison.OrdinalIgnoreCase))
+    if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(value, "noop", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(value, "bms", StringComparison.OrdinalIgnoreCase))
     {
-        kind = WzStringEncryptionKind.Bms;
+        // WC historically names this no-op key BMS; keep that as an alias only.
+        kind = WzStringEncryptionKind.None;
         return true;
     }
 
@@ -144,6 +147,6 @@ static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)
         return true;
     }
 
-    kind = WzStringEncryptionKind.Bms;
+    kind = WzStringEncryptionKind.None;
     return false;
 }

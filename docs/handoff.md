@@ -56,7 +56,7 @@ a0858cb Bootstrap WCX modernization project
   - CLI `header` and recursive `headers` commands,
   - JSON output for `list` and header workflows,
   - PKG1 top-level directory preview,
-  - PKG1 directory-name decoding with BMS/KMS/GMS key modes.
+  - PKG1 directory-name decoding with no-op/KMS/GMS key modes.
 
 ## Important Decisions
 

@@ -22,7 +22,7 @@ public sealed class WzStringDecryptor
     private readonly WzStringEncryptionKind kind;
     private byte[]? keyStream;
 
-    public WzStringDecryptor(WzStringEncryptionKind kind = WzStringEncryptionKind.Bms)
+    public WzStringDecryptor(WzStringEncryptionKind kind = WzStringEncryptionKind.None)
     {
         this.kind = kind;
     }
@@ -55,7 +55,7 @@ public sealed class WzStringDecryptor
 
     private void DecryptKeyStream(Span<byte> data)
     {
-        if (kind == WzStringEncryptionKind.Bms || data.Length == 0)
+        if (kind == WzStringEncryptionKind.None || data.Length == 0)
         {
             return;
         }

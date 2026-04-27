@@ -7,18 +7,20 @@ Added PKG1 directory string decoding for previewed directory entries.
 ## Completed
 
 - Added `WzStringDecryptor` and `WzStringEncryptionKind`.
-- Implemented BMS/no-op, KMS, and GMS PKG1 string key modes.
+- Implemented no-op, KMS, and GMS PKG1 string key modes.
 - Updated directory preview entries to include decoded names.
 - Added CLI key selection:
 
 ```bash
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key bms path/to/file.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key none path/to/file.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key kms path/to/file.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms path/to/file.wz
 ```
 
-- Defaulted `preview-dir` to BMS/no-op because the local MapleStoryNA client
+- Defaulted `preview-dir` to no-op because the local MapleStoryNA client
   `Data/Base/Base.wz` decodes correctly with that key.
+- `--key bms` remains accepted as a compatibility alias for WC's historical
+  no-op key name.
 - Updated synthetic byte tests to use encoded string bytes instead of plaintext.
 
 ## Local Smoke

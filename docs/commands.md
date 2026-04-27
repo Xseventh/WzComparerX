@@ -97,9 +97,10 @@ dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --json path/t
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms path/to/older-client.wz
 ```
 
-`preview-dir` defaults to `--key bms`, which matches the current local
+`preview-dir` defaults to `--key none`, which matches the current local
 MapleStoryNA client. Use `--key kms` or `--key gms` for files that need those
-legacy PKG1 string keys.
+legacy PKG1 string keys. `--key bms` remains accepted as a compatibility alias
+for WC's historical no-op key name.
 
 ## Run Avalonia App
 

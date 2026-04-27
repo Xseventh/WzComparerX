@@ -121,7 +121,7 @@ public class WzPackageHeaderServiceTests
     {
         var path = WriteTemporaryPkg1DirectoryFile();
         var service = new WzDirectoryPreviewService(
-            new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(WzStringEncryptionKind.Bms)));
+            new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(WzStringEncryptionKind.None)));
         var formatter = new WzDirectoryPreviewFormatter();
 
         try
