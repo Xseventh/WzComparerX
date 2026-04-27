@@ -65,7 +65,8 @@ a0858cb Bootstrap WCX modernization project
   - PKG1 version hash and entry offset calculation,
   - PKG1 `0x02` string-reference name decoding,
   - PKG1 recursive directory-table pre-read and preview enumeration,
-  - minimal IMG payload preview for top-level object type.
+  - minimal IMG payload preview for top-level object type,
+  - shallow IMG `Property` preview for first-layer scalar values.
 
 ## Important Decisions
 
@@ -82,7 +83,8 @@ header detection and PKG1 directory preview working against the local
 MapleStoryNA client. `preview-dir` can decode names, detect PKG1 version/hash,
 calculate entry offsets, and enumerate recursively nested directory tables.
 `preview-img` can select an image by name/path/index and read its top-level IMG
-object type.
+object type. For `Property` images it also lists first-layer property names and
+simple scalar values.
 
 ## Suggested Next Prompt
 
@@ -91,10 +93,10 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Then continue Milestone 2 by migrating
-minimal IMG property/value parsing below the top-level object type. Add
-fixture-backed tests, run build/test, update docs/logs, and commit the work on
-the current branch.
+docs/development-guidelines.md first. Then continue Milestone 2 by adding a
+bounded recursive IMG property preview, or by adding key auto-detection for
+preview workflows. Add fixture-backed tests, run build/test, update docs/logs,
+and commit the work on the current branch.
 ```
 
 ## Caution

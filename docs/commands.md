@@ -115,6 +115,9 @@ dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --json path/t
 ```
 
 The selector can be an image name, image path, or preview entry index.
+For top-level `Property` images, `preview-img` also lists the first layer of
+property names and simple scalar values. Nested objects are summarized by object
+type.
 
 ## Run Avalonia App
 

@@ -4,7 +4,9 @@ public sealed record WzImagePreview(
     WzPackageHeader Header,
     string Selector,
     WzDirectoryEntryPreview? Entry,
-    string? ObjectType)
+    string? ObjectType,
+    int? PropertyCount = null,
+    IReadOnlyList<WzImagePropertyPreviewEntry>? Properties = null)
 {
     public bool IsValid => Header.IsValid && Entry is not null && ObjectType is not null;
 }

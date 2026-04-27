@@ -10,7 +10,8 @@ public class WzImagePreviewReaderTests
         byte[] bytes =
         [
             0x00, 0x00, 0x00, 0x00,
-            0x73, 0xf8, 0xfa, 0xd9, 0xc3, 0xdd, 0xcb, 0xdd, 0xc4, 0xc8
+            0x73, 0xf8, 0xfa, 0xd9, 0xc3, 0xdd, 0xcb, 0xdd, 0xc4, 0xc8,
+            0x00, 0x00, 0x00
         ];
         using var stream = new MemoryStream(bytes);
         var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
@@ -19,6 +20,7 @@ public class WzImagePreviewReaderTests
 
         Assert.True(preview.IsValid);
         Assert.Equal("Property", preview.ObjectType);
+        Assert.Equal(0, preview.PropertyCount);
         Assert.Equal(4, preview.Entry?.Offset);
     }
 
@@ -28,7 +30,8 @@ public class WzImagePreviewReaderTests
         byte[] bytes =
         [
             0x00, 0x00, 0x00, 0x00,
-            0x1b, 0x05, 0x00, 0x00, 0x00,
+            0x1b, 0x08, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00,
             0xf8, 0xfa, 0xd9, 0xc3, 0xdd, 0xcb, 0xdd, 0xc4, 0xc8
         ];
         using var stream = new MemoryStream(bytes);
@@ -38,6 +41,33 @@ public class WzImagePreviewReaderTests
 
         Assert.True(preview.IsValid);
         Assert.Equal("Property", preview.ObjectType);
+        Assert.Equal(0, preview.PropertyCount);
+    }
+
+    [Fact]
+    public void Read_ReturnsTopLevelPropertyScalars()
+    {
+        byte[] bytes =
+        [
+            0x00, 0x00, 0x00, 0x00,
+            0x73, 0xf8, 0xfa, 0xd9, 0xc3, 0xdd, 0xcb, 0xdd, 0xc4, 0xc8,
+            0x00, 0x00, 0x02,
+            0x00, 0xfd, 0xcc, 0xc4, 0xc3, 0x03, 0x2a,
+            0x00, 0xfc, 0xc4, 0xca, 0xc1, 0xc8, 0x08, 0x00, 0xfd, 0xc8, 0xca, 0xde
+        ];
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
+
+        Assert.Equal(2, preview.PropertyCount);
+        Assert.NotNull(preview.Properties);
+        Assert.Equal("foo", preview.Properties[0].Name);
+        Assert.Equal("int32", preview.Properties[0].Kind);
+        Assert.Equal(42, preview.Properties[0].Value);
+        Assert.Equal("name", preview.Properties[1].Name);
+        Assert.Equal("string", preview.Properties[1].Kind);
+        Assert.Equal("bar", preview.Properties[1].Value);
     }
 
     private static WzPackageHeader CreateHeader()

@@ -99,3 +99,5 @@ directory tables immediately after the top-level directory table.
 `Data/Base/Base_000.wz` contains image entries such as `smap.img`,
 `StandardPDD.img`, and `zmap.img`. Their calculated offsets point to IMG
 payloads whose top-level object type currently reads as `Property`.
+`smap.img` previews as 151 first-layer properties, mostly string mappings and
+null placeholders. `StandardPDD.img` previews as six nested `Property` objects.
