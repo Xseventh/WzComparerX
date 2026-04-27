@@ -146,7 +146,8 @@ For each migrated feature, record:
     nested object summaries.
   - Expand nested IMG `Property` objects to a caller-provided bounded depth.
   - Preview nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
-    metadata, RawData metadata, and Canvas#Video metadata object values.
+    metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
+    object values.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
@@ -163,14 +164,15 @@ For each migrated feature, record:
   - Bounded nested IMG `Property` preview.
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview.
+  - IMG Sound_DX8 metadata value preview.
 - Known unsupported cases:
   - Key auto-detection is not implemented yet.
   - Full unbounded IMG property/value parsing is not implemented yet.
   - Canvas pixel decoding is not implemented yet.
   - RawData payload decoding is not implemented yet.
   - Canvas#Video payload decoding is not implemented yet.
-  - Sound and other nested IMG object payloads are still summarized by object
-    type.
+  - Sound_DX8 audio payload decoding is not implemented yet.
+  - Other nested IMG object payloads are still summarized by object type.
 - UI dependency removed or isolated:
   - Implemented in `WzComparerX.WzLib` and Core CLI services only; no UI
     dependency.

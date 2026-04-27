@@ -154,6 +154,7 @@ public sealed class WzImagePreviewReader
             "UOL" => ReadUolObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "RawData" => ReadRawDataObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "Canvas#Video" => ReadVideoObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "Sound_DX8" => ReadSoundObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             _ => new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path)
         };
 
@@ -350,6 +351,76 @@ public sealed class WzImagePreviewReader
         return new WzImagePropertyPreviewEntry(index, name, type, "video", video, depth, path, childCount, children);
     }
 
+    private WzImagePropertyPreviewEntry ReadSoundObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        var version = ReadByte(stream);
+        int? childCount = null;
+        List<WzImagePropertyPreviewEntry>? children = null;
+        if (version == 1 && ReadByte(stream) == 0x01)
+        {
+            ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out childCount, out children);
+        }
+
+        var dataLength = ReadCompressedInt32(stream);
+        if (dataLength < 0)
+        {
+            throw new InvalidDataException($"Cannot read a negative sound data length: {dataLength}.");
+        }
+
+        var duration = ReadCompressedInt32(stream);
+        var soundDeclaration = ReadByte(stream);
+        var majorType = ReadGuidString(stream);
+        var subType = ReadGuidString(stream);
+        var fixedSizeSamples = ReadByte(stream) != 0;
+        var temporalCompression = ReadByte(stream) != 0;
+        var formatType = ReadGuidString(stream);
+        int? formatExtraLength = null;
+        if (soundDeclaration == 2)
+        {
+            formatExtraLength = ReadCompressedInt32(stream);
+            if (formatExtraLength < 0)
+            {
+                throw new InvalidDataException($"Cannot read a negative sound format data length: {formatExtraLength}.");
+            }
+
+            if (stream.Position + formatExtraLength.Value > imageEndOffset)
+            {
+                throw new InvalidDataException($"Sound format data extends past the image stream: {stream.Position + formatExtraLength.Value}.");
+            }
+
+            SkipBytes(stream, formatExtraLength.Value);
+        }
+
+        var dataOffset = stream.Position;
+        if (dataOffset + dataLength > imageEndOffset)
+        {
+            throw new InvalidDataException($"Sound data extends past the image stream: {dataOffset + dataLength}.");
+        }
+
+        SkipBytes(stream, dataLength);
+        var sound = new WzImageSoundPreview(
+            version,
+            duration,
+            soundDeclaration,
+            majorType,
+            subType,
+            fixedSizeSamples,
+            temporalCompression,
+            formatType,
+            formatExtraLength,
+            dataOffset,
+            dataLength);
+        return new WzImagePropertyPreviewEntry(index, name, type, "sound", sound, depth, path, childCount, children);
+    }
+
     private WzImagePropertyPreviewEntry ReadRawDataPayload(
         Stream stream,
         long imageEndOffset,
@@ -395,6 +466,11 @@ public sealed class WzImagePreviewReader
     private static WzImageVectorPreview ReadVectorPreview(Stream stream)
     {
         return new WzImageVectorPreview(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
+    }
+
+    private static string ReadGuidString(Stream stream)
+    {
+        return new Guid(ReadBytes(stream, 16)).ToString();
     }
 
     private static string? CombinePath(string parentPath, string? name)

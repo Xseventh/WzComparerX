@@ -109,3 +109,8 @@ scalar child entries such as integer threshold values.
 width, height, texture format, scale, page count, payload offset, and payload
 length. With `--depth 3`, Canvas mini-properties expose child values such as
 `origin` vectors.
+
+`Data/Sound/Sound_000.wz` contains sound image entries such as
+`AchievementEff.img` and `Bgm00.img`. With `preview-img --depth 2`, their
+`Sound_DX8` values preview as metadata including duration, sound declaration,
+payload length, and payload offset. Audio payload decoding is not implemented.

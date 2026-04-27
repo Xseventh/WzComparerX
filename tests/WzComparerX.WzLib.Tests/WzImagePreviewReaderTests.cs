@@ -325,6 +325,80 @@ public class WzImagePreviewReaderTests
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
     }
 
+    [Fact]
+    public void Read_ReturnsSoundMetadata()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "sound",
+            CreateObjectValue(
+                "Sound_DX8",
+                1,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString("kind"),
+                0x03,
+                7,
+                3,
+                60,
+                2,
+                CreateBytes(0x00, 16),
+                CreateBytes(0x01, 16),
+                0x01,
+                0x00,
+                CreateBytes(0x02, 16),
+                4,
+                CreateBytes(0x03, 4),
+                0x10,
+                0x11,
+                0x12)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(preview.Properties);
+        var property = Assert.Single(preview.Properties);
+        Assert.Equal("sound", property.Kind);
+        Assert.Equal(1, property.ChildCount);
+        Assert.NotNull(property.Children);
+        Assert.Equal("kind", Assert.Single(property.Children).Name);
+        var sound = Assert.IsType<WzImageSoundPreview>(property.Value);
+        Assert.Equal(1, sound.Version);
+        Assert.Equal(60, sound.Duration);
+        Assert.Equal(2, sound.SoundDeclaration);
+        Assert.True(sound.FixedSizeSamples);
+        Assert.False(sound.TemporalCompression);
+        Assert.Equal(4, sound.FormatExtraLength);
+        Assert.Equal(3, sound.DataLength);
+    }
+
+    [Fact]
+    public void Read_RejectsSoundExtendingPastImage()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "sound",
+            CreateObjectValue(
+                "Sound_DX8",
+                0,
+                100,
+                1,
+                0,
+                CreateBytes(0x00, 16),
+                CreateBytes(0x00, 16),
+                0x00,
+                0x00,
+                CreateBytes(0x00, 16))));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        Assert.Throws<InvalidDataException>(
+            () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
+    }
+
     private static WzPackageHeader CreateHeader()
     {
         return new WzPackageHeader(
@@ -407,6 +481,11 @@ public class WzImagePreviewReaderTests
         var bytes = new List<byte> { 0x00 };
         AddWzString(bytes, value);
         return bytes.ToArray();
+    }
+
+    private static byte[] CreateBytes(byte value, int count)
+    {
+        return Enumerable.Repeat(value, count).ToArray();
     }
 
     private static void AddImageObjectName(List<byte> bytes, string value)

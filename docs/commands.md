@@ -122,8 +122,9 @@ type by default. Use `--depth 0` to print only the top-level object type, or
 `--depth 2` to expand one nested `Property` layer. The accepted depth range is
 `0` through `64`. IMG object previews currently include `Property`,
 `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas metadata, and RawData
-metadata, and Canvas#Video metadata; Canvas pixel decoding, RawData payload
-decoding, and video payload decoding are not implemented yet.
+metadata, Canvas#Video metadata, and Sound_DX8 metadata; Canvas pixel decoding,
+RawData payload decoding, video payload decoding, and audio payload decoding are
+not implemented yet.
 
 ## Run Avalonia App
 
