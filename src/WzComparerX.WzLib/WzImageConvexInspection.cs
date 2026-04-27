@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImageConvexPreview(IReadOnlyList<WzImageVectorPreview> Points)
+public sealed record WzImageConvexInspection(IReadOnlyList<WzImageVectorInspection> Points)
 {
     public override string ToString()
     {

@@ -101,15 +101,15 @@ directory tables immediately after the top-level directory table.
 `Data/Base/Base_000.wz` contains image entries such as `smap.img`,
 `StandardPDD.img`, and `zmap.img`. Their calculated offsets point to IMG
 payloads whose top-level object type currently reads as `Property`.
-`smap.img` previews as 151 first-layer properties, mostly string mappings and
-null placeholders. `StandardPDD.img` previews as six nested `Property` objects.
+`smap.img` inspects as 151 first-layer properties, mostly string mappings and
+null placeholders. `StandardPDD.img` inspects as six nested `Property` objects.
 With `inspect --debug --depth 2`, those nested `Property` objects expand into
 scalar child entries such as integer threshold values.
 
 `Data/UI/UI_000.wz` contains UI image entries such as `Basic.img`. With
 `inspect --debug --depth 2`, many nested Canvas values now expose metadata:
 width, height, texture format, scale, page count, payload offset, and payload
-length. Canvas preview also reports whether the payload looks like direct zlib
+length. Canvas inspection also reports whether the payload looks like direct zlib
 or WC's chunked encrypted zlib stream, plus the expected uncompressed byte
 length for known texture formats. With `--depth 3`, Canvas mini-properties
 expose child values such as `origin` vectors.
@@ -122,19 +122,19 @@ object type.
 WC treats entries whose image names end in `.lua` as a separate stream shape
 instead of the normal IMG object-tag stream. Lua blocks use flag `0x01`,
 compressed payload length, key-stream-only decryption, and UTF-8 text. WCX now
-previews Lua block count, payload length, and a short text snippet, but does not
+inspects Lua block count, payload length, and a short text snippet, but does not
 export full scripts yet. The local client contains WZ2Lua and `_Canvas` packages
-with Lua-related strings, but the currently supported directory preview paths do
+with Lua-related strings, but the currently supported directory inspection paths do
 not yet expose a direct local `.lua` smoke entry.
 
 WC also supports text-format IMG streams. V1 starts with `#Property` and uses
 `key = value` lines with `{ ... }` property blocks. V2 starts with
 `Root <Property>` and uses tab indentation plus explicit node types such as
-`<I4>`, `<I8>`, `<R8>`, `<String>`, `<Vector>`, and `<Property>`. WCX previews
-both variants into the same bounded property preview model. Current local GMS
+`<I4>`, `<I8>`, `<R8>`, `<String>`, `<Vector>`, and `<Property>`. WCX inspects
+both variants into the same bounded property inspection model. Current local GMS
 data did not expose a direct text IMG smoke sample in the scanned WZ files.
 
 `Data/Sound/Sound_000.wz` contains sound image entries such as
 `AchievementEff.img` and `Bgm00.img`. With `inspect --debug --depth 2`, their
-`Sound_DX8` values preview as metadata including duration, sound declaration,
+`Sound_DX8` values inspect as metadata including duration, sound declaration,
 payload length, and payload offset. Audio payload decoding is not implemented.

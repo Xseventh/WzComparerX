@@ -4,30 +4,30 @@ using System.Text;
 
 namespace WzComparerX.WzLib;
 
-public sealed class WzImagePreviewReader
+public sealed class WzImageInspectionReader
 {
-    public const int MaxPropertyPreviewDepth = 64;
+    public const int MaxPropertyInspectionDepth = 64;
 
     private readonly WzStringDecryptor stringDecryptor;
     private readonly int maxPropertyDepth;
 
-    public WzImagePreviewReader(WzStringDecryptor? stringDecryptor = null, int maxPropertyDepth = 1)
+    public WzImageInspectionReader(WzStringDecryptor? stringDecryptor = null, int maxPropertyDepth = 1)
     {
-        if (maxPropertyDepth is < 0 or > MaxPropertyPreviewDepth)
+        if (maxPropertyDepth is < 0 or > MaxPropertyInspectionDepth)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(maxPropertyDepth),
-                $"Property preview depth must be between 0 and {MaxPropertyPreviewDepth}.");
+                $"Property inspection depth must be between 0 and {MaxPropertyInspectionDepth}.");
         }
 
         this.stringDecryptor = stringDecryptor ?? new WzStringDecryptor();
         this.maxPropertyDepth = maxPropertyDepth;
     }
 
-    public WzImagePreview Read(
+    public WzImageInspection Read(
         Stream stream,
         WzPackageHeader header,
-        WzDirectoryEntryPreview entry,
+        WzDirectoryEntryInspection entry,
         string selector)
     {
         ArgumentNullException.ThrowIfNull(stream);
@@ -57,19 +57,19 @@ public sealed class WzImagePreviewReader
         }
 
         stream.Position = offset;
-        if (TryReadTextImagePreview(stream, header, entry, selector, imageEndOffset, out var textPreview))
+        if (TryReadTextImageInspection(stream, header, entry, selector, imageEndOffset, out var textInspection))
         {
-            return textPreview;
+            return textInspection;
         }
 
         if (IsLuaEntry(entry))
         {
-            return ReadLuaPreview(stream, header, entry, selector, imageEndOffset);
+            return ReadLuaInspection(stream, header, entry, selector, imageEndOffset);
         }
 
         var objectType = ReadImageObjectTypeName(stream, offset);
         int? propertyCount = null;
-        IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
+        IReadOnlyList<WzImagePropertyInspectionEntry>? properties = null;
         object? objectValue = null;
         if (objectType == "Property" && maxPropertyDepth > 0)
         {
@@ -77,93 +77,93 @@ public sealed class WzImagePreviewReader
         }
         else if (maxPropertyDepth > 0)
         {
-            var objectPreview = ReadTopLevelObjectValue(stream, offset, imageEndOffset, objectType);
-            objectValue = objectPreview?.Value;
-            propertyCount = objectPreview?.ChildCount;
-            properties = objectPreview?.Children;
+            var objectInspection = ReadTopLevelObjectValue(stream, offset, imageEndOffset, objectType);
+            objectValue = objectInspection?.Value;
+            propertyCount = objectInspection?.ChildCount;
+            properties = objectInspection?.Children;
         }
 
-        return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties, objectValue);
+        return new WzImageInspection(header, selector, entry, objectType, propertyCount, properties, objectValue);
     }
 
-    private bool TryReadTextImagePreview(
+    private bool TryReadTextImageInspection(
         Stream stream,
         WzPackageHeader header,
-        WzDirectoryEntryPreview entry,
+        WzDirectoryEntryInspection entry,
         string selector,
         long imageEndOffset,
-        out WzImagePreview preview)
+        out WzImageInspection inspection)
     {
-        preview = default!;
+        inspection = default!;
         var startPosition = stream.Position;
         var signatureBytes = ReadBytes(stream, (int)Math.Min(9, imageEndOffset - startPosition));
         stream.Position = startPosition;
 
         if (signatureBytes.AsSpan().StartsWith("#Property"u8))
         {
-            preview = ReadTextPropertyV1Preview(stream, header, entry, selector, imageEndOffset);
+            inspection = ReadTextPropertyV1Inspection(stream, header, entry, selector, imageEndOffset);
             return true;
         }
 
         if (signatureBytes.AsSpan().StartsWith("Root"u8))
         {
-            preview = ReadTextPropertyV2Preview(stream, header, entry, selector, imageEndOffset);
+            inspection = ReadTextPropertyV2Inspection(stream, header, entry, selector, imageEndOffset);
             return true;
         }
 
         return false;
     }
 
-    private WzImagePreview ReadTextPropertyV1Preview(
+    private WzImageInspection ReadTextPropertyV1Inspection(
         Stream stream,
         WzPackageHeader header,
-        WzDirectoryEntryPreview entry,
+        WzDirectoryEntryInspection entry,
         string selector,
         long imageEndOffset)
     {
         var text = ReadUtf8Text(stream, imageEndOffset);
         var parser = new TextImageV1Parser(maxPropertyDepth);
         int? propertyCount = null;
-        IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
+        IReadOnlyList<WzImagePropertyInspectionEntry>? properties = null;
         if (maxPropertyDepth > 0)
         {
             properties = parser.Parse(text, out var count);
             propertyCount = count;
         }
 
-        return new WzImagePreview(header, selector, entry, "Property", propertyCount, properties);
+        return new WzImageInspection(header, selector, entry, "Property", propertyCount, properties);
     }
 
-    private WzImagePreview ReadTextPropertyV2Preview(
+    private WzImageInspection ReadTextPropertyV2Inspection(
         Stream stream,
         WzPackageHeader header,
-        WzDirectoryEntryPreview entry,
+        WzDirectoryEntryInspection entry,
         string selector,
         long imageEndOffset)
     {
         var text = ReadUtf8Text(stream, imageEndOffset);
         var parser = new TextImageV2Parser(maxPropertyDepth);
         int? propertyCount = null;
-        IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
+        IReadOnlyList<WzImagePropertyInspectionEntry>? properties = null;
         if (maxPropertyDepth > 0)
         {
             properties = parser.Parse(text, out var count);
             propertyCount = count;
         }
 
-        return new WzImagePreview(header, selector, entry, "Property", propertyCount, properties);
+        return new WzImageInspection(header, selector, entry, "Property", propertyCount, properties);
     }
 
-    private WzImagePreview ReadLuaPreview(
+    private WzImageInspection ReadLuaInspection(
         Stream stream,
         WzPackageHeader header,
-        WzDirectoryEntryPreview entry,
+        WzDirectoryEntryInspection entry,
         string selector,
         long imageEndOffset)
     {
         const string objectType = "Lua";
         int? propertyCount = null;
-        IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
+        IReadOnlyList<WzImagePropertyInspectionEntry>? properties = null;
         object? objectValue = null;
 
         if (maxPropertyDepth > 0)
@@ -177,12 +177,12 @@ public sealed class WzImagePreviewReader
             }
         }
 
-        return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties, objectValue);
+        return new WzImageInspection(header, selector, entry, objectType, propertyCount, properties, objectValue);
     }
 
-    private List<WzImagePropertyPreviewEntry> ReadLuaEntries(Stream stream, long imageEndOffset)
+    private List<WzImagePropertyInspectionEntry> ReadLuaEntries(Stream stream, long imageEndOffset)
     {
-        var entries = new List<WzImagePropertyPreviewEntry>();
+        var entries = new List<WzImagePropertyInspectionEntry>();
         while (stream.Position < imageEndOffset)
         {
             var flag = ReadByte(stream);
@@ -204,19 +204,19 @@ public sealed class WzImagePreviewReader
 
             var payload = stringDecryptor.DecryptPayload(ReadBytes(stream, length));
             var script = Encoding.UTF8.GetString(payload);
-            var preview = new WzImageLuaPreview(payload.Length, CreateLuaPreview(script));
-            entries.Add(new WzImagePropertyPreviewEntry(entries.Count, null, flag, "lua", preview));
+            var inspection = new WzImageLuaInspection(payload.Length, CreateLuaSnippet(script));
+            entries.Add(new WzImagePropertyInspectionEntry(entries.Count, null, flag, "lua", inspection));
         }
 
         return entries;
     }
 
-    private static bool IsLuaEntry(WzDirectoryEntryPreview entry)
+    private static bool IsLuaEntry(WzDirectoryEntryInspection entry)
     {
         return (entry.Path ?? entry.Name)?.EndsWith(".lua", StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    private static string CreateLuaPreview(string script)
+    private static string CreateLuaSnippet(string script)
     {
         const int maxLength = 80;
         var normalized = script.ReplaceLineEndings("\\n");
@@ -228,7 +228,7 @@ public sealed class WzImagePreviewReader
         var length = imageEndOffset - stream.Position;
         if (length > int.MaxValue)
         {
-            throw new InvalidDataException($"Text image is too large to preview: {length} bytes.");
+            throw new InvalidDataException($"Text image is too large to inspect: {length} bytes.");
         }
 
         return Encoding.UTF8.GetString(ReadBytes(stream, (int)length));
@@ -241,7 +241,7 @@ public sealed class WzImagePreviewReader
         private string[] lines = [];
         private int position;
 
-        public List<WzImagePropertyPreviewEntry> Parse(string text, out int count)
+        public List<WzImagePropertyInspectionEntry> Parse(string text, out int count)
         {
             lines = SplitLines(text);
             position = 0;
@@ -256,9 +256,9 @@ public sealed class WzImagePreviewReader
             return entries;
         }
 
-        private List<WzImagePropertyPreviewEntry> ParseEntries(int depth, string parentPath)
+        private List<WzImagePropertyInspectionEntry> ParseEntries(int depth, string parentPath)
         {
-            var entries = new List<WzImagePropertyPreviewEntry>();
+            var entries = new List<WzImagePropertyInspectionEntry>();
             while (position < lines.Length)
             {
                 var line = lines[position++].Trim();
@@ -284,7 +284,7 @@ public sealed class WzImagePreviewReader
                 if (rawValue == "{")
                 {
                     var children = ParseEntries(depth + 1, path ?? string.Empty);
-                    entries.Add(new WzImagePropertyPreviewEntry(
+                    entries.Add(new WzImagePropertyInspectionEntry(
                         entries.Count,
                         name,
                         TextValueType,
@@ -311,7 +311,7 @@ public sealed class WzImagePreviewReader
         private string[] lines = [];
         private int position;
 
-        public List<WzImagePropertyPreviewEntry> Parse(string text, out int count)
+        public List<WzImagePropertyInspectionEntry> Parse(string text, out int count)
         {
             lines = SplitLines(text);
             position = 0;
@@ -326,9 +326,9 @@ public sealed class WzImagePreviewReader
             return entries;
         }
 
-        private List<WzImagePropertyPreviewEntry> ParseEntries(int expectedIndent, int depth, string parentPath)
+        private List<WzImagePropertyInspectionEntry> ParseEntries(int expectedIndent, int depth, string parentPath)
         {
-            var entries = new List<WzImagePropertyPreviewEntry>();
+            var entries = new List<WzImagePropertyInspectionEntry>();
             while (position < lines.Length)
             {
                 if (string.IsNullOrWhiteSpace(lines[position]))
@@ -353,7 +353,7 @@ public sealed class WzImagePreviewReader
                 if (node.Kind == "object")
                 {
                     var children = ParseEntries(expectedIndent + 1, depth + 1, path ?? string.Empty);
-                    entries.Add(new WzImagePropertyPreviewEntry(
+                    entries.Add(new WzImagePropertyInspectionEntry(
                         entries.Count,
                         node.Name,
                         TextValueType,
@@ -366,7 +366,7 @@ public sealed class WzImagePreviewReader
                     continue;
                 }
 
-                entries.Add(new WzImagePropertyPreviewEntry(
+                entries.Add(new WzImagePropertyInspectionEntry(
                     entries.Count,
                     node.Name,
                     TextValueType,
@@ -429,7 +429,7 @@ public sealed class WzImagePreviewReader
 
     private sealed record TextNode(int Indent, string Name, string Kind, object? Value);
 
-    private static WzImagePropertyPreviewEntry CreateTextValueEntry(
+    private static WzImagePropertyInspectionEntry CreateTextValueEntry(
         int index,
         string name,
         string rawValue,
@@ -439,25 +439,25 @@ public sealed class WzImagePreviewReader
         const byte textValueType = 0xff;
         if (rawValue.Length == 0)
         {
-            return new WzImagePropertyPreviewEntry(index, name, textValueType, "null", Depth: depth, Path: path);
+            return new WzImagePropertyInspectionEntry(index, name, textValueType, "null", Depth: depth, Path: path);
         }
 
         if (int.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intValue))
         {
-            return new WzImagePropertyPreviewEntry(index, name, textValueType, "int32", intValue, depth, path);
+            return new WzImagePropertyInspectionEntry(index, name, textValueType, "int32", intValue, depth, path);
         }
 
         if (long.TryParse(rawValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longValue))
         {
-            return new WzImagePropertyPreviewEntry(index, name, textValueType, "int64", longValue, depth, path);
+            return new WzImagePropertyInspectionEntry(index, name, textValueType, "int64", longValue, depth, path);
         }
 
         if (double.TryParse(rawValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleValue))
         {
-            return new WzImagePropertyPreviewEntry(index, name, textValueType, "double", doubleValue, depth, path);
+            return new WzImagePropertyInspectionEntry(index, name, textValueType, "double", doubleValue, depth, path);
         }
 
-        return new WzImagePropertyPreviewEntry(index, name, textValueType, "string", rawValue, depth, path);
+        return new WzImagePropertyInspectionEntry(index, name, textValueType, "string", rawValue, depth, path);
     }
 
     private static (string Kind, object? Value) ParseTypedValue(string typeName, string? rawValue)
@@ -475,7 +475,7 @@ public sealed class WzImagePreviewReader
         };
     }
 
-    private static WzImageVectorPreview ParseTextVector(string rawValue)
+    private static WzImageVectorInspection ParseTextVector(string rawValue)
     {
         var commaIndex = rawValue.IndexOf(',');
         if (commaIndex < 0)
@@ -485,7 +485,7 @@ public sealed class WzImagePreviewReader
 
         var x = int.Parse(rawValue[..commaIndex], CultureInfo.InvariantCulture);
         var y = int.Parse(rawValue[(commaIndex + 1)..], CultureInfo.InvariantCulture);
-        return new WzImageVectorPreview(x, y);
+        return new WzImageVectorInspection(x, y);
     }
 
     private static string[] SplitLines(string text)
@@ -504,7 +504,7 @@ public sealed class WzImagePreviewReader
         };
     }
 
-    private List<WzImagePropertyPreviewEntry>? ReadPropertyEntries(
+    private List<WzImagePropertyInspectionEntry>? ReadPropertyEntries(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -515,7 +515,7 @@ public sealed class WzImagePreviewReader
         SkipBytes(stream, 2);
         var count = ReadCompressedInt32(stream);
         propertyCount = count;
-        var properties = new List<WzImagePropertyPreviewEntry>(Math.Max(count, 0));
+        var properties = new List<WzImagePropertyInspectionEntry>(Math.Max(count, 0));
 
         for (var i = 0; i < count; i++)
         {
@@ -528,7 +528,7 @@ public sealed class WzImagePreviewReader
         return properties;
     }
 
-    private WzImagePropertyPreviewEntry ReadPropertyValue(
+    private WzImagePropertyInspectionEntry ReadPropertyValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -540,19 +540,19 @@ public sealed class WzImagePreviewReader
     {
         return type switch
         {
-            0x00 => new WzImagePropertyPreviewEntry(index, name, type, "null", Depth: depth, Path: path),
-            0x02 or 0x0b => new WzImagePropertyPreviewEntry(index, name, type, "int16", ReadInt16LittleEndian(stream), depth, path),
-            0x03 or 0x13 => new WzImagePropertyPreviewEntry(index, name, type, "int32", ReadCompressedInt32(stream), depth, path),
-            0x14 => new WzImagePropertyPreviewEntry(index, name, type, "int64", ReadCompressedInt64(stream), depth, path),
-            0x04 => new WzImagePropertyPreviewEntry(index, name, type, "single", ReadCompressedSingle(stream), depth, path),
-            0x05 => new WzImagePropertyPreviewEntry(index, name, type, "double", ReadDoubleLittleEndian(stream), depth, path),
-            0x08 => new WzImagePropertyPreviewEntry(index, name, type, "string", ReadImageString(stream, imageBaseOffset), depth, path),
+            0x00 => new WzImagePropertyInspectionEntry(index, name, type, "null", Depth: depth, Path: path),
+            0x02 or 0x0b => new WzImagePropertyInspectionEntry(index, name, type, "int16", ReadInt16LittleEndian(stream), depth, path),
+            0x03 or 0x13 => new WzImagePropertyInspectionEntry(index, name, type, "int32", ReadCompressedInt32(stream), depth, path),
+            0x14 => new WzImagePropertyInspectionEntry(index, name, type, "int64", ReadCompressedInt64(stream), depth, path),
+            0x04 => new WzImagePropertyInspectionEntry(index, name, type, "single", ReadCompressedSingle(stream), depth, path),
+            0x05 => new WzImagePropertyInspectionEntry(index, name, type, "double", ReadDoubleLittleEndian(stream), depth, path),
+            0x08 => new WzImagePropertyInspectionEntry(index, name, type, "string", ReadImageString(stream, imageBaseOffset), depth, path),
             0x09 => ReadObjectPropertyValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             _ => throw new InvalidDataException($"Unknown image property value type 0x{type:X2}.")
         };
     }
 
-    private WzImagePropertyPreviewEntry ReadObjectPropertyValue(
+    private WzImagePropertyInspectionEntry ReadObjectPropertyValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -585,7 +585,7 @@ public sealed class WzImagePreviewReader
             "RawData" => ReadRawDataObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "Canvas#Video" => ReadVideoObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "Sound_DX8" => ReadSoundObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
-            _ => new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path)
+            _ => new WzImagePropertyInspectionEntry(index, name, type, "object", objectType, depth, path)
         };
 
         if (stream.Position > endPosition)
@@ -597,7 +597,7 @@ public sealed class WzImagePreviewReader
         return property;
     }
 
-    private WzImagePropertyPreviewEntry? ReadTopLevelObjectValue(
+    private WzImagePropertyInspectionEntry? ReadTopLevelObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -616,7 +616,7 @@ public sealed class WzImagePreviewReader
         };
     }
 
-    private WzImagePropertyPreviewEntry ReadNestedPropertyObjectValue(
+    private WzImagePropertyInspectionEntry ReadNestedPropertyObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -627,16 +627,16 @@ public sealed class WzImagePreviewReader
         string? path)
     {
         int? childCount = null;
-        List<WzImagePropertyPreviewEntry>? children = null;
+        List<WzImagePropertyInspectionEntry>? children = null;
         if (depth + 1 < maxPropertyDepth)
         {
             children = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
         }
 
-        return new WzImagePropertyPreviewEntry(index, name, type, "object", "Property", depth, path, childCount, children);
+        return new WzImagePropertyInspectionEntry(index, name, type, "object", "Property", depth, path, childCount, children);
     }
 
-    private static WzImagePropertyPreviewEntry ReadVectorObjectValue(
+    private static WzImagePropertyInspectionEntry ReadVectorObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -648,10 +648,10 @@ public sealed class WzImagePreviewReader
     {
         _ = imageBaseOffset;
         _ = imageEndOffset;
-        return new WzImagePropertyPreviewEntry(index, name, type, "vector", ReadVectorPreview(stream), depth, path);
+        return new WzImagePropertyInspectionEntry(index, name, type, "vector", ReadVectorInspection(stream), depth, path);
     }
 
-    private WzImagePropertyPreviewEntry ReadCanvasObjectValue(
+    private WzImagePropertyInspectionEntry ReadCanvasObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -663,7 +663,7 @@ public sealed class WzImagePreviewReader
     {
         SkipBytes(stream, 1);
         int? childCount = null;
-        List<WzImagePropertyPreviewEntry>? children = null;
+        List<WzImagePropertyInspectionEntry>? children = null;
         if (ReadByte(stream) == 0x01)
         {
             var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
@@ -695,7 +695,7 @@ public sealed class WzImagePreviewReader
         var compressionKind = DetectCanvasCompressionKind(stream, dataOffset, dataLength);
         var uncompressedDataLength = GetCanvasUncompressedDataLength(format, scale, pages, width, height);
         SkipBytes(stream, dataLength);
-        var canvas = new WzImageCanvasPreview(
+        var canvas = new WzImageCanvasInspection(
             width,
             height,
             format,
@@ -706,7 +706,7 @@ public sealed class WzImagePreviewReader
             dataLength,
             compressionKind,
             uncompressedDataLength);
-        return new WzImagePropertyPreviewEntry(index, name, type, "canvas", canvas, depth, path, childCount, children);
+        return new WzImagePropertyInspectionEntry(index, name, type, "canvas", canvas, depth, path, childCount, children);
     }
 
     private static WzImageCanvasCompressionKind DetectCanvasCompressionKind(
@@ -774,7 +774,7 @@ public sealed class WzImagePreviewReader
         return checked(perPageLength.Value * actualPages);
     }
 
-    private WzImagePropertyPreviewEntry ReadConvexObjectValue(
+    private WzImagePropertyInspectionEntry ReadConvexObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -791,7 +791,7 @@ public sealed class WzImagePreviewReader
             throw new InvalidDataException($"Cannot read a negative convex point count: {pointCount}.");
         }
 
-        var points = new List<WzImageVectorPreview>(pointCount);
+        var points = new List<WzImageVectorInspection>(pointCount);
         for (var i = 0; i < pointCount; i++)
         {
             var objectType = ReadImageObjectTypeName(stream, imageBaseOffset);
@@ -800,13 +800,13 @@ public sealed class WzImagePreviewReader
                 throw new InvalidDataException($"Convex2D point {i} is not a vector: {objectType}.");
             }
 
-            points.Add(ReadVectorPreview(stream));
+            points.Add(ReadVectorInspection(stream));
         }
 
-        return new WzImagePropertyPreviewEntry(index, name, type, "convex", new WzImageConvexPreview(points), depth, path);
+        return new WzImagePropertyInspectionEntry(index, name, type, "convex", new WzImageConvexInspection(points), depth, path);
     }
 
-    private WzImagePropertyPreviewEntry ReadUolObjectValue(
+    private WzImagePropertyInspectionEntry ReadUolObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -818,10 +818,10 @@ public sealed class WzImagePreviewReader
     {
         _ = imageEndOffset;
         SkipBytes(stream, 1);
-        return new WzImagePropertyPreviewEntry(index, name, type, "uol", ReadImageString(stream, imageBaseOffset), depth, path);
+        return new WzImagePropertyInspectionEntry(index, name, type, "uol", ReadImageString(stream, imageBaseOffset), depth, path);
     }
 
-    private WzImagePropertyPreviewEntry ReadRawDataObjectValue(
+    private WzImagePropertyInspectionEntry ReadRawDataObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -841,7 +841,7 @@ public sealed class WzImagePreviewReader
         return ReadRawDataPayload(stream, imageEndOffset, index, name, type, depth, path, version, null, null);
     }
 
-    private WzImagePropertyPreviewEntry ReadVideoObjectValue(
+    private WzImagePropertyInspectionEntry ReadVideoObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -853,7 +853,7 @@ public sealed class WzImagePreviewReader
     {
         SkipBytes(stream, 1);
         int? childCount = null;
-        List<WzImagePropertyPreviewEntry>? children = null;
+        List<WzImagePropertyInspectionEntry>? children = null;
         if (ReadByte(stream) == 0x01)
         {
             ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out childCount, out children);
@@ -873,11 +873,11 @@ public sealed class WzImagePreviewReader
         }
 
         SkipBytes(stream, dataLength);
-        var video = new WzImageVideoPreview(unknown, dataOffset, dataLength);
-        return new WzImagePropertyPreviewEntry(index, name, type, "video", video, depth, path, childCount, children);
+        var video = new WzImageVideoInspection(unknown, dataOffset, dataLength);
+        return new WzImagePropertyInspectionEntry(index, name, type, "video", video, depth, path, childCount, children);
     }
 
-    private WzImagePropertyPreviewEntry ReadSoundObjectValue(
+    private WzImagePropertyInspectionEntry ReadSoundObjectValue(
         Stream stream,
         long imageBaseOffset,
         long imageEndOffset,
@@ -889,7 +889,7 @@ public sealed class WzImagePreviewReader
     {
         var version = ReadByte(stream);
         int? childCount = null;
-        List<WzImagePropertyPreviewEntry>? children = null;
+        List<WzImagePropertyInspectionEntry>? children = null;
         if (version == 1 && ReadByte(stream) == 0x01)
         {
             ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out childCount, out children);
@@ -932,7 +932,7 @@ public sealed class WzImagePreviewReader
         }
 
         SkipBytes(stream, dataLength);
-        var sound = new WzImageSoundPreview(
+        var sound = new WzImageSoundInspection(
             version,
             duration,
             soundDeclaration,
@@ -944,10 +944,10 @@ public sealed class WzImagePreviewReader
             formatExtraLength,
             dataOffset,
             dataLength);
-        return new WzImagePropertyPreviewEntry(index, name, type, "sound", sound, depth, path, childCount, children);
+        return new WzImagePropertyInspectionEntry(index, name, type, "sound", sound, depth, path, childCount, children);
     }
 
-    private WzImagePropertyPreviewEntry ReadRawDataPayload(
+    private WzImagePropertyInspectionEntry ReadRawDataPayload(
         Stream stream,
         long imageEndOffset,
         int index,
@@ -957,7 +957,7 @@ public sealed class WzImagePreviewReader
         string? path,
         int version,
         int? childCount,
-        List<WzImagePropertyPreviewEntry>? children)
+        List<WzImagePropertyInspectionEntry>? children)
     {
         var dataLength = ReadCompressedInt32(stream);
         if (dataLength < 0)
@@ -972,8 +972,8 @@ public sealed class WzImagePreviewReader
         }
 
         SkipBytes(stream, dataLength);
-        var rawData = new WzImageRawDataPreview(version, dataOffset, dataLength);
-        return new WzImagePropertyPreviewEntry(index, name, type, "rawData", rawData, depth, path, childCount, children);
+        var rawData = new WzImageRawDataInspection(version, dataOffset, dataLength);
+        return new WzImagePropertyInspectionEntry(index, name, type, "rawData", rawData, depth, path, childCount, children);
     }
 
     private void ReadMiniProperty(
@@ -983,15 +983,15 @@ public sealed class WzImagePreviewReader
         int depth,
         string? path,
         out int? childCount,
-        out List<WzImagePropertyPreviewEntry>? children)
+        out List<WzImagePropertyInspectionEntry>? children)
     {
         var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
         children = depth + 1 < maxPropertyDepth ? parsedChildren : null;
     }
 
-    private static WzImageVectorPreview ReadVectorPreview(Stream stream)
+    private static WzImageVectorInspection ReadVectorInspection(Stream stream)
     {
-        return new WzImageVectorPreview(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
+        return new WzImageVectorInspection(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
     }
 
     private static string ReadGuidString(Stream stream)

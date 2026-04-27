@@ -2,12 +2,12 @@ using System.Buffers.Binary;
 
 namespace WzComparerX.WzLib;
 
-public sealed class WzDirectoryPreviewReader
+public sealed class WzDirectoryInspectionReader
 {
     private readonly WzPackageHeaderReader headerReader;
     private readonly WzStringDecryptor stringDecryptor;
 
-    public WzDirectoryPreviewReader(
+    public WzDirectoryInspectionReader(
         WzPackageHeaderReader? headerReader = null,
         WzStringDecryptor? stringDecryptor = null)
     {
@@ -15,7 +15,7 @@ public sealed class WzDirectoryPreviewReader
         this.stringDecryptor = stringDecryptor ?? new WzStringDecryptor();
     }
 
-    public async Task<WzDirectoryPreview> ReadAsync(string path, CancellationToken cancellationToken = default)
+    public async Task<WzDirectoryInspection> ReadAsync(string path, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
@@ -24,28 +24,28 @@ public sealed class WzDirectoryPreviewReader
         return Read(stream, header, cancellationToken);
     }
 
-    public WzDirectoryPreview Read(Stream stream, WzPackageHeader header, CancellationToken cancellationToken = default)
+    public WzDirectoryInspection Read(Stream stream, WzPackageHeader header, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(header);
 
         if (!header.IsValid)
         {
-            return new WzDirectoryPreview(header, EntryCount: 0, Array.Empty<WzDirectoryEntryPreview>());
+            return new WzDirectoryInspection(header, EntryCount: 0, Array.Empty<WzDirectoryEntryInspection>());
         }
 
         if (header.Format != WzPackageFormat.Pkg1)
         {
-            throw new NotSupportedException("Directory preview currently supports PKG1 WZ files only.");
+            throw new NotSupportedException("Directory inspection currently supports PKG1 WZ files only.");
         }
 
         if (!stream.CanSeek)
         {
-            throw new ArgumentException("Directory preview requires a seekable stream.", nameof(stream));
+            throw new ArgumentException("Directory inspection requires a seekable stream.", nameof(stream));
         }
 
         stream.Position = header.DirectoryStartPosition;
-        var entries = new List<WzDirectoryEntryPreview>();
+        var entries = new List<WzDirectoryEntryInspection>();
         var entryCount = ReadDirectoryTree(
             stream,
             header,
@@ -65,7 +65,7 @@ public sealed class WzDirectoryPreviewReader
             }
         }
 
-        return new WzDirectoryPreview(
+        return new WzDirectoryInspection(
             header,
             entryCount,
             entries,
@@ -77,13 +77,13 @@ public sealed class WzDirectoryPreviewReader
     private int ReadDirectoryTree(
         Stream stream,
         WzPackageHeader header,
-        List<WzDirectoryEntryPreview> entries,
+        List<WzDirectoryEntryInspection> entries,
         int depth,
         string parentPath,
         CancellationToken cancellationToken)
     {
         var entryCount = ReadCompressedInt32(stream);
-        var directoryEntries = new List<WzDirectoryEntryPreview>();
+        var directoryEntries = new List<WzDirectoryEntryInspection>();
 
         for (var i = 0; i < entryCount; i++)
         {
@@ -112,7 +112,7 @@ public sealed class WzDirectoryPreviewReader
             var hashOffset = ReadUInt32LittleEndian(stream);
             var path = CombinePath(parentPath, name);
 
-            var entry = new WzDirectoryEntryPreview(
+            var entry = new WzDirectoryEntryInspection(
                 entries.Count,
                 nodeType,
                 ToEntryKind(nodeType),

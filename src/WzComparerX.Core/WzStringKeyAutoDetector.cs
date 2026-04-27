@@ -11,23 +11,23 @@ public static class WzStringKeyAutoDetector
         WzStringEncryptionKind.Gms
     ];
 
-    public static async Task<WzDirectoryPreview> ReadDirectoryAsync(
+    public static async Task<WzDirectoryInspection> ReadDirectoryAsync(
         string path,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
 
-        WzDirectoryPreview? bestPreview = null;
+        WzDirectoryInspection? bestInspection = null;
         var bestScore = int.MinValue;
         foreach (var candidate in CandidateKeys)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            WzDirectoryPreview preview;
+            WzDirectoryInspection inspection;
             try
             {
-                var reader = new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(candidate));
-                preview = await reader.ReadAsync(path, cancellationToken);
+                var reader = new WzDirectoryInspectionReader(stringDecryptor: new WzStringDecryptor(candidate));
+                inspection = await reader.ReadAsync(path, cancellationToken);
             }
             catch (InvalidDataException)
             {
@@ -38,36 +38,36 @@ public static class WzStringKeyAutoDetector
                 continue;
             }
 
-            var score = Score(preview);
+            var score = Score(inspection);
             if (score > bestScore)
             {
                 bestScore = score;
-                bestPreview = preview;
+                bestInspection = inspection;
             }
         }
 
-        if (bestPreview is null)
+        if (bestInspection is null)
         {
-            throw new InvalidDataException("Unable to preview directory with any known PKG1 string key.");
+            throw new InvalidDataException("Unable to inspect directory with any known PKG1 string key.");
         }
 
-        return bestPreview;
+        return bestInspection;
     }
 
-    private static int Score(WzDirectoryPreview preview)
+    private static int Score(WzDirectoryInspection inspection)
     {
-        if (!preview.Header.IsValid)
+        if (!inspection.Header.IsValid)
         {
             return int.MinValue / 2;
         }
 
         var score = 0;
-        if (preview.WzVersion is not null && preview.HashVersion is not null)
+        if (inspection.WzVersion is not null && inspection.HashVersion is not null)
         {
             score += 1000;
         }
 
-        foreach (var entry in preview.Entries)
+        foreach (var entry in inspection.Entries)
         {
             if (entry.Offset is not null)
             {

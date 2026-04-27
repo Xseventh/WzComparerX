@@ -2,7 +2,7 @@ using WzComparerX.WzLib;
 
 namespace WzComparerX.WzLib.Tests;
 
-public class WzImagePreviewReaderTests
+public class WzImageInspectionReaderTests
 {
     [Fact]
     public void Read_ReturnsInlineImageObjectType()
@@ -14,14 +14,14 @@ public class WzImagePreviewReaderTests
             0x00, 0x00, 0x00
         ];
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
 
-        Assert.True(preview.IsValid);
-        Assert.Equal("Property", preview.ObjectType);
-        Assert.Equal(0, preview.PropertyCount);
-        Assert.Equal(4, preview.Entry?.Offset);
+        Assert.True(inspection.IsValid);
+        Assert.Equal("Property", inspection.ObjectType);
+        Assert.Equal(0, inspection.PropertyCount);
+        Assert.Equal(4, inspection.Entry?.Offset);
     }
 
     [Fact]
@@ -35,13 +35,13 @@ public class WzImagePreviewReaderTests
             0xf8, 0xfa, 0xd9, 0xc3, 0xdd, 0xcb, 0xdd, 0xc4, 0xc8
         ];
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
 
-        Assert.True(preview.IsValid);
-        Assert.Equal("Property", preview.ObjectType);
-        Assert.Equal(0, preview.PropertyCount);
+        Assert.True(inspection.IsValid);
+        Assert.Equal("Property", inspection.ObjectType);
+        Assert.Equal(0, inspection.PropertyCount);
     }
 
     [Fact]
@@ -56,18 +56,18 @@ public class WzImagePreviewReaderTests
             0x00, 0xfc, 0xc4, 0xca, 0xc1, 0xc8, 0x08, 0x00, 0xfd, 0xc8, 0xca, 0xde
         ];
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4), "0");
 
-        Assert.Equal(2, preview.PropertyCount);
-        Assert.NotNull(preview.Properties);
-        Assert.Equal("foo", preview.Properties[0].Name);
-        Assert.Equal("int32", preview.Properties[0].Kind);
-        Assert.Equal(42, preview.Properties[0].Value);
-        Assert.Equal("name", preview.Properties[1].Name);
-        Assert.Equal("string", preview.Properties[1].Kind);
-        Assert.Equal("bar", preview.Properties[1].Value);
+        Assert.Equal(2, inspection.PropertyCount);
+        Assert.NotNull(inspection.Properties);
+        Assert.Equal("foo", inspection.Properties[0].Name);
+        Assert.Equal("int32", inspection.Properties[0].Kind);
+        Assert.Equal(42, inspection.Properties[0].Value);
+        Assert.Equal("name", inspection.Properties[1].Name);
+        Assert.Equal("string", inspection.Properties[1].Kind);
+        Assert.Equal("bar", inspection.Properties[1].Value);
     }
 
     [Fact]
@@ -85,12 +85,12 @@ public class WzImagePreviewReaderTests
             0x00, 0xfd, 0xcc, 0xc4, 0xc3, 0x03, 0x2a
         ];
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None), maxPropertyDepth: 2);
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None), maxPropertyDepth: 2);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("child", property.Name);
         Assert.Equal("object", property.Kind);
         Assert.Equal("Property", property.Value);
@@ -107,7 +107,7 @@ public class WzImagePreviewReaderTests
     public void Constructor_RejectsDepthAboveLimit()
     {
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => new WzImagePreviewReader(maxPropertyDepth: WzImagePreviewReader.MaxPropertyPreviewDepth + 1));
+            () => new WzImageInspectionReader(maxPropertyDepth: WzImageInspectionReader.MaxPropertyInspectionDepth + 1));
     }
 
     [Fact]
@@ -117,14 +117,14 @@ public class WzImagePreviewReaderTests
             "origin",
             CreateObjectValue("Shape2D#Vector2D", 12, 34)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("vector", property.Kind);
-        var vector = Assert.IsType<WzImageVectorPreview>(property.Value);
+        var vector = Assert.IsType<WzImageVectorInspection>(property.Value);
         Assert.Equal(12, vector.X);
         Assert.Equal(34, vector.Y);
     }
@@ -136,12 +136,12 @@ public class WzImagePreviewReaderTests
             "link",
             CreateObjectValue("UOL", 0x00, CreateImageString("../foo"))));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("uol", property.Kind);
         Assert.Equal("../foo", property.Value);
     }
@@ -168,14 +168,14 @@ public class WzImagePreviewReaderTests
                 0x02,
                 0x03)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("canvas", property.Kind);
-        var canvas = Assert.IsType<WzImageCanvasPreview>(property.Value);
+        var canvas = Assert.IsType<WzImageCanvasInspection>(property.Value);
         Assert.Equal(16, canvas.Width);
         Assert.Equal(8, canvas.Height);
         Assert.Equal(2, canvas.Format);
@@ -205,12 +205,12 @@ public class WzImagePreviewReaderTests
             0x02,
             0x03);
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.Equal("Canvas", preview.ObjectType);
-        var canvas = Assert.IsType<WzImageCanvasPreview>(preview.ObjectValue);
+        Assert.Equal("Canvas", inspection.ObjectType);
+        var canvas = Assert.IsType<WzImageCanvasInspection>(inspection.ObjectValue);
         Assert.Equal(16, canvas.Width);
         Assert.Equal(8, canvas.Height);
         Assert.Equal(2, canvas.Format);
@@ -242,12 +242,12 @@ public class WzImagePreviewReaderTests
                 0x78,
                 0x9c)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var canvas = Assert.IsType<WzImageCanvasPreview>(Assert.Single(preview.Properties).Value);
+        Assert.NotNull(inspection.Properties);
+        var canvas = Assert.IsType<WzImageCanvasInspection>(Assert.Single(inspection.Properties).Value);
         Assert.Equal(WzImageCanvasCompressionKind.Zlib, canvas.CompressionKind);
         Assert.Equal(512, canvas.UncompressedDataLength);
     }
@@ -257,12 +257,12 @@ public class WzImagePreviewReaderTests
     {
         var bytes = CreateImage("Shape2D#Vector2D", 12, 34);
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.Equal("Shape2D#Vector2D", preview.ObjectType);
-        Assert.Equal(new WzImageVectorPreview(12, 34), preview.ObjectValue);
+        Assert.Equal("Shape2D#Vector2D", inspection.ObjectType);
+        Assert.Equal(new WzImageVectorInspection(12, 34), inspection.ObjectValue);
     }
 
     [Fact]
@@ -270,36 +270,36 @@ public class WzImagePreviewReaderTests
     {
         var bytes = CreateImage("Shape2D#Vector2D", 12, 34);
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 0);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.Equal("Shape2D#Vector2D", preview.ObjectType);
-        Assert.Null(preview.ObjectValue);
+        Assert.Equal("Shape2D#Vector2D", inspection.ObjectType);
+        Assert.Null(inspection.ObjectValue);
     }
 
     [Fact]
-    public void Read_ReturnsLuaPreviewForLuaImage()
+    public void Read_ReturnsLuaInspectionForLuaImage()
     {
         var bytes = CreateLuaImage("return 42\n");
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(
+        var inspection = reader.Read(
             stream,
             CreateHeader(),
             CreateImageEntry(offset: 4, dataSize: bytes.Length - 4, name: "Synthetic.lua"),
             "0");
 
-        Assert.Equal("Lua", preview.ObjectType);
-        Assert.Equal(1, preview.PropertyCount);
-        var lua = Assert.IsType<WzImageLuaPreview>(preview.ObjectValue);
+        Assert.Equal("Lua", inspection.ObjectType);
+        Assert.Equal(1, inspection.PropertyCount);
+        var lua = Assert.IsType<WzImageLuaInspection>(inspection.ObjectValue);
         Assert.Equal(10, lua.ScriptLength);
-        Assert.Equal("return 42\\n", lua.Preview);
-        Assert.NotNull(preview.Properties);
-        Assert.Equal("lua", Assert.Single(preview.Properties).Kind);
+        Assert.Equal("return 42\\n", lua.Snippet);
+        Assert.NotNull(inspection.Properties);
+        Assert.Equal("lua", Assert.Single(inspection.Properties).Kind);
     }
 
     [Fact]
@@ -307,24 +307,24 @@ public class WzImagePreviewReaderTests
     {
         var bytes = CreateLuaImage("return 42\n");
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 0);
 
-        var preview = reader.Read(
+        var inspection = reader.Read(
             stream,
             CreateHeader(),
             CreateImageEntry(offset: 4, dataSize: bytes.Length - 4, name: "Synthetic.lua"),
             "0");
 
-        Assert.Equal("Lua", preview.ObjectType);
-        Assert.Null(preview.ObjectValue);
-        Assert.Null(preview.PropertyCount);
-        Assert.Null(preview.Properties);
+        Assert.Equal("Lua", inspection.ObjectType);
+        Assert.Null(inspection.ObjectValue);
+        Assert.Null(inspection.PropertyCount);
+        Assert.Null(inspection.Properties);
     }
 
     [Fact]
-    public void Read_ReturnsTextPropertyV1Preview()
+    public void Read_ReturnsTextPropertyV1Inspection()
     {
         var bytes = CreateTextImage("""
             #Property
@@ -335,21 +335,21 @@ public class WzImagePreviewReaderTests
             }
             """);
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 2);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.Equal("Property", preview.ObjectType);
-        Assert.Equal(3, preview.PropertyCount);
-        Assert.NotNull(preview.Properties);
-        Assert.Equal("name", preview.Properties[0].Name);
-        Assert.Equal("string", preview.Properties[0].Kind);
-        Assert.Equal("Beginner Cap", preview.Properties[0].Value);
-        Assert.Equal("int32", preview.Properties[1].Kind);
-        Assert.Equal(0, preview.Properties[1].Value);
-        var info = preview.Properties[2];
+        Assert.Equal("Property", inspection.ObjectType);
+        Assert.Equal(3, inspection.PropertyCount);
+        Assert.NotNull(inspection.Properties);
+        Assert.Equal("name", inspection.Properties[0].Name);
+        Assert.Equal("string", inspection.Properties[0].Kind);
+        Assert.Equal("Beginner Cap", inspection.Properties[0].Value);
+        Assert.Equal("int32", inspection.Properties[1].Kind);
+        Assert.Equal(0, inspection.Properties[1].Value);
+        var info = inspection.Properties[2];
         Assert.Equal("object", info.Kind);
         Assert.Equal(1, info.ChildCount);
         Assert.NotNull(info.Children);
@@ -357,7 +357,7 @@ public class WzImagePreviewReaderTests
     }
 
     [Fact]
-    public void Read_ReturnsTextPropertyV2Preview()
+    public void Read_ReturnsTextPropertyV2Inspection()
     {
         var bytes = CreateTextImage(
             "Root <Property>\n" +
@@ -366,18 +366,18 @@ public class WzImagePreviewReaderTests
             "\tnested <Property>\t[no_binary]\n" +
             "\t\tcount <I4>\t7\n");
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 2);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.Equal("Property", preview.ObjectType);
-        Assert.Equal(3, preview.PropertyCount);
-        Assert.NotNull(preview.Properties);
-        Assert.Equal(new WzImageVectorPreview(12, 34), preview.Properties[0].Value);
-        Assert.Equal("Hello", preview.Properties[1].Value);
-        var nested = preview.Properties[2];
+        Assert.Equal("Property", inspection.ObjectType);
+        Assert.Equal(3, inspection.PropertyCount);
+        Assert.NotNull(inspection.Properties);
+        Assert.Equal(new WzImageVectorInspection(12, 34), inspection.Properties[0].Value);
+        Assert.Equal("Hello", inspection.Properties[1].Value);
+        var nested = inspection.Properties[2];
         Assert.Equal("object", nested.Kind);
         Assert.Equal(1, nested.ChildCount);
         Assert.NotNull(nested.Children);
@@ -395,17 +395,17 @@ public class WzImagePreviewReaderTests
                 CreateObjectValue("Shape2D#Vector2D", 1, 2),
                 CreateObjectValue("Shape2D#Vector2D", 3, 4))));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("convex", property.Kind);
-        var convex = Assert.IsType<WzImageConvexPreview>(property.Value);
+        var convex = Assert.IsType<WzImageConvexInspection>(property.Value);
         Assert.Equal(2, convex.Points.Count);
-        Assert.Equal(new WzImageVectorPreview(1, 2), convex.Points[0]);
-        Assert.Equal(new WzImageVectorPreview(3, 4), convex.Points[1]);
+        Assert.Equal(new WzImageVectorInspection(1, 2), convex.Points[0]);
+        Assert.Equal(new WzImageVectorInspection(3, 4), convex.Points[1]);
     }
 
     [Fact]
@@ -418,7 +418,7 @@ public class WzImagePreviewReaderTests
                 1,
                 CreateObjectValue("Property", 0x00, 0x00, 0))));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
         Assert.Throws<InvalidDataException>(
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
@@ -444,19 +444,19 @@ public class WzImagePreviewReaderTests
                 0x02,
                 0x03)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 2);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("rawData", property.Kind);
         Assert.Equal(1, property.ChildCount);
         Assert.NotNull(property.Children);
         Assert.Equal("kind", Assert.Single(property.Children).Name);
-        var rawData = Assert.IsType<WzImageRawDataPreview>(property.Value);
+        var rawData = Assert.IsType<WzImageRawDataInspection>(property.Value);
         Assert.Equal(1, rawData.Version);
         Assert.Equal(3, rawData.DataLength);
     }
@@ -468,7 +468,7 @@ public class WzImagePreviewReaderTests
             "payload",
             CreateObjectValue("RawData", 0, 100)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
         Assert.Throws<InvalidDataException>(
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
@@ -496,19 +496,19 @@ public class WzImagePreviewReaderTests
                 0x03,
                 0x04)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 2);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("video", property.Kind);
         Assert.Equal(1, property.ChildCount);
         Assert.NotNull(property.Children);
         Assert.Equal("kind", Assert.Single(property.Children).Name);
-        var video = Assert.IsType<WzImageVideoPreview>(property.Value);
+        var video = Assert.IsType<WzImageVideoInspection>(property.Value);
         Assert.Equal(5, video.Unknown);
         Assert.Equal(4, video.DataLength);
     }
@@ -520,7 +520,7 @@ public class WzImagePreviewReaderTests
             "clip",
             CreateObjectValue("Canvas#Video", 0x00, 0x00, 5, 100)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
         Assert.Throws<InvalidDataException>(
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
@@ -555,19 +555,19 @@ public class WzImagePreviewReaderTests
                 0x11,
                 0x12)));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(
+        var reader = new WzImageInspectionReader(
             new WzStringDecryptor(WzStringEncryptionKind.None),
             maxPropertyDepth: 2);
 
-        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
 
-        Assert.NotNull(preview.Properties);
-        var property = Assert.Single(preview.Properties);
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
         Assert.Equal("sound", property.Kind);
         Assert.Equal(1, property.ChildCount);
         Assert.NotNull(property.Children);
         Assert.Equal("kind", Assert.Single(property.Children).Name);
-        var sound = Assert.IsType<WzImageSoundPreview>(property.Value);
+        var sound = Assert.IsType<WzImageSoundInspection>(property.Value);
         Assert.Equal(1, sound.Version);
         Assert.Equal(60, sound.Duration);
         Assert.Equal(2, sound.SoundDeclaration);
@@ -594,7 +594,7 @@ public class WzImagePreviewReaderTests
                 0x00,
                 CreateBytes(0x00, 16))));
         using var stream = new MemoryStream(bytes);
-        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
 
         Assert.Throws<InvalidDataException>(
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
@@ -613,12 +613,12 @@ public class WzImagePreviewReaderTests
             DirectoryStartPosition: 0);
     }
 
-    private static WzDirectoryEntryPreview CreateImageEntry(
+    private static WzDirectoryEntryInspection CreateImageEntry(
         long offset,
         int dataSize = 10,
         string name = "Synthetic.img")
     {
-        return new WzDirectoryEntryPreview(
+        return new WzDirectoryEntryInspection(
             Index: 0,
             NodeType: 0x04,
             WzDirectoryEntryKind.Image,

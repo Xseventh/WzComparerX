@@ -8,7 +8,7 @@ public static class WzPkg1VersionDetector
 
     public static WzPkg1VersionDetection? Detect(
         WzPackageHeader header,
-        IReadOnlyList<WzDirectoryEntryPreview> entries,
+        IReadOnlyList<WzDirectoryEntryInspection> entries,
         long directoryEndPosition)
     {
         ArgumentNullException.ThrowIfNull(header);
@@ -55,7 +55,7 @@ public static class WzPkg1VersionDetector
 
     private static bool ValidateOffsets(
         WzPackageHeader header,
-        IReadOnlyList<WzDirectoryEntryPreview> entries,
+        IReadOnlyList<WzDirectoryEntryInspection> entries,
         long directoryEndPosition,
         uint hashVersion)
     {
@@ -107,7 +107,7 @@ public static class WzPkg1VersionDetector
 
     internal static uint CalculateOffset(
         WzPackageHeader header,
-        WzDirectoryEntryPreview entry,
+        WzDirectoryEntryInspection entry,
         uint hashVersion)
     {
         return WzPkg1OffsetCalculator.CalculateOffset(

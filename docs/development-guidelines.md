@@ -171,7 +171,7 @@ When migrating from WC:
 Do not port `MainForm` patterns, global `PluginManager.FindWz`, or Designer UI
 code into WCX core layers.
 
-## Inspect And Preview Rules
+## Inspect Rules
 
 - `inspect` is the preferred stable resource observation surface.
 - `inspect --debug` is the preferred long-term diagnostic surface.

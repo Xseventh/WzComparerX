@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImagePropertyPreviewEntry(
+public sealed record WzImagePropertyInspectionEntry(
     int Index,
     string? Name,
     byte Type,
@@ -9,4 +9,4 @@ public sealed record WzImagePropertyPreviewEntry(
     int Depth = 0,
     string? Path = null,
     int? ChildCount = null,
-    IReadOnlyList<WzImagePropertyPreviewEntry>? Children = null);
+    IReadOnlyList<WzImagePropertyInspectionEntry>? Children = null);

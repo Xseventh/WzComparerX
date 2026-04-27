@@ -63,7 +63,7 @@ Exit criteria:
 
 Closeout notes:
 
-- Real PKG1 directory and IMG preview behavior now exceeds the original scope.
+- Real PKG1 directory and IMG inspection behavior now exceeds the original scope.
 - Remaining work should focus on documenting unsupported cases and ensuring new
   parser behavior is reachable through `inspect`.
 
@@ -122,7 +122,7 @@ Exit criteria:
 
 ## Later Milestones
 
-- Image preview/export.
+- Image rendering/export.
 - String search and StringLinker.
 - CharaSim domain model.
 - Tooltip data projection.

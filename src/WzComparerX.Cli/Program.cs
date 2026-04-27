@@ -49,9 +49,9 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             if (i + 1 >= args.Length ||
                 !int.TryParse(args[i + 1], out imagePropertyDepth) ||
                 imagePropertyDepth < 0 ||
-                imagePropertyDepth > WzImagePreviewReader.MaxPropertyPreviewDepth)
+                imagePropertyDepth > WzImageInspectionReader.MaxPropertyInspectionDepth)
             {
-                error.WriteLine($"Depth must be between 0 and {WzImagePreviewReader.MaxPropertyPreviewDepth}.");
+                error.WriteLine($"Depth must be between 0 and {WzImageInspectionReader.MaxPropertyInspectionDepth}.");
                 WriteUsage(error);
                 return 2;
             }

@@ -9,8 +9,8 @@ an ADR under `docs/adr/`.
 - 0002: Build a headless core and CLI before making the desktop UI feature-heavy.
 - 0003: Treat WC as reference implementation material, not as a direct source
   compatibility target.
-- 0004: Replace `preview-*` commands with `inspect --debug` as the long-term
-  diagnostic and automation surface.
+- 0004: Use `inspect --debug` as the long-term diagnostic and automation
+  surface.
 
 ## Pending Decisions
 

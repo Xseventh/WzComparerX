@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImageVectorPreview(int X, int Y)
+public sealed record WzImageVectorInspection(int X, int Y)
 {
     public override string ToString()
     {

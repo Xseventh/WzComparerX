@@ -20,29 +20,12 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+d6fc84b Add inspect debug diagnostics
 84a5f88 Add resource inspect abstraction
-19cd8a9 Preview Canvas payload metadata
-115a38f Preview text image properties
-50e6b90 Preview Lua image entries
-3604f66 Preview top-level IMG object values
-b2b972d Add preview string key auto detection
-2d3d8b3 Preview IMG sound metadata
-84e4b49 Preview IMG video metadata
-ebf41c8 Preview IMG RawData metadata
-6e1f495 Preview IMG Convex2D values
-2a275e7 Preview IMG object value metadata
-8fc50ba Bound preview image depth option
-9af2181 Add bounded IMG property depth preview
-f3118ae Add shallow IMG property preview
-7b0c917 Add IMG object type preview
-25a599f Add recursive PKG1 directory preview
 41e1ad0 Fix PKG1 string reference offset base
-d22d231 Fix preview-dir review issues
 2cb2722 Align PKG1 directory offset validation with WC
-ddd9ddc Add PKG1 version offset preview
 5d32743 Clarify no-op PKG1 string key naming
 3601367 Decode PKG1 directory entry names
-e65c73a Add PKG1 directory preview
 6f18aef Add WZ header scan command
 3285065 Add JSON output for CLI workflows
 bbfe559 Add CLI WZ header command
@@ -77,23 +60,23 @@ a0858cb Bootstrap WCX modernization project
   - WZ `PKG1`/`PKG2` header detection,
   - CLI `header` and recursive `headers` commands,
   - JSON output for `list` and header workflows,
-  - PKG1 top-level directory preview,
+  - PKG1 top-level directory inspection,
   - PKG1 directory-name decoding with no-op/KMS/GMS key modes,
   - PKG1 version hash and entry offset calculation,
   - PKG1 `0x02` string-reference name decoding,
-  - PKG1 recursive directory-table pre-read and preview enumeration,
-  - minimal IMG payload preview for top-level object type,
-  - bounded IMG `Property` preview for first-layer scalar values and nested
+  - PKG1 recursive directory-table pre-read and inspection enumeration,
+  - minimal IMG payload inspection for top-level object type,
+  - bounded IMG `Property` inspection for first-layer scalar values and nested
     `Property` objects,
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
-    Canvas#Video metadata value preview,
+    Canvas#Video metadata value inspection,
   - Canvas payload compression metadata and uncompressed size estimates,
-  - IMG Sound_DX8 metadata value preview,
-  - preview string-key auto-detection across no-op/KMS/GMS modes,
-  - top-level IMG object value previews for supported non-`Property` object
+  - IMG Sound_DX8 metadata value inspection,
+  - string-key auto-detection across no-op/KMS/GMS modes,
+  - top-level IMG object value inspection for supported non-`Property` object
     types,
-  - Lua image block preview for `.lua` entries,
-  - text-format IMG v1/v2 property preview,
+  - Lua image block inspection for `.lua` entries,
+  - text-format IMG v1/v2 property inspection,
   - initial Core `inspect` model and CLI command,
   - `inspect --debug` with structured directory and IMG diagnostics.
 
@@ -111,7 +94,7 @@ a0858cb Bootstrap WCX modernization project
 ## Current State
 
 Milestone 1 is implemented. Milestone 2 is closing with real WZ package
-header detection and PKG1 directory preview working against the local
+header detection and PKG1 directory inspection working against the local
 MapleStoryNA client. `inspect` now projects synthetic fixtures, WZ directories,
 and WZ IMG payloads into a generic inspection tree so future UI/export/search
 work does not depend directly on parser DTOs. `inspect --debug` exposes the

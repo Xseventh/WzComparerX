@@ -1,4 +1,4 @@
-# ADR 0004: Replace Preview Commands With Inspect Debug
+# ADR 0004: Use Inspect Debug For Diagnostics
 
 ## Status
 
@@ -6,13 +6,13 @@ Accepted and implemented.
 
 ## Context
 
-WCX had grown migration-oriented preview commands alongside the first stable
+WCX had grown migration-oriented diagnostic commands alongside the first stable
 Core `inspect` model. Keeping both as equal product surfaces would create a
 long-term risk: command behavior, key detection, image selection, property
 depth, JSON output, and unsupported-case reporting could diverge.
 
-The migration preview commands were useful while migrating WC parser behavior
-because they exposed low-level fields such as node type bytes, offsets,
+The migration diagnostics were useful while migrating WC parser behavior because
+they exposed low-level fields such as node type bytes, offsets,
 checksums, hash offsets, and payload metadata. Those fields are important for
 development, but they should not become a second user-facing resource model.
 
@@ -26,9 +26,9 @@ expose lower-level parser metadata, but it must still be projected through the
 Core inspection model rather than implementing a separate parser path.
 
 Once `inspect --debug` covers the useful diagnostic fields, remove the
-migration preview commands, preview-specific design language, and preview
-command documentation. New real parser behavior should be considered complete
-only after it is reachable through `inspect`.
+migration diagnostic commands, command-specific design language, and command
+documentation. New real parser behavior should be considered complete only
+after it is reachable through `inspect`.
 
 ## Consequences
 
@@ -43,8 +43,9 @@ Positive:
 Negative:
 
 - The inspection model must carry structured metadata and diagnostics sooner.
-- Some existing preview formatter behavior needs to be re-projected into
-  `inspect --debug` before preview code and documentation can be deleted.
+- Some existing diagnostic formatter behavior needs to be re-projected into
+  `inspect --debug` before command-specific code and documentation can be
+  deleted.
 
 ## Rules
 
@@ -53,8 +54,8 @@ Negative:
   and diagnostics.
 - `inspect` is the preferred CLI surface.
 - `inspect --debug` is the preferred diagnostic CLI surface.
-- Separate migration preview commands must not gain new business logic that is
+- Separate migration diagnostic commands must not gain new business logic that is
   absent from `inspect`.
-- After migration, delete migration preview commands, preview-specific
-  formatters and services, and design documentation that presents preview as a
+- After migration, delete migration diagnostic commands, command-specific
+  formatters and services, and design documentation that presents them as a
   supported surface.

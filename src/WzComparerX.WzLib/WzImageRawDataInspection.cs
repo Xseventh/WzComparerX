@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImageRawDataPreview(
+public sealed record WzImageRawDataInspection(
     int Version,
     long DataOffset,
     int DataLength)

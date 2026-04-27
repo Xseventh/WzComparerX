@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImageCanvasPreview(
+public sealed record WzImageCanvasInspection(
     int Width,
     int Height,
     int Format,

@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImageVideoPreview(
+public sealed record WzImageVideoInspection(
     int Unknown,
     long DataOffset,
     int DataLength)

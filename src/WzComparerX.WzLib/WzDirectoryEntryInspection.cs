@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzDirectoryEntryPreview(
+public sealed record WzDirectoryEntryInspection(
     int Index,
     byte NodeType,
     WzDirectoryEntryKind Kind,

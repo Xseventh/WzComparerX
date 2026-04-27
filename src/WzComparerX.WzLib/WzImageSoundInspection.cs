@@ -1,6 +1,6 @@
 namespace WzComparerX.WzLib;
 
-public sealed record WzImageSoundPreview(
+public sealed record WzImageSoundInspection(
     int Version,
     int Duration,
     int SoundDeclaration,

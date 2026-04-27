@@ -59,18 +59,18 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
-        var preview = await ReadDirectoryAsync(path, options.StringKey, cancellationToken);
-        if (!preview.Header.IsValid)
+        var inspection = await ReadDirectoryAsync(path, options.StringKey, cancellationToken);
+        if (!inspection.Header.IsValid)
         {
-            throw new InvalidDataException($"Invalid WZ package: {preview.Header.SourcePath}.");
+            throw new InvalidDataException($"Invalid WZ package: {inspection.Header.SourcePath}.");
         }
 
-        var root = BuildDirectoryRoot(preview, options.IncludeDebugMetadata);
+        var root = BuildDirectoryRoot(inspection, options.IncludeDebugMetadata);
         return new ResourceInspectionDocument(
-            preview.Header.SourcePath,
-            preview.Header.Format.ToString().ToLowerInvariant(),
+            inspection.Header.SourcePath,
+            inspection.Header.Format.ToString().ToLowerInvariant(),
             root,
-            options.IncludeDebugMetadata ? BuildDirectoryDocumentMetadata(preview) : null);
+            options.IncludeDebugMetadata ? BuildDirectoryDocumentMetadata(inspection) : null);
     }
 
     private static async Task<ResourceInspectionDocument> InspectImageAsync(
@@ -79,32 +79,32 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
-        var directoryPreview = await ReadDirectoryAsync(path, options.StringKey, cancellationToken);
-        if (!directoryPreview.Header.IsValid)
+        var directoryInspection = await ReadDirectoryAsync(path, options.StringKey, cancellationToken);
+        if (!directoryInspection.Header.IsValid)
         {
-            throw new InvalidDataException($"Invalid WZ package: {directoryPreview.Header.SourcePath}.");
+            throw new InvalidDataException($"Invalid WZ package: {directoryInspection.Header.SourcePath}.");
         }
 
-        var entry = FindImageEntry(directoryPreview, selector);
-        var stringKey = directoryPreview.StringEncryptionKind ?? options.StringKey ?? WzStringEncryptionKind.None;
+        var entry = FindImageEntry(directoryInspection, selector);
+        var stringKey = directoryInspection.StringEncryptionKind ?? options.StringKey ?? WzStringEncryptionKind.None;
         await using var stream = File.OpenRead(path);
-        var imageReader = new WzImagePreviewReader(new WzStringDecryptor(stringKey), options.MaxPropertyDepth);
-        var preview = imageReader.Read(stream, directoryPreview.Header, entry, selector);
-        if (!preview.IsValid)
+        var imageReader = new WzImageInspectionReader(new WzStringDecryptor(stringKey), options.MaxPropertyDepth);
+        var inspection = imageReader.Read(stream, directoryInspection.Header, entry, selector);
+        if (!inspection.IsValid)
         {
             throw new InvalidDataException($"Invalid WZ image selection: {selector}.");
         }
 
-        var root = ProjectImagePreview(preview, options.IncludeDebugMetadata);
+        var root = ProjectImageInspection(inspection, options.IncludeDebugMetadata);
         return new ResourceInspectionDocument(
-            preview.Header.SourcePath,
-            preview.Header.Format.ToString().ToLowerInvariant(),
+            inspection.Header.SourcePath,
+            inspection.Header.Format.ToString().ToLowerInvariant(),
             root,
-            options.IncludeDebugMetadata ? BuildImageDocumentMetadata(directoryPreview, preview, stringKey) : null,
+            options.IncludeDebugMetadata ? BuildImageDocumentMetadata(directoryInspection, inspection, stringKey) : null,
             root.Diagnostics);
     }
 
-    private static Task<WzDirectoryPreview> ReadDirectoryAsync(
+    private static Task<WzDirectoryInspection> ReadDirectoryAsync(
         string path,
         WzStringEncryptionKind? stringKey,
         CancellationToken cancellationToken)
@@ -114,7 +114,7 @@ public sealed class ResourceInspectionService
             return WzStringKeyAutoDetector.ReadDirectoryAsync(path, cancellationToken);
         }
 
-        var reader = new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(stringKey.Value));
+        var reader = new WzDirectoryInspectionReader(stringDecryptor: new WzStringDecryptor(stringKey.Value));
         return reader.ReadAsync(path, cancellationToken);
     }
 
@@ -132,16 +132,16 @@ public sealed class ResourceInspectionService
             node.Children.Select(child => ProjectRawNode(child, path)).ToArray());
     }
 
-    private static ResourceInspectionNode BuildDirectoryRoot(WzDirectoryPreview preview, bool includeDebugMetadata)
+    private static ResourceInspectionNode BuildDirectoryRoot(WzDirectoryInspection inspection, bool includeDebugMetadata)
     {
-        var rootName = Path.GetFileName(preview.Header.SourcePath);
+        var rootName = Path.GetFileName(inspection.Header.SourcePath);
         if (string.IsNullOrWhiteSpace(rootName))
         {
-            rootName = preview.Header.SourcePath;
+            rootName = inspection.Header.SourcePath;
         }
 
-        var builder = new InspectionNodeBuilder(rootName, "package", rootName, preview.Header.Format.ToString().ToLowerInvariant());
-        foreach (var entry in preview.Entries)
+        var builder = new InspectionNodeBuilder(rootName, "package", rootName, inspection.Header.Format.ToString().ToLowerInvariant());
+        foreach (var entry in inspection.Entries)
         {
             var entryPath = entry.Path ?? entry.Name ?? entry.Index.ToString(CultureInfo.InvariantCulture);
             var parts = entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
@@ -160,16 +160,16 @@ public sealed class ResourceInspectionService
         return builder.ToNode();
     }
 
-    private static ResourceInspectionNode ProjectImagePreview(WzImagePreview preview, bool includeDebugMetadata)
+    private static ResourceInspectionNode ProjectImageInspection(WzImageInspection inspection, bool includeDebugMetadata)
     {
-        var name = preview.Entry?.Path ?? preview.Entry?.Name ?? preview.Selector;
-        var displayValue = preview.ObjectValue is not null
-            ? FormatObject(preview.ObjectValue)
-            : preview.ObjectType;
-        var children = preview.Properties?
+        var name = inspection.Entry?.Path ?? inspection.Entry?.Name ?? inspection.Selector;
+        var displayValue = inspection.ObjectValue is not null
+            ? FormatObject(inspection.ObjectValue)
+            : inspection.ObjectType;
+        var children = inspection.Properties?
             .Select(property => ProjectImageProperty(property, includeDebugMetadata))
             .ToArray() ?? Array.Empty<ResourceInspectionNode>();
-        var diagnostics = includeDebugMetadata ? BuildValueDiagnostics(preview.ObjectValue, name) : null;
+        var diagnostics = includeDebugMetadata ? BuildValueDiagnostics(inspection.ObjectValue, name) : null;
 
         return new ResourceInspectionNode(
             name,
@@ -177,12 +177,12 @@ public sealed class ResourceInspectionService
             name,
             displayValue,
             children,
-            includeDebugMetadata ? BuildImageRootMetadata(preview) : null,
+            includeDebugMetadata ? BuildImageRootMetadata(inspection) : null,
             diagnostics);
     }
 
     private static ResourceInspectionNode ProjectImageProperty(
-        WzImagePropertyPreviewEntry property,
+        WzImagePropertyInspectionEntry property,
         bool includeDebugMetadata)
     {
         var name = property.Name ?? property.Index.ToString(CultureInfo.InvariantCulture);
@@ -200,18 +200,18 @@ public sealed class ResourceInspectionService
             includeDebugMetadata ? BuildValueDiagnostics(property.Value, property.Path) : null);
     }
 
-    private static WzDirectoryEntryPreview FindImageEntry(WzDirectoryPreview preview, string selector)
+    private static WzDirectoryEntryInspection FindImageEntry(WzDirectoryInspection inspection, string selector)
     {
         if (int.TryParse(selector, out var index))
         {
-            var indexed = preview.Entries.FirstOrDefault(entry => entry.Index == index);
+            var indexed = inspection.Entries.FirstOrDefault(entry => entry.Index == index);
             if (indexed is not null)
             {
                 return EnsureImage(indexed, selector);
             }
         }
 
-        var named = preview.Entries.FirstOrDefault(entry =>
+        var named = inspection.Entries.FirstOrDefault(entry =>
             entry.Kind == WzDirectoryEntryKind.Image &&
             (string.Equals(entry.Path, selector, StringComparison.OrdinalIgnoreCase) ||
              string.Equals(entry.Name, selector, StringComparison.OrdinalIgnoreCase)));
@@ -223,7 +223,7 @@ public sealed class ResourceInspectionService
         throw new InvalidDataException($"Image entry not found: {selector}.");
     }
 
-    private static WzDirectoryEntryPreview EnsureImage(WzDirectoryEntryPreview entry, string selector)
+    private static WzDirectoryEntryInspection EnsureImage(WzDirectoryEntryInspection entry, string selector)
     {
         if (entry.Kind != WzDirectoryEntryKind.Image)
         {
@@ -233,20 +233,20 @@ public sealed class ResourceInspectionService
         return entry;
     }
 
-    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzDirectoryPreview preview)
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzDirectoryInspection inspection)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
-            new("entryCount", preview.EntryCount),
-            new("totalEntryCount", preview.Entries.Count)
+            new("entryCount", inspection.EntryCount),
+            new("totalEntryCount", inspection.Entries.Count)
         };
-        AddOptional(metadata, "stringKey", preview.StringEncryptionKind?.ToString().ToLowerInvariant());
-        AddOptional(metadata, "wzVersion", preview.WzVersion);
-        AddOptional(metadata, "hashVersion", preview.HashVersion);
+        AddOptional(metadata, "stringKey", inspection.StringEncryptionKind?.ToString().ToLowerInvariant());
+        AddOptional(metadata, "wzVersion", inspection.WzVersion);
+        AddOptional(metadata, "hashVersion", inspection.HashVersion);
         return metadata;
     }
 
-    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryEntryMetadata(WzDirectoryEntryPreview entry)
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryEntryMetadata(WzDirectoryEntryInspection entry)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
@@ -262,35 +262,35 @@ public sealed class ResourceInspectionService
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildImageDocumentMetadata(
-        WzDirectoryPreview directoryPreview,
-        WzImagePreview preview,
+        WzDirectoryInspection directoryInspection,
+        WzImageInspection inspection,
         WzStringEncryptionKind stringKey)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
-            new("selector", preview.Selector),
+            new("selector", inspection.Selector),
             new("stringKey", stringKey.ToString().ToLowerInvariant())
         };
-        AddOptional(metadata, "wzVersion", directoryPreview.WzVersion);
-        AddOptional(metadata, "hashVersion", directoryPreview.HashVersion);
+        AddOptional(metadata, "wzVersion", directoryInspection.WzVersion);
+        AddOptional(metadata, "hashVersion", directoryInspection.HashVersion);
         return metadata;
     }
 
-    private static IReadOnlyList<ResourceInspectionMetadata> BuildImageRootMetadata(WzImagePreview preview)
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildImageRootMetadata(WzImageInspection inspection)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
-            new("selector", preview.Selector)
+            new("selector", inspection.Selector)
         };
-        AddEntryMetadata(metadata, preview.Entry);
-        AddOptional(metadata, "objectType", preview.ObjectType);
-        AddOptional(metadata, "propertyCount", preview.PropertyCount);
-        AddValueMetadata(metadata, preview.ObjectValue);
+        AddEntryMetadata(metadata, inspection.Entry);
+        AddOptional(metadata, "objectType", inspection.ObjectType);
+        AddOptional(metadata, "propertyCount", inspection.PropertyCount);
+        AddValueMetadata(metadata, inspection.ObjectValue);
         return metadata;
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildImagePropertyMetadata(
-        WzImagePropertyPreviewEntry property)
+        WzImagePropertyInspectionEntry property)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
@@ -303,7 +303,7 @@ public sealed class ResourceInspectionService
         return metadata;
     }
 
-    private static void AddEntryMetadata(List<ResourceInspectionMetadata> metadata, WzDirectoryEntryPreview? entry)
+    private static void AddEntryMetadata(List<ResourceInspectionMetadata> metadata, WzDirectoryEntryInspection? entry)
     {
         if (entry is null)
         {
@@ -325,7 +325,7 @@ public sealed class ResourceInspectionService
     {
         switch (value)
         {
-            case WzImageCanvasPreview canvas:
+            case WzImageCanvasInspection canvas:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "canvas"));
                 metadata.Add(new ResourceInspectionMetadata("width", canvas.Width));
                 metadata.Add(new ResourceInspectionMetadata("height", canvas.Height));
@@ -340,19 +340,19 @@ public sealed class ResourceInspectionService
                 metadata.Add(new ResourceInspectionMetadata("compressionKind", canvas.CompressionKind.ToString()));
                 AddOptional(metadata, "uncompressedDataLength", canvas.UncompressedDataLength);
                 break;
-            case WzImageRawDataPreview rawData:
+            case WzImageRawDataInspection rawData:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "rawData"));
                 metadata.Add(new ResourceInspectionMetadata("version", rawData.Version));
                 metadata.Add(new ResourceInspectionMetadata("dataOffset", rawData.DataOffset));
                 metadata.Add(new ResourceInspectionMetadata("dataLength", rawData.DataLength));
                 break;
-            case WzImageVideoPreview video:
+            case WzImageVideoInspection video:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "video"));
                 metadata.Add(new ResourceInspectionMetadata("unknown", video.Unknown));
                 metadata.Add(new ResourceInspectionMetadata("dataOffset", video.DataOffset));
                 metadata.Add(new ResourceInspectionMetadata("dataLength", video.DataLength));
                 break;
-            case WzImageSoundPreview sound:
+            case WzImageSoundInspection sound:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "sound"));
                 metadata.Add(new ResourceInspectionMetadata("version", sound.Version));
                 metadata.Add(new ResourceInspectionMetadata("duration", sound.Duration));
@@ -366,17 +366,17 @@ public sealed class ResourceInspectionService
                 metadata.Add(new ResourceInspectionMetadata("dataOffset", sound.DataOffset));
                 metadata.Add(new ResourceInspectionMetadata("dataLength", sound.DataLength));
                 break;
-            case WzImageLuaPreview lua:
+            case WzImageLuaInspection lua:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "lua"));
                 metadata.Add(new ResourceInspectionMetadata("scriptLength", lua.ScriptLength));
-                metadata.Add(new ResourceInspectionMetadata("preview", lua.Preview));
+                metadata.Add(new ResourceInspectionMetadata("snippet", lua.Snippet));
                 break;
-            case WzImageVectorPreview vector:
+            case WzImageVectorInspection vector:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "vector"));
                 metadata.Add(new ResourceInspectionMetadata("x", vector.X));
                 metadata.Add(new ResourceInspectionMetadata("y", vector.Y));
                 break;
-            case WzImageConvexPreview convex:
+            case WzImageConvexInspection convex:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "convex"));
                 metadata.Add(new ResourceInspectionMetadata("pointCount", convex.Points.Count));
                 break;
@@ -390,11 +390,11 @@ public sealed class ResourceInspectionService
     {
         var message = value switch
         {
-            WzImageCanvasPreview => "Canvas pixel decoding is not implemented.",
-            WzImageRawDataPreview => "RawData payload decoding is not implemented.",
-            WzImageVideoPreview => "Video payload decoding is not implemented.",
-            WzImageSoundPreview => "Audio payload decoding is not implemented.",
-            WzImageLuaPreview => "Full Lua script export is not implemented.",
+            WzImageCanvasInspection => "Canvas pixel decoding is not implemented.",
+            WzImageRawDataInspection => "RawData payload decoding is not implemented.",
+            WzImageVideoInspection => "Video payload decoding is not implemented.",
+            WzImageSoundInspection => "Audio payload decoding is not implemented.",
+            WzImageLuaInspection => "Full Lua script export is not implemented.",
             _ => null
         };
 
