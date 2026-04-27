@@ -104,6 +104,40 @@ public class WzImageInspectionReaderTests
     }
 
     [Fact]
+    public void Read_SkipsNestedPropertyChildrenWhenDepthStopsAtParent()
+    {
+        var bytes = CreatePropertyImage(
+            CreateObjectProperty(
+                "child",
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateImageString("foo"),
+                    0x03,
+                    42)),
+            CreateScalarProperty("after", 7));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 1);
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(inspection.Properties);
+        Assert.Equal(2, inspection.Properties.Count);
+        var property = inspection.Properties[0];
+        Assert.Equal("child", property.Name);
+        Assert.Equal("object", property.Kind);
+        Assert.Equal("Property", property.Value);
+        Assert.Null(property.ChildCount);
+        Assert.Null(property.Children);
+        Assert.Equal("after", inspection.Properties[1].Name);
+        Assert.Equal(7, inspection.Properties[1].Value);
+    }
+
+    [Fact]
     public void Constructor_RejectsDepthAboveLimit()
     {
         Assert.Throws<ArgumentOutOfRangeException>(
@@ -183,6 +217,52 @@ public class WzImageInspectionReaderTests
         Assert.Equal(3, canvas.DataLength);
         Assert.Equal(WzImageCanvasCompressionKind.ChunkedEncryptedZlib, canvas.CompressionKind);
         Assert.Equal(512, canvas.UncompressedDataLength);
+    }
+
+    [Fact]
+    public void Read_ConsumesCanvasMiniPropertiesWhenDepthStopsAtParent()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString("kind"),
+                0x03,
+                42,
+                16,
+                8,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(3),
+                0x01,
+                0x02,
+                0x03)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 1);
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
+        Assert.Equal("canvas", property.Kind);
+        Assert.Equal(1, property.ChildCount);
+        Assert.Null(property.Children);
+        var canvas = Assert.IsType<WzImageCanvasInspection>(property.Value);
+        Assert.Equal(16, canvas.Width);
+        Assert.Equal(8, canvas.Height);
+        Assert.Equal(3, canvas.DataLength);
+        Assert.Equal(WzImageCanvasCompressionKind.ChunkedEncryptedZlib, canvas.CompressionKind);
     }
 
     [Fact]
@@ -683,6 +763,15 @@ public class WzImageInspectionReaderTests
         bytes.Add(0x09);
         bytes.AddRange(BitConverter.GetBytes(objectValue.Length));
         bytes.AddRange(objectValue);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateScalarProperty(string name, int value)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x03);
+        bytes.Add((byte)value);
         return bytes.ToArray();
     }
 
