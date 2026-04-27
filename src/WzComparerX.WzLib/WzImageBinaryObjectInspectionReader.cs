@@ -4,24 +4,21 @@ namespace WzComparerX.WzLib;
 
 internal sealed class WzImageBinaryObjectInspectionReader
 {
-    private readonly WzStringDecryptor stringDecryptor;
-    private readonly int maxPropertyDepth;
+    private readonly WzImageBinaryPropertyInspectionReader propertyReader;
+    private readonly WzImageBinaryStringReader stringReader;
 
     public WzImageBinaryObjectInspectionReader(WzStringDecryptor stringDecryptor, int maxPropertyDepth)
     {
-        this.stringDecryptor = stringDecryptor;
-        this.maxPropertyDepth = maxPropertyDepth;
+        stringReader = new WzImageBinaryStringReader(stringDecryptor);
+        propertyReader = new WzImageBinaryPropertyInspectionReader(
+            stringReader,
+            maxPropertyDepth,
+            ReadObjectPropertyValue);
     }
 
     public string ReadObjectTypeName(Stream stream, long imageBaseOffset)
     {
-        var flag = ReadByte(stream);
-        return flag switch
-        {
-            0x73 => ReadString(stream),
-            0x1b => ReadStringAt(stream, imageBaseOffset + ReadInt32LittleEndian(stream)),
-            _ => throw new InvalidDataException($"Unexpected image object type flag 0x{flag:X2}.")
-        };
+        return stringReader.ReadObjectTypeName(stream, imageBaseOffset);
     }
 
     public List<WzImagePropertyInspectionEntry>? ReadPropertyEntries(
@@ -32,44 +29,7 @@ internal sealed class WzImageBinaryObjectInspectionReader
         string parentPath,
         out int? propertyCount)
     {
-        SkipBytes(stream, 2);
-        var count = ReadCompressedInt32(stream);
-        propertyCount = count;
-        var properties = new List<WzImagePropertyInspectionEntry>(Math.Max(count, 0));
-
-        for (var i = 0; i < count; i++)
-        {
-            var name = ReadImageString(stream, imageBaseOffset);
-            var type = ReadByte(stream);
-            var path = CombinePath(parentPath, name);
-            properties.Add(ReadPropertyValue(stream, imageBaseOffset, imageEndOffset, i, name, type, depth, path));
-        }
-
-        return properties;
-    }
-
-    private WzImagePropertyInspectionEntry ReadPropertyValue(
-        Stream stream,
-        long imageBaseOffset,
-        long imageEndOffset,
-        int index,
-        string? name,
-        byte type,
-        int depth,
-        string? path)
-    {
-        return type switch
-        {
-            0x00 => new WzImagePropertyInspectionEntry(index, name, type, "null", Depth: depth, Path: path),
-            0x02 or 0x0b => new WzImagePropertyInspectionEntry(index, name, type, "int16", ReadInt16LittleEndian(stream), depth, path),
-            0x03 or 0x13 => new WzImagePropertyInspectionEntry(index, name, type, "int32", ReadCompressedInt32(stream), depth, path),
-            0x14 => new WzImagePropertyInspectionEntry(index, name, type, "int64", ReadCompressedInt64(stream), depth, path),
-            0x04 => new WzImagePropertyInspectionEntry(index, name, type, "single", ReadCompressedSingle(stream), depth, path),
-            0x05 => new WzImagePropertyInspectionEntry(index, name, type, "double", ReadDoubleLittleEndian(stream), depth, path),
-            0x08 => new WzImagePropertyInspectionEntry(index, name, type, "string", ReadImageString(stream, imageBaseOffset), depth, path),
-            0x09 => ReadObjectPropertyValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
-            _ => throw new InvalidDataException($"Unknown image property value type 0x{type:X2}.")
-        };
+        return propertyReader.ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth, parentPath, out propertyCount);
     }
 
     private WzImagePropertyInspectionEntry ReadObjectPropertyValue(
@@ -146,14 +106,18 @@ internal sealed class WzImageBinaryObjectInspectionReader
         int depth,
         string? path)
     {
-        int? childCount = null;
-        List<WzImagePropertyInspectionEntry>? children = null;
-        if (depth + 1 < maxPropertyDepth)
-        {
-            children = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
-        }
+        var nestedProperties = propertyReader.ReadNestedObjectProperties(stream, imageBaseOffset, imageEndOffset, depth, path);
 
-        return new WzImagePropertyInspectionEntry(index, name, type, "object", "Property", depth, path, childCount, children);
+        return new WzImagePropertyInspectionEntry(
+            index,
+            name,
+            type,
+            "object",
+            "Property",
+            depth,
+            path,
+            nestedProperties.ChildCount,
+            nestedProperties.Children);
     }
 
     private static WzImagePropertyInspectionEntry ReadVectorObjectValue(
@@ -186,11 +150,9 @@ internal sealed class WzImageBinaryObjectInspectionReader
         List<WzImagePropertyInspectionEntry>? children = null;
         if (ReadByte(stream) == 0x01)
         {
-            var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
-            if (depth + 1 < maxPropertyDepth)
-            {
-                children = parsedChildren;
-            }
+            var miniProperty = propertyReader.ReadMiniProperties(stream, imageBaseOffset, imageEndOffset, depth, path);
+            childCount = miniProperty.ChildCount;
+            children = miniProperty.Children;
         }
 
         var canvas = WzImagePayloadInspectionReader.ReadCanvas(stream, imageEndOffset);
@@ -241,7 +203,7 @@ internal sealed class WzImageBinaryObjectInspectionReader
     {
         _ = imageEndOffset;
         SkipBytes(stream, 1);
-        return new WzImagePropertyInspectionEntry(index, name, type, "uol", ReadImageString(stream, imageBaseOffset), depth, path);
+        return new WzImagePropertyInspectionEntry(index, name, type, "uol", stringReader.ReadImageString(stream, imageBaseOffset), depth, path);
     }
 
     private WzImagePropertyInspectionEntry ReadRawDataObjectValue(
@@ -257,8 +219,18 @@ internal sealed class WzImageBinaryObjectInspectionReader
         var version = ReadByte(stream);
         if (version == 1 && ReadByte(stream) == 0x01)
         {
-            ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out var childCount, out var children);
-            return ReadRawDataPayload(stream, imageEndOffset, index, name, type, depth, path, version, childCount, children);
+            var miniProperty = propertyReader.ReadMiniProperties(stream, imageBaseOffset, imageEndOffset, depth, path);
+            return ReadRawDataPayload(
+                stream,
+                imageEndOffset,
+                index,
+                name,
+                type,
+                depth,
+                path,
+                version,
+                miniProperty.ChildCount,
+                miniProperty.Children);
         }
 
         return ReadRawDataPayload(stream, imageEndOffset, index, name, type, depth, path, version, null, null);
@@ -279,7 +251,9 @@ internal sealed class WzImageBinaryObjectInspectionReader
         List<WzImagePropertyInspectionEntry>? children = null;
         if (ReadByte(stream) == 0x01)
         {
-            ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out childCount, out children);
+            var miniProperty = propertyReader.ReadMiniProperties(stream, imageBaseOffset, imageEndOffset, depth, path);
+            childCount = miniProperty.ChildCount;
+            children = miniProperty.Children;
         }
 
         var video = WzImagePayloadInspectionReader.ReadVideo(stream, imageEndOffset);
@@ -301,7 +275,9 @@ internal sealed class WzImageBinaryObjectInspectionReader
         List<WzImagePropertyInspectionEntry>? children = null;
         if (version == 1 && ReadByte(stream) == 0x01)
         {
-            ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out childCount, out children);
+            var miniProperty = propertyReader.ReadMiniProperties(stream, imageBaseOffset, imageEndOffset, depth, path);
+            childCount = miniProperty.ChildCount;
+            children = miniProperty.Children;
         }
 
         var sound = WzImagePayloadInspectionReader.ReadSound(stream, imageEndOffset, version);
@@ -324,82 +300,8 @@ internal sealed class WzImageBinaryObjectInspectionReader
         return new WzImagePropertyInspectionEntry(index, name, type, "rawData", rawData, depth, path, childCount, children);
     }
 
-    private void ReadMiniProperty(
-        Stream stream,
-        long imageBaseOffset,
-        long imageEndOffset,
-        int depth,
-        string? path,
-        out int? childCount,
-        out List<WzImagePropertyInspectionEntry>? children)
-    {
-        var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
-        children = depth + 1 < maxPropertyDepth ? parsedChildren : null;
-    }
-
     private static WzImageVectorInspection ReadVectorInspection(Stream stream)
     {
         return new WzImageVectorInspection(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
     }
-
-    private static string? CombinePath(string parentPath, string? name)
-    {
-        if (string.IsNullOrEmpty(name))
-        {
-            return string.IsNullOrEmpty(parentPath) ? null : parentPath;
-        }
-
-        return string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
-    }
-
-    private string? ReadImageString(Stream stream, long imageBaseOffset)
-    {
-        var flag = ReadByte(stream);
-        return flag switch
-        {
-            0x00 => ReadString(stream),
-            0x01 => ReadStringAt(stream, imageBaseOffset + ReadInt32LittleEndian(stream)),
-            0x04 => SkipNullImageString(stream),
-            _ => throw new InvalidDataException($"Unexpected image string flag 0x{flag:X2}.")
-        };
-    }
-
-    private string ReadString(Stream stream)
-    {
-        var size = ReadSByte(stream);
-        if (size < 0)
-        {
-            var byteCount = size == sbyte.MinValue ? ReadInt32LittleEndian(stream) : -size;
-            return stringDecryptor.Decode(ReadBytes(stream, byteCount), unicode: false);
-        }
-
-        if (size > 0)
-        {
-            var charCount = size == sbyte.MaxValue ? ReadInt32LittleEndian(stream) : size;
-            return stringDecryptor.Decode(ReadBytes(stream, charCount * sizeof(char)), unicode: true);
-        }
-
-        return string.Empty;
-    }
-
-    private static string? SkipNullImageString(Stream stream)
-    {
-        SkipBytes(stream, 8);
-        return null;
-    }
-
-    private string ReadStringAt(Stream stream, long offset)
-    {
-        if (offset < 0)
-        {
-            throw new InvalidDataException($"Cannot read a string from a negative offset: {offset}.");
-        }
-
-        var position = stream.Position;
-        stream.Position = offset;
-        var value = ReadString(stream);
-        stream.Position = position;
-        return value;
-    }
-
 }

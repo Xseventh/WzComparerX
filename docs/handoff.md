@@ -133,10 +133,12 @@ present.
 `WzImageInspectionReader` is now the small image-entry dispatcher, and
 `WzImageBinaryInspectionReader` is the binary IMG entry coordinator. Binary IMG
 object/property parsing lives in `WzImageBinaryObjectInspectionReader`, with
-text and Lua stream shapes in their own readers. Canvas/RawData/Video/Sound
-payload metadata lives in `WzImagePayloadInspectionReader`, and shared IMG
-binary read primitives live in `WzImageBinaryReaderPrimitives`; the next reader
-split should target nested property recursion.
+bounded property traversal in `WzImageBinaryPropertyInspectionReader` and IMG
+string decoding in `WzImageBinaryStringReader`. Text and Lua stream shapes are
+in their own readers. Canvas/RawData/Video/Sound payload metadata lives in
+`WzImagePayloadInspectionReader`, and shared IMG binary read primitives live in
+`WzImageBinaryReaderPrimitives`; the next parser split should target additional
+object-type families only when new behavior needs them.
 
 ## Suggested Next Prompt
 
