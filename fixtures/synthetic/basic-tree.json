@@ -1,0 +1,59 @@
+{
+  "name": "basic-tree",
+  "kind": "Directory",
+  "children": [
+    {
+      "name": "Character.wz",
+      "kind": "Directory",
+      "children": [
+        {
+          "name": "Cap",
+          "kind": "Directory",
+          "children": [
+            {
+              "name": "00002000.img",
+              "kind": "Image",
+              "children": [
+                {
+                  "name": "info",
+                  "kind": "Property",
+                  "children": [
+                    {
+                      "name": "name",
+                      "kind": "Value",
+                      "valueKind": "string",
+                      "value": "Beginner Cap"
+                    },
+                    {
+                      "name": "reqLevel",
+                      "kind": "Value",
+                      "valueKind": "int32",
+                      "value": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "String.wz",
+      "kind": "Directory",
+      "children": [
+        {
+          "name": "Eqp.img",
+          "kind": "Image",
+          "children": [
+            {
+              "name": "Eqp",
+              "kind": "Property",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

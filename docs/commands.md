@@ -57,6 +57,12 @@ dotnet format WzComparerX.slnx --verify-no-changes
 dotnet run --project src/WzComparerX.Cli -- --help
 ```
 
+After building, the Milestone 1 fixture browser can be run with:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- list fixtures/synthetic/basic-tree.json
+```
+
 ## Run Avalonia App
 
 ```bash
@@ -79,3 +85,7 @@ permissions when needed.
 
 NuGet restore requires network access. If restore fails with DNS or
 `api.nuget.org` errors, rerun with elevated permissions.
+
+On macOS inside the Codex sandbox, `dotnet run` may hang during the SDK
+build/run step after printing a CSSM warning. If the solution has already been
+built, use `dotnet run --no-build` or execute the built CLI DLL directly.

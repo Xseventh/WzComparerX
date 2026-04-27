@@ -40,6 +40,11 @@ a0858cb Bootstrap WCX modernization project
 - Added CLI, Core, Domain, Rendering, WzLib, and test projects.
 - Added development docs, ADRs, roadmap, command reference, and bootstrap log.
 - Verified build and tests after bootstrap.
+- Implemented Milestone 1 headless resource browser:
+  - synthetic raw node fixture and reader,
+  - Core document/workspace/list services,
+  - CLI `list` command,
+  - deterministic tests.
 
 ## Important Decisions
 
@@ -51,11 +56,8 @@ a0858cb Bootstrap WCX modernization project
 
 ## Current State
 
-The project is ready for Milestone 1: Headless Resource Browser.
-
-There is not yet a real parser. The first implementation should use a synthetic
-fixture to stabilize the model, workspace, CLI, and tests before migrating WC
-parser code.
+Milestone 1 is implemented using a synthetic fixture. There is not yet a real
+parser.
 
 ## Suggested Next Prompt
 
@@ -64,14 +66,12 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Then implement Milestone 1: define a
-minimal raw resource node/document model, add a synthetic fixture, implement
-`wcx list`, add tests, run build/test, update docs/logs, and commit the work on
-the current branch.
+docs/development-guidelines.md first. Then begin Milestone 2 by selecting the
+smallest real WC parser behavior to migrate, add fixture-backed tests, run
+build/test, update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution
 
 `origin` still points to `https://github.com/Kagamia/WzComparerX.git`. Do not
 push to it unless the user explicitly asks and remote ownership is clarified.
-

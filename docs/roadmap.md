@@ -16,6 +16,8 @@ Status: done.
 
 ## Milestone 1: Headless Resource Browser
 
+Status: done.
+
 Goal: prove the core can model and browse a resource tree without UI.
 
 Tasks:
