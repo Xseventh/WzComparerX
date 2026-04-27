@@ -103,3 +103,9 @@ payloads whose top-level object type currently reads as `Property`.
 null placeholders. `StandardPDD.img` previews as six nested `Property` objects.
 With `preview-img --depth 2`, those nested `Property` objects expand into
 scalar child entries such as integer threshold values.
+
+`Data/UI/UI_000.wz` contains UI image entries such as `Basic.img`. With
+`preview-img --depth 2`, many nested Canvas values now preview as metadata:
+width, height, texture format, scale, page count, payload offset, and payload
+length. With `--depth 3`, Canvas mini-properties expose child values such as
+`origin` vectors.

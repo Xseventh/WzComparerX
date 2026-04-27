@@ -71,7 +71,8 @@ a0858cb Bootstrap WCX modernization project
   - PKG1 recursive directory-table pre-read and preview enumeration,
   - minimal IMG payload preview for top-level object type,
   - bounded IMG `Property` preview for first-layer scalar values and nested
-    `Property` objects.
+    `Property` objects,
+  - IMG Vector, UOL, and Canvas metadata value preview.
 
 ## Important Decisions
 
@@ -90,7 +91,9 @@ calculate entry offsets, and enumerate recursively nested directory tables.
 `preview-img` can select an image by name/path/index and read its top-level IMG
 object type. For `Property` images it lists first-layer property names and
 simple scalar values by default. `--depth 0` prints only the object type, while
-`--depth 2` can expand one nested `Property` layer.
+`--depth 2` can expand one nested `Property` layer. Deeper previews can expose
+Canvas metadata and Vector child values in local UI files, but Canvas pixel
+decoding is not implemented yet.
 
 ## Suggested Next Prompt
 
@@ -99,10 +102,10 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Then continue Milestone 2 by adding a
-next IMG value reader such as Canvas, Vector, or UOL preview support, or by
-adding key auto-detection for preview workflows. Add fixture-backed tests, run
-build/test, update docs/logs, and commit the work on the current branch.
+docs/development-guidelines.md first. Then continue Milestone 2 by adding the
+next IMG value reader such as Canvas pixel metadata refinements, Convex2D, Sound
+metadata, or key auto-detection for preview workflows. Add fixture-backed tests,
+run build/test, update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution

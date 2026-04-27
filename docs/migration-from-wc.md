@@ -145,6 +145,8 @@ For each migrated feature, record:
   - Read first-layer `Property` entries, including simple scalar values and
     nested object summaries.
   - Expand nested IMG `Property` objects to a caller-provided bounded depth.
+  - Preview nested `Shape2D#Vector2D`, `UOL`, and Canvas metadata object
+    values.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
@@ -159,11 +161,13 @@ For each migrated feature, record:
   - PKG1 encrypted-version detection against deterministic synthetic offsets.
   - Core text formatter output for decoded preview entries.
   - Bounded nested IMG `Property` preview.
+  - IMG Vector, UOL, and Canvas metadata value preview.
 - Known unsupported cases:
   - Key auto-detection is not implemented yet.
   - Full unbounded IMG property/value parsing is not implemented yet.
-  - Non-`Property` nested IMG object parsing is still summarized by object
-    type.
+  - Canvas pixel decoding is not implemented yet.
+  - Sound, Convex2D, RawData, Video, and other nested IMG object payloads are
+    still summarized by object type.
 - UI dependency removed or isolated:
   - Implemented in `WzComparerX.WzLib` and Core CLI services only; no UI
     dependency.

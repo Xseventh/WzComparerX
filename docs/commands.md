@@ -120,7 +120,9 @@ For top-level `Property` images, `preview-img` also lists the first layer of
 property names and simple scalar values. Nested objects are summarized by object
 type by default. Use `--depth 0` to print only the top-level object type, or
 `--depth 2` to expand one nested `Property` layer. The accepted depth range is
-`0` through `64`.
+`0` through `64`. IMG object previews currently include `Property`,
+`Shape2D#Vector2D`, `UOL`, and Canvas metadata; Canvas pixel decoding is not
+implemented yet.
 
 ## Run Avalonia App
 

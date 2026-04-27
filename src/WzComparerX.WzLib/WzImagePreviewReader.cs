@@ -145,19 +145,119 @@ public sealed class WzImagePreviewReader
         }
 
         var objectType = ReadImageObjectTypeName(stream, imageBaseOffset);
-        int? childCount = null;
-        List<WzImagePropertyPreviewEntry>? children = null;
-        if (objectType == "Property" && depth + 1 < maxPropertyDepth)
+        var property = objectType switch
         {
-            children = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
-            if (stream.Position > endPosition)
-            {
-                throw new InvalidDataException($"Object data parser moved past the object boundary: {stream.Position}.");
-            }
+            "Property" => ReadNestedPropertyObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "Shape2D#Vector2D" => ReadVectorObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "Canvas" => ReadCanvasObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "UOL" => ReadUolObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            _ => new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path)
+        };
+
+        if (stream.Position > endPosition)
+        {
+            throw new InvalidDataException($"Object data parser moved past the object boundary: {stream.Position}.");
         }
 
         stream.Position = endPosition;
-        return new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path, childCount, children);
+        return property;
+    }
+
+    private WzImagePropertyPreviewEntry ReadNestedPropertyObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        int? childCount = null;
+        List<WzImagePropertyPreviewEntry>? children = null;
+        if (depth + 1 < maxPropertyDepth)
+        {
+            children = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
+        }
+
+        return new WzImagePropertyPreviewEntry(index, name, type, "object", "Property", depth, path, childCount, children);
+    }
+
+    private static WzImagePropertyPreviewEntry ReadVectorObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        _ = imageBaseOffset;
+        _ = imageEndOffset;
+        var vector = new WzImageVectorPreview(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
+        return new WzImagePropertyPreviewEntry(index, name, type, "vector", vector, depth, path);
+    }
+
+    private WzImagePropertyPreviewEntry ReadCanvasObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        SkipBytes(stream, 1);
+        int? childCount = null;
+        List<WzImagePropertyPreviewEntry>? children = null;
+        if (ReadByte(stream) == 0x01)
+        {
+            var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
+            if (depth + 1 < maxPropertyDepth)
+            {
+                children = parsedChildren;
+            }
+        }
+
+        var width = ReadCompressedInt32(stream);
+        var height = ReadCompressedInt32(stream);
+        var format = ReadCompressedInt32(stream);
+        var scale = ReadByte(stream);
+        var pages = ReadCompressedInt32(stream);
+        var unknown1 = ReadCompressedInt32(stream);
+        SkipBytes(stream, 2);
+        var dataLength = ReadInt32LittleEndian(stream);
+        var dataOffset = stream.Position;
+        if (dataLength < 0)
+        {
+            throw new InvalidDataException($"Cannot read a negative canvas data length: {dataLength}.");
+        }
+
+        if (dataOffset + dataLength > imageEndOffset)
+        {
+            throw new InvalidDataException($"Canvas data extends past the image stream: {dataOffset + dataLength}.");
+        }
+
+        SkipBytes(stream, dataLength);
+        var canvas = new WzImageCanvasPreview(width, height, format, scale, pages, unknown1, dataOffset, dataLength);
+        return new WzImagePropertyPreviewEntry(index, name, type, "canvas", canvas, depth, path, childCount, children);
+    }
+
+    private WzImagePropertyPreviewEntry ReadUolObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        _ = imageEndOffset;
+        SkipBytes(stream, 1);
+        return new WzImagePropertyPreviewEntry(index, name, type, "uol", ReadImageString(stream, imageBaseOffset), depth, path);
     }
 
     private static string? CombinePath(string parentPath, string? name)
