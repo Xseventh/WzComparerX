@@ -102,7 +102,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             output.Write(json
                 ? new WzDirectoryPreviewJsonFormatter().Format(preview)
                 : new WzDirectoryPreviewFormatter().Format(preview));
-            return 0;
+            return preview.Header.IsValid ? 0 : 1;
         }
 
         WriteUsage(error);

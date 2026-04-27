@@ -57,7 +57,9 @@ public sealed class WzDirectoryPreviewReader
             switch (nodeType)
             {
                 case 0x02:
-                    SkipBytes(stream, sizeof(int));
+                    name = ReadStringAt(
+                        stream,
+                        ReadInt32LittleEndian(stream) + GetStringReferenceOffset(header));
                     break;
                 case 0x03:
                 case 0x04:
@@ -128,6 +130,25 @@ public sealed class WzDirectoryPreviewReader
         }
 
         return string.Empty;
+    }
+
+    private string ReadStringAt(Stream stream, long offset)
+    {
+        if (offset < 0)
+        {
+            throw new InvalidDataException($"Cannot read a string from a negative offset: {offset}.");
+        }
+
+        var position = stream.Position;
+        stream.Position = offset;
+        var value = ReadString(stream);
+        stream.Position = position;
+        return value;
+    }
+
+    private static int GetStringReferenceOffset(WzPackageHeader header)
+    {
+        return header.IsEncryptedVersionMissing ? 2 : -1;
     }
 
     private static long SkipChildDirectoryTrees(

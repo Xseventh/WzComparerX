@@ -77,6 +77,26 @@ public class WzDirectoryPreviewReaderTests
         Assert.Equal(30, preview.Entries[0].Offset);
     }
 
+    [Fact]
+    public void Read_NodeType02ReadsReferencedStringName()
+    {
+        var bytes = CreatePkg1WithReferencedStringName();
+        var headerReader = new WzPackageHeaderReader();
+        var previewReader = new WzDirectoryPreviewReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "String.wz");
+
+        var preview = previewReader.Read(stream, header);
+
+        Assert.Equal(1, preview.EntryCount);
+        Assert.Equal(WzDirectoryEntryKind.Image, preview.Entries[0].Kind);
+        Assert.Equal(0x02, preview.Entries[0].NodeType);
+        Assert.Equal("ref", preview.Entries[0].Name);
+        Assert.Equal(26, preview.Entries[0].HashOffsetPosition);
+    }
+
     private static byte[] CreatePkg1WithDirectoryEntries()
     {
         byte[] directoryData =
@@ -111,6 +131,19 @@ public class WzDirectoryPreviewReaderTests
             0x01,
             0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0xc0, 0xa2, 0x76, 0x31,
             0x00
+        ];
+        var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
+        return [.. header, .. encryptedVersion, .. directoryData];
+    }
+
+    private static byte[] CreatePkg1WithReferencedStringName()
+    {
+        byte[] encryptedVersion = [0x7b, 0x00];
+        byte[] directoryData =
+        [
+            0x01,
+            0x02, 0x1f, 0x00, 0x00, 0x00, 0x07, 0x02, 0xef, 0xcd, 0xab, 0x90,
+            0xfd, 0xd8, 0xce, 0xca
         ];
         var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
         return [.. header, .. encryptedVersion, .. directoryData];

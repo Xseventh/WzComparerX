@@ -136,6 +136,7 @@ For each migrated feature, record:
     offset fields.
   - Decode inline PKG1 ASCII/UTF-16 directory strings with no-op, KMS, and
     GMS key modes.
+  - Decode PKG1 `0x02` string-reference entry names.
   - Calculate PKG1 hash versions and entry offsets.
   - Detect missing-encrypted-version PKG1 files as WZ version `777`.
   - Detect encrypted-version PKG1 files by validating calculated offsets.
@@ -145,11 +146,11 @@ For each migrated feature, record:
   - Local-only MapleStoryNA smoke file `Data/Base/Base.wz`.
 - Test coverage added:
   - PKG1 directory entry pre-read with encoded no-op strings.
+  - PKG1 `0x02` string-reference names.
   - PKG1 hash-version and offset calculation.
   - PKG1 encrypted-version detection against deterministic synthetic offsets.
   - Core text formatter output for decoded preview entries.
 - Known unsupported cases:
-  - `0x02` string-reference names are not decoded yet.
   - Key auto-detection is not implemented yet.
   - Recursive child directory loading is not implemented yet.
 - UI dependency removed or isolated:
