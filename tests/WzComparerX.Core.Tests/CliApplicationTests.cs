@@ -238,6 +238,54 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugImage_DepthLimitKeepsMiniPropertyMetadataCompact()
+    {
+        var imageBytes = CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString("kind"),
+                0x03,
+                42,
+                16,
+                8,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(3),
+                0x00,
+                0x78,
+                0x9c)));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", "--depth", "1", path, "Canvas.img");
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("icon [canvas]", output);
+            Assert.Contains("childCount: 1", output);
+            Assert.Contains("dataLength: 3", output);
+            Assert.Contains("compressionKind: Zlib", output);
+            Assert.DoesNotContain("kind [int32]", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task PreviewCommands_AreNotAccepted()
     {
         var fixture = FixturePath("basic-tree.json");
