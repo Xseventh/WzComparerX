@@ -692,9 +692,86 @@ public sealed class WzImagePreviewReader
             throw new InvalidDataException($"Canvas data extends past the image stream: {dataOffset + dataLength}.");
         }
 
+        var compressionKind = DetectCanvasCompressionKind(stream, dataOffset, dataLength);
+        var uncompressedDataLength = GetCanvasUncompressedDataLength(format, scale, pages, width, height);
         SkipBytes(stream, dataLength);
-        var canvas = new WzImageCanvasPreview(width, height, format, scale, pages, unknown1, dataOffset, dataLength);
+        var canvas = new WzImageCanvasPreview(
+            width,
+            height,
+            format,
+            scale,
+            pages,
+            unknown1,
+            dataOffset,
+            dataLength,
+            compressionKind,
+            uncompressedDataLength);
         return new WzImagePropertyPreviewEntry(index, name, type, "canvas", canvas, depth, path, childCount, children);
+    }
+
+    private static WzImageCanvasCompressionKind DetectCanvasCompressionKind(
+        Stream stream,
+        long dataOffset,
+        int dataLength)
+    {
+        if (dataLength < 3)
+        {
+            return WzImageCanvasCompressionKind.Unknown;
+        }
+
+        var position = stream.Position;
+        try
+        {
+            stream.Position = dataOffset + 1;
+            var first = ReadByte(stream);
+            var second = ReadByte(stream);
+            return first == 0x78 && second == 0x9c
+                ? WzImageCanvasCompressionKind.Zlib
+                : WzImageCanvasCompressionKind.ChunkedEncryptedZlib;
+        }
+        finally
+        {
+            stream.Position = position;
+        }
+    }
+
+    private static int? GetCanvasUncompressedDataLength(
+        int format,
+        int scale,
+        int pages,
+        int width,
+        int height)
+    {
+        var actualScale = scale > 0 ? 1 << scale : 1;
+        if (actualScale > 1)
+        {
+            if (width % actualScale != 0 || height % actualScale != 0)
+            {
+                return null;
+            }
+
+            width /= actualScale;
+            height /= actualScale;
+        }
+
+        var perPageLength = format switch
+        {
+            1 or 257 or 513 or 769 => width * height * 2,
+            2 or 2562 => width * height * 4,
+            1026 or 2050 => ((width + 3) / 4) * ((height + 3) / 4) * 16,
+            4098 => width * (height & ~3),
+            4097 => ((width + 3) / 4) * ((height + 3) / 4) * 8,
+            2304 => width * height,
+            6656 => width * height * 16,
+            _ => (int?)null
+        };
+        if (perPageLength is null)
+        {
+            return null;
+        }
+
+        var actualPages = pages > 0 ? pages : 1;
+        return checked(perPageLength.Value * actualPages);
     }
 
     private WzImagePropertyPreviewEntry ReadConvexObjectValue(

@@ -109,8 +109,10 @@ scalar child entries such as integer threshold values.
 `Data/UI/UI_000.wz` contains UI image entries such as `Basic.img`. With
 `preview-img --depth 2`, many nested Canvas values now preview as metadata:
 width, height, texture format, scale, page count, payload offset, and payload
-length. With `--depth 3`, Canvas mini-properties expose child values such as
-`origin` vectors.
+length. Canvas preview also reports whether the payload looks like direct zlib
+or WC's chunked encrypted zlib stream, plus the expected uncompressed byte
+length for known texture formats. With `--depth 3`, Canvas mini-properties
+expose child values such as `origin` vectors.
 
 The same object readers are also used when an IMG root object is a supported
 non-`Property` type. For example, top-level Canvas and `Shape2D#Vector2D`

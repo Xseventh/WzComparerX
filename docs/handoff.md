@@ -81,6 +81,7 @@ a0858cb Bootstrap WCX modernization project
     `Property` objects,
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview,
+  - Canvas payload compression metadata and uncompressed size estimates,
   - IMG Sound_DX8 metadata value preview,
   - preview string-key auto-detection across no-op/KMS/GMS modes,
   - top-level IMG object value previews for supported non-`Property` object
@@ -108,6 +109,8 @@ object type. For supported non-`Property` root objects it also exposes direct
 names and simple scalar values by default. `--depth 0` prints only the object
 type, while `--depth 2` can expand one nested `Property` layer. Deeper previews
 can expose Canvas metadata and Vector child values in local UI files.
+Canvas metadata includes direct zlib vs chunked encrypted zlib detection and
+expected uncompressed byte length for known texture formats.
 `preview-dir` and `preview-img` support `--key auto` to select among
 no-op/KMS/GMS directory string decoding. Canvas pixel decoding and
 RawData/Video/Sound payload decoding are not implemented yet. Lua image entries

@@ -149,6 +149,8 @@ For each migrated feature, record:
   - Preview nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
     object values.
+  - Detect Canvas payload compression kind and expected uncompressed data
+    length for WC texture formats.
   - Auto-detect preview string key selection across no-op, KMS, and GMS modes
     using conservative directory-name scoring.
   - Preview `.lua` IMG entries through WC's Lua-specific block stream path.
@@ -172,6 +174,7 @@ For each migrated feature, record:
   - Bounded nested IMG `Property` preview.
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview.
+  - Canvas zlib/chunked payload metadata and uncompressed data size estimates.
   - IMG Sound_DX8 metadata value preview.
   - Top-level IMG Canvas metadata and Vector value preview.
   - Lua image block preview and `--depth 0` behavior.

@@ -133,6 +133,10 @@ not implemented yet. When the IMG root object is one of those supported
 non-`Property` object types, `preview-img` prints its top-level `objectValue`
 metadata directly.
 
+Canvas metadata includes payload compression kind and expected uncompressed byte
+length when the texture format is known. Pixel conversion/export is still a
+later step.
+
 Lua image entries (`*.lua`) are previewed as `objectType: Lua` with block count,
 payload length, and a short UTF-8 snippet. Full Lua script export is not
 implemented yet.

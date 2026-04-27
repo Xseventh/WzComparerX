@@ -181,6 +181,8 @@ public class WzImagePreviewReaderTests
         Assert.Equal(2, canvas.Format);
         Assert.Equal(1, canvas.Pages);
         Assert.Equal(3, canvas.DataLength);
+        Assert.Equal(WzImageCanvasCompressionKind.ChunkedEncryptedZlib, canvas.CompressionKind);
+        Assert.Equal(512, canvas.UncompressedDataLength);
     }
 
     [Fact]
@@ -214,6 +216,40 @@ public class WzImagePreviewReaderTests
         Assert.Equal(2, canvas.Format);
         Assert.Equal(1, canvas.Pages);
         Assert.Equal(3, canvas.DataLength);
+        Assert.Equal(WzImageCanvasCompressionKind.ChunkedEncryptedZlib, canvas.CompressionKind);
+        Assert.Equal(512, canvas.UncompressedDataLength);
+    }
+
+    [Fact]
+    public void Read_ReturnsCanvasZlibCompressionMetadata()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x00,
+                16,
+                8,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(3),
+                0x00,
+                0x78,
+                0x9c)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(preview.Properties);
+        var canvas = Assert.IsType<WzImageCanvasPreview>(Assert.Single(preview.Properties).Value);
+        Assert.Equal(WzImageCanvasCompressionKind.Zlib, canvas.CompressionKind);
+        Assert.Equal(512, canvas.UncompressedDataLength);
     }
 
     [Fact]
