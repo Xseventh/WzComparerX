@@ -37,6 +37,8 @@ Exit criteria:
 
 ## Milestone 2: First Real WC Migration
 
+Status: in progress.
+
 Goal: migrate the smallest useful WC parsing behavior.
 
 Candidate scope:

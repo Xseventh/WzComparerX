@@ -54,3 +54,17 @@ WC currently supports multiple compatibility paths in `WzComparerR2.WzLib`,
 including newer PKG2-related changes and KMST/KMS-specific format changes. WCX
 should treat those paths as reference behavior and add tests before reshaping
 the code.
+
+## WZ Header Detection
+
+Initial WCX support covers only package header detection:
+
+- `PKG1` and `PKG2` signatures are recognized.
+- Header fields are little-endian, matching WC's `Wz_File.GetHeader` path:
+  signature, `Int64` data size, `Int32` header size, and copyright bytes.
+- PKG1 directory data starts after the two-byte encrypted version unless WC's
+  missing-encver heuristic detects a removed encrypted-version field.
+- PKG2 stores two `UInt32` hash fields immediately after the copyright area.
+
+This does not yet validate WZ version profiles, decrypt directory strings, or
+read the directory tree.

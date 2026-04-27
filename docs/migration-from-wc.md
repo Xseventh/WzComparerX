@@ -93,6 +93,34 @@ For each migrated feature, record:
 - Known unsupported cases.
 - UI dependency removed or isolated.
 
+## Migrated Behaviors
+
+### WZ Package Header Detection
+
+- WC source files referenced:
+  - `WzComparerR2.WzLib/Wz_Header.cs`
+  - `WzComparerR2.WzLib/Wz_File.cs`
+- WC behavior preserved:
+  - Recognize `PKG1` and `PKG2` signatures.
+  - Read data size, header size, copyright, and directory start position.
+  - Preserve WC's PKG1 encrypted-version-missing heuristic for values above
+    `0xff` and the compressed-int `0x80` edge case.
+  - Read PKG2 header hash fields.
+- Fixture or sample used:
+  - Minimal in-memory synthetic WZ header byte streams in
+    `WzPackageHeaderReaderTests`.
+- Test coverage added:
+  - Valid PKG1 with encrypted version.
+  - PKG1 with missing encrypted version.
+  - Valid PKG2 hash fields.
+  - Invalid signature handling.
+- Known unsupported cases:
+  - WZ version profile detection is not migrated yet.
+  - Directory tree parsing is not migrated yet.
+  - MS/MN and PKG2 string encryption detection are not migrated yet.
+- UI dependency removed or isolated:
+  - Implemented in `WzComparerX.WzLib` only; no UI dependency.
+
 ## Suggested Migration Order
 
 1. Repository and solution skeleton.
