@@ -94,7 +94,12 @@ calculating real offsets:
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Base.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --json path/to/Base.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms path/to/older-client.wz
 ```
+
+`preview-dir` defaults to `--key bms`, which matches the current local
+MapleStoryNA client. Use `--key kms` or `--key gms` for files that need those
+legacy PKG1 string keys.
 
 ## Run Avalonia App
 

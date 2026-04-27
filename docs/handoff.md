@@ -20,6 +20,12 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+e65c73a Add PKG1 directory preview
+6f18aef Add WZ header scan command
+3285065 Add JSON output for CLI workflows
+bbfe559 Add CLI WZ header command
+11b974c Add WZ package header detection
+79e5568 Add headless resource browser
 53598d9 Add WCX development governance docs
 a0858cb Bootstrap WCX modernization project
 ```
@@ -45,6 +51,12 @@ a0858cb Bootstrap WCX modernization project
   - Core document/workspace/list services,
   - CLI `list` command,
   - deterministic tests.
+- Started Milestone 2 real parser migration:
+  - WZ `PKG1`/`PKG2` header detection,
+  - CLI `header` and recursive `headers` commands,
+  - JSON output for `list` and header workflows,
+  - PKG1 top-level directory preview,
+  - PKG1 directory-name decoding with BMS/KMS/GMS key modes.
 
 ## Important Decisions
 
@@ -56,8 +68,9 @@ a0858cb Bootstrap WCX modernization project
 
 ## Current State
 
-Milestone 1 is implemented using a synthetic fixture. There is not yet a real
-parser.
+Milestone 1 is implemented. Milestone 2 is in progress with real WZ package
+header detection and PKG1 top-level directory preview working against the local
+MapleStoryNA client.
 
 ## Suggested Next Prompt
 
@@ -66,9 +79,10 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Then begin Milestone 2 by selecting the
-smallest real WC parser behavior to migrate, add fixture-backed tests, run
-build/test, update docs/logs, and commit the work on the current branch.
+docs/development-guidelines.md first. Then continue Milestone 2 by migrating
+PKG1 version/hash and offset calculation so previewed directory entries can
+resolve child payload locations. Add fixture-backed tests, run build/test,
+update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution

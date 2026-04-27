@@ -19,6 +19,12 @@ public sealed class WzDirectoryPreviewFormatter
             builder.Append(entry.Index);
             builder.Append(" | ");
             builder.Append(entry.Kind.ToString().ToLowerInvariant());
+            if (!string.IsNullOrEmpty(entry.Name))
+            {
+                builder.Append(" | name=");
+                builder.Append(entry.Name);
+            }
+
             builder.Append(" | type=0x");
             builder.Append(entry.NodeType.ToString("X2"));
             builder.Append(" | size=");
@@ -33,4 +39,3 @@ public sealed class WzDirectoryPreviewFormatter
         return builder.ToString();
     }
 }
-

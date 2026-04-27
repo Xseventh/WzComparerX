@@ -1,10 +1,11 @@
 using WzComparerX.Core;
+using WzComparerX.WzLib;
 
 return await RunAsync(args, Console.Out, Console.Error);
 
 static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter error)
 {
-    if (args.Length is < 2 or > 3)
+    if (args.Length < 2)
     {
         WriteUsage(error);
         return 2;
@@ -12,20 +13,43 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
 
     var command = args[0];
     var json = false;
-    var pathIndex = 1;
-    if (args.Length == 3)
+    var stringKey = WzStringEncryptionKind.Bms;
+    string? path = null;
+    for (var i = 1; i < args.Length; i++)
     {
-        if (!string.Equals(args[1], "--json", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(args[i], "--json", StringComparison.OrdinalIgnoreCase))
+        {
+            json = true;
+            continue;
+        }
+
+        if (string.Equals(args[i], "--key", StringComparison.OrdinalIgnoreCase))
+        {
+            if (i + 1 >= args.Length || !TryParseStringKey(args[i + 1], out stringKey))
+            {
+                WriteUsage(error);
+                return 2;
+            }
+
+            i++;
+            continue;
+        }
+
+        if (path is not null)
         {
             WriteUsage(error);
             return 2;
         }
 
-        json = true;
-        pathIndex = 2;
+        path = args[i];
     }
 
-    var path = args[pathIndex];
+    if (path is null)
+    {
+        WriteUsage(error);
+        return 2;
+    }
+
     if (!File.Exists(path) && !Directory.Exists(path))
     {
         error.WriteLine($"File or directory not found: {path}");
@@ -72,7 +96,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
 
         if (string.Equals(command, "preview-dir", StringComparison.OrdinalIgnoreCase))
         {
-            var previewService = new WzDirectoryPreviewService();
+            var previewService = new WzDirectoryPreviewService(stringKey);
 
             var preview = await previewService.ReadAsync(path);
             output.Write(json
@@ -97,5 +121,29 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
-    error.WriteLine("  wcx preview-dir [--json] <pkg1-wz-file>");
+    error.WriteLine("  wcx preview-dir [--json] [--key bms|kms|gms] <pkg1-wz-file>");
+}
+
+static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)
+{
+    if (string.Equals(value, "bms", StringComparison.OrdinalIgnoreCase))
+    {
+        kind = WzStringEncryptionKind.Bms;
+        return true;
+    }
+
+    if (string.Equals(value, "kms", StringComparison.OrdinalIgnoreCase))
+    {
+        kind = WzStringEncryptionKind.Kms;
+        return true;
+    }
+
+    if (string.Equals(value, "gms", StringComparison.OrdinalIgnoreCase))
+    {
+        kind = WzStringEncryptionKind.Gms;
+        return true;
+    }
+
+    kind = WzStringEncryptionKind.Bms;
+    return false;
 }

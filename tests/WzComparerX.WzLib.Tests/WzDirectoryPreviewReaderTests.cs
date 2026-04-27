@@ -11,7 +11,9 @@ public class WzDirectoryPreviewReaderTests
     {
         var bytes = CreatePkg1WithDirectoryEntries();
         var headerReader = new WzPackageHeaderReader();
-        var previewReader = new WzDirectoryPreviewReader(headerReader);
+        var previewReader = new WzDirectoryPreviewReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.Bms));
         using var stream = new MemoryStream(bytes);
         var header = headerReader.Read(stream, "Base.wz");
 
@@ -19,11 +21,13 @@ public class WzDirectoryPreviewReaderTests
 
         Assert.Equal(2, preview.EntryCount);
         Assert.Equal(WzDirectoryEntryKind.Directory, preview.Entries[0].Kind);
+        Assert.Equal("abc", preview.Entries[0].Name);
         Assert.Equal(0x03, preview.Entries[0].NodeType);
         Assert.Equal(5, preview.Entries[0].DataSize);
         Assert.Equal(1, preview.Entries[0].Checksum);
         Assert.Equal(0x12345678u, preview.Entries[0].HashOffset);
         Assert.Equal(WzDirectoryEntryKind.Image, preview.Entries[1].Kind);
+        Assert.Equal("def", preview.Entries[1].Name);
         Assert.Equal(0x04, preview.Entries[1].NodeType);
         Assert.Equal(7, preview.Entries[1].DataSize);
         Assert.Equal(2, preview.Entries[1].Checksum);
@@ -35,8 +39,8 @@ public class WzDirectoryPreviewReaderTests
         byte[] directoryData =
         [
             0x02,
-            0x03, 0xfd, 0x61, 0x62, 0x63, 0x05, 0x01, 0x78, 0x56, 0x34, 0x12,
-            0x04, 0xfd, 0x64, 0x65, 0x66, 0x07, 0x02, 0xef, 0xcd, 0xab, 0x90
+            0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0x78, 0x56, 0x34, 0x12,
+            0x04, 0xfd, 0xce, 0xce, 0xca, 0x07, 0x02, 0xef, 0xcd, 0xab, 0x90
         ];
         byte[] encryptedVersion = [0x7b, 0x00];
         var header = CreateHeader("PKG1", "Copyright", dataSize: encryptedVersion.Length + directoryData.Length);

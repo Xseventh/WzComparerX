@@ -5,10 +5,14 @@ namespace WzComparerX.WzLib;
 public sealed class WzDirectoryPreviewReader
 {
     private readonly WzPackageHeaderReader headerReader;
+    private readonly WzStringDecryptor stringDecryptor;
 
-    public WzDirectoryPreviewReader(WzPackageHeaderReader? headerReader = null)
+    public WzDirectoryPreviewReader(
+        WzPackageHeaderReader? headerReader = null,
+        WzStringDecryptor? stringDecryptor = null)
     {
         this.headerReader = headerReader ?? new WzPackageHeaderReader();
+        this.stringDecryptor = stringDecryptor ?? new WzStringDecryptor();
     }
 
     public async Task<WzDirectoryPreview> ReadAsync(string path, CancellationToken cancellationToken = default)
@@ -49,6 +53,7 @@ public sealed class WzDirectoryPreviewReader
             cancellationToken.ThrowIfCancellationRequested();
 
             var nodeType = ReadByte(stream);
+            string? name = null;
             switch (nodeType)
             {
                 case 0x02:
@@ -56,7 +61,7 @@ public sealed class WzDirectoryPreviewReader
                     break;
                 case 0x03:
                 case 0x04:
-                    SkipString(stream);
+                    name = ReadString(stream);
                     break;
                 default:
                     throw new InvalidDataException($"Unknown PKG1 directory node type 0x{nodeType:X2}.");
@@ -71,6 +76,7 @@ public sealed class WzDirectoryPreviewReader
                 i,
                 nodeType,
                 ToEntryKind(nodeType),
+                name,
                 dataSize,
                 checksum,
                 hashOffsetPosition,
@@ -90,19 +96,22 @@ public sealed class WzDirectoryPreviewReader
         };
     }
 
-    private static void SkipString(Stream stream)
+    private string ReadString(Stream stream)
     {
         var size = ReadSByte(stream);
         if (size < 0)
         {
             var byteCount = size == sbyte.MinValue ? ReadInt32LittleEndian(stream) : -size;
-            SkipBytes(stream, byteCount);
+            return stringDecryptor.Decode(ReadBytes(stream, byteCount), unicode: false);
         }
-        else if (size > 0)
+
+        if (size > 0)
         {
             var charCount = size == sbyte.MaxValue ? ReadInt32LittleEndian(stream) : size;
-            SkipBytes(stream, charCount * sizeof(char));
+            return stringDecryptor.Decode(ReadBytes(stream, charCount * sizeof(char)), unicode: true);
         }
+
+        return string.Empty;
     }
 
     private static int ReadCompressedInt32(Stream stream)
@@ -139,6 +148,18 @@ public sealed class WzDirectoryPreviewReader
         Span<byte> bytes = stackalloc byte[sizeof(uint)];
         stream.ReadExactly(bytes);
         return BinaryPrimitives.ReadUInt32LittleEndian(bytes);
+    }
+
+    private static byte[] ReadBytes(Stream stream, int count)
+    {
+        if (count < 0)
+        {
+            throw new InvalidDataException($"Cannot read a negative byte count: {count}.");
+        }
+
+        var bytes = new byte[count];
+        stream.ReadExactly(bytes);
+        return bytes;
     }
 
     private static void SkipBytes(Stream stream, int count)

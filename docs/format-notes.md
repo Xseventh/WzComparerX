@@ -85,3 +85,8 @@ package headers, including `Data/Base/Base.wz` and `Data/Base/Base_000.wz`.
 contains 16 top-level directory entries (`nodeType` `0x03`) with zero data size
 and checksum fields. This confirms the PKG1 directory entry shape before WZ
 version/hash and string decryption are migrated.
+
+The same file's top-level names decode with the BMS/no-op PKG1 string key.
+The default `preview-dir` path now uses that key and can list names such as
+`Character`, `Effect`, `Etc`, `Item`, `Map`, `Mob`, `Npc`, `String`, and `UI`.
+KMS/GMS key modes are still exposed for older or region-specific files.

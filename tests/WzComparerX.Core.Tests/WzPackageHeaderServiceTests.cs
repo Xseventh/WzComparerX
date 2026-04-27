@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 using WzComparerX.Core;
+using WzComparerX.WzLib;
 
 namespace WzComparerX.Core.Tests;
 
@@ -119,7 +120,8 @@ public class WzPackageHeaderServiceTests
     public async Task PreviewDir_FormatsDirectoryPreview()
     {
         var path = WriteTemporaryPkg1DirectoryFile();
-        var service = new WzDirectoryPreviewService();
+        var service = new WzDirectoryPreviewService(
+            new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(WzStringEncryptionKind.Bms)));
         var formatter = new WzDirectoryPreviewFormatter();
 
         try
@@ -128,7 +130,7 @@ public class WzPackageHeaderServiceTests
             var output = formatter.Format(preview);
 
             Assert.Contains("entries: 1", output);
-            Assert.Contains("0 | directory | type=0x03 | size=5 | checksum=1 | hashOffset=305419896", output);
+            Assert.Contains("0 | directory | name=abc | type=0x03 | size=5 | checksum=1 | hashOffset=305419896", output);
         }
         finally
         {
@@ -148,7 +150,7 @@ public class WzPackageHeaderServiceTests
         byte[] directoryData =
         [
             0x01,
-            0x03, 0xfd, 0x61, 0x62, 0x63, 0x05, 0x01, 0x78, 0x56, 0x34, 0x12
+            0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0x78, 0x56, 0x34, 0x12
         ];
         byte[] encryptedVersion = [0x7b, 0x00];
         var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");
