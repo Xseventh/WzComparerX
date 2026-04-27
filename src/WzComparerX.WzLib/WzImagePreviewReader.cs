@@ -150,6 +150,7 @@ public sealed class WzImagePreviewReader
             "Property" => ReadNestedPropertyObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "Shape2D#Vector2D" => ReadVectorObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "Canvas" => ReadCanvasObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "Shape2D#Convex2D" => ReadConvexObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "UOL" => ReadUolObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             _ => new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path)
         };
@@ -195,8 +196,7 @@ public sealed class WzImagePreviewReader
     {
         _ = imageBaseOffset;
         _ = imageEndOffset;
-        var vector = new WzImageVectorPreview(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
-        return new WzImagePropertyPreviewEntry(index, name, type, "vector", vector, depth, path);
+        return new WzImagePropertyPreviewEntry(index, name, type, "vector", ReadVectorPreview(stream), depth, path);
     }
 
     private WzImagePropertyPreviewEntry ReadCanvasObjectValue(
@@ -245,6 +245,38 @@ public sealed class WzImagePreviewReader
         return new WzImagePropertyPreviewEntry(index, name, type, "canvas", canvas, depth, path, childCount, children);
     }
 
+    private WzImagePropertyPreviewEntry ReadConvexObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        _ = imageEndOffset;
+        var pointCount = ReadCompressedInt32(stream);
+        if (pointCount < 0)
+        {
+            throw new InvalidDataException($"Cannot read a negative convex point count: {pointCount}.");
+        }
+
+        var points = new List<WzImageVectorPreview>(pointCount);
+        for (var i = 0; i < pointCount; i++)
+        {
+            var objectType = ReadImageObjectTypeName(stream, imageBaseOffset);
+            if (objectType != "Shape2D#Vector2D")
+            {
+                throw new InvalidDataException($"Convex2D point {i} is not a vector: {objectType}.");
+            }
+
+            points.Add(ReadVectorPreview(stream));
+        }
+
+        return new WzImagePropertyPreviewEntry(index, name, type, "convex", new WzImageConvexPreview(points), depth, path);
+    }
+
     private WzImagePropertyPreviewEntry ReadUolObjectValue(
         Stream stream,
         long imageBaseOffset,
@@ -258,6 +290,11 @@ public sealed class WzImagePreviewReader
         _ = imageEndOffset;
         SkipBytes(stream, 1);
         return new WzImagePropertyPreviewEntry(index, name, type, "uol", ReadImageString(stream, imageBaseOffset), depth, path);
+    }
+
+    private static WzImageVectorPreview ReadVectorPreview(Stream stream)
+    {
+        return new WzImageVectorPreview(ReadCompressedInt32(stream), ReadCompressedInt32(stream));
     }
 
     private static string? CombinePath(string parentPath, string? name)

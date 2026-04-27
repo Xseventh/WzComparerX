@@ -183,6 +183,46 @@ public class WzImagePreviewReaderTests
         Assert.Equal(3, canvas.DataLength);
     }
 
+    [Fact]
+    public void Read_ReturnsConvexObjectValue()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "polygon",
+            CreateObjectValue(
+                "Shape2D#Convex2D",
+                2,
+                CreateObjectValue("Shape2D#Vector2D", 1, 2),
+                CreateObjectValue("Shape2D#Vector2D", 3, 4))));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(preview.Properties);
+        var property = Assert.Single(preview.Properties);
+        Assert.Equal("convex", property.Kind);
+        var convex = Assert.IsType<WzImageConvexPreview>(property.Value);
+        Assert.Equal(2, convex.Points.Count);
+        Assert.Equal(new WzImageVectorPreview(1, 2), convex.Points[0]);
+        Assert.Equal(new WzImageVectorPreview(3, 4), convex.Points[1]);
+    }
+
+    [Fact]
+    public void Read_RejectsConvexWithNonVectorPoint()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "polygon",
+            CreateObjectValue(
+                "Shape2D#Convex2D",
+                1,
+                CreateObjectValue("Property", 0x00, 0x00, 0))));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        Assert.Throws<InvalidDataException>(
+            () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
+    }
+
     private static WzPackageHeader CreateHeader()
     {
         return new WzPackageHeader(
