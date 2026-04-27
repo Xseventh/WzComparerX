@@ -14,6 +14,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
     var command = args[0];
     var json = false;
     var stringKey = WzStringEncryptionKind.None;
+    var imagePropertyDepth = 1;
     string? path = null;
     string? selector = null;
     for (var i = 1; i < args.Length; i++)
@@ -27,6 +28,20 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
         if (string.Equals(args[i], "--key", StringComparison.OrdinalIgnoreCase))
         {
             if (i + 1 >= args.Length || !TryParseStringKey(args[i + 1], out stringKey))
+            {
+                WriteUsage(error);
+                return 2;
+            }
+
+            i++;
+            continue;
+        }
+
+        if (string.Equals(args[i], "--depth", StringComparison.OrdinalIgnoreCase))
+        {
+            if (i + 1 >= args.Length ||
+                !int.TryParse(args[i + 1], out imagePropertyDepth) ||
+                imagePropertyDepth < 0)
             {
                 WriteUsage(error);
                 return 2;
@@ -121,7 +136,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
                 return 2;
             }
 
-            var previewService = new WzImagePreviewService(stringKey);
+            var previewService = new WzImagePreviewService(stringKey, imagePropertyDepth);
 
             var preview = await previewService.ReadAsync(path, selector);
             output.Write(json
@@ -147,7 +162,7 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
     error.WriteLine("  wcx preview-dir [--json] [--key none|kms|gms] <pkg1-wz-file>");
-    error.WriteLine("  wcx preview-img [--json] [--key none|kms|gms] <pkg1-wz-file> <image-name-or-index>");
+    error.WriteLine("  wcx preview-img [--json] [--key none|kms|gms] [--depth n] <pkg1-wz-file> <image-name-or-index>");
 }
 
 static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)

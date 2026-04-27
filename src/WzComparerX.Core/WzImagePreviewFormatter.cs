@@ -36,27 +36,53 @@ public sealed class WzImagePreviewFormatter
         {
             foreach (var property in preview.Properties)
             {
-                builder.Append(property.Index);
-                builder.Append(" | ");
-                builder.Append(property.Kind);
-                if (!string.IsNullOrEmpty(property.Name))
-                {
-                    builder.Append(" | name=");
-                    builder.Append(property.Name);
-                }
-
-                builder.Append(" | type=0x");
-                builder.Append(property.Type.ToString("X2"));
-                if (property.Value is not null)
-                {
-                    builder.Append(" | value=");
-                    builder.Append(property.Value);
-                }
-
-                builder.AppendLine();
+                AppendProperty(builder, property);
             }
         }
 
         return builder.ToString();
+    }
+
+    private static void AppendProperty(StringBuilder builder, WzImagePropertyPreviewEntry property)
+    {
+        if (property.Depth > 0)
+        {
+            builder.Append(' ', property.Depth * 2);
+        }
+
+        builder.Append(property.Index);
+        builder.Append(" | ");
+        builder.Append(property.Kind);
+        if (!string.IsNullOrEmpty(property.Name))
+        {
+            builder.Append(" | name=");
+            builder.Append(property.Name);
+        }
+
+        builder.Append(" | type=0x");
+        builder.Append(property.Type.ToString("X2"));
+        if (property.Value is not null)
+        {
+            builder.Append(" | value=");
+            builder.Append(property.Value);
+        }
+
+        if (property.ChildCount is not null)
+        {
+            builder.Append(" | children=");
+            builder.Append(property.ChildCount);
+        }
+
+        builder.AppendLine();
+
+        if (property.Children is null)
+        {
+            return;
+        }
+
+        foreach (var child in property.Children)
+        {
+            AppendProperty(builder, child);
+        }
     }
 }

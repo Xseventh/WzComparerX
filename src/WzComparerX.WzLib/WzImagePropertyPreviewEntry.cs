@@ -5,4 +5,8 @@ public sealed record WzImagePropertyPreviewEntry(
     string? Name,
     byte Type,
     string Kind,
-    object? Value = null);
+    object? Value = null,
+    int Depth = 0,
+    string? Path = null,
+    int? ChildCount = null,
+    IReadOnlyList<WzImagePropertyPreviewEntry>? Children = null);

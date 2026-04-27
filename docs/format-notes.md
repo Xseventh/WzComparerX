@@ -101,3 +101,5 @@ directory tables immediately after the top-level directory table.
 payloads whose top-level object type currently reads as `Property`.
 `smap.img` previews as 151 first-layer properties, mostly string mappings and
 null placeholders. `StandardPDD.img` previews as six nested `Property` objects.
+With `preview-img --depth 2`, those nested `Property` objects expand into
+scalar child entries such as integer threshold values.

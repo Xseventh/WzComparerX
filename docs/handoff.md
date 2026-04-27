@@ -20,6 +20,10 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+f3118ae Add shallow IMG property preview
+7b0c917 Add IMG object type preview
+25a599f Add recursive PKG1 directory preview
+41e1ad0 Fix PKG1 string reference offset base
 d22d231 Fix preview-dir review issues
 2cb2722 Align PKG1 directory offset validation with WC
 ddd9ddc Add PKG1 version offset preview
@@ -66,7 +70,8 @@ a0858cb Bootstrap WCX modernization project
   - PKG1 `0x02` string-reference name decoding,
   - PKG1 recursive directory-table pre-read and preview enumeration,
   - minimal IMG payload preview for top-level object type,
-  - shallow IMG `Property` preview for first-layer scalar values.
+  - bounded IMG `Property` preview for first-layer scalar values and nested
+    `Property` objects.
 
 ## Important Decisions
 
@@ -83,8 +88,9 @@ header detection and PKG1 directory preview working against the local
 MapleStoryNA client. `preview-dir` can decode names, detect PKG1 version/hash,
 calculate entry offsets, and enumerate recursively nested directory tables.
 `preview-img` can select an image by name/path/index and read its top-level IMG
-object type. For `Property` images it also lists first-layer property names and
-simple scalar values.
+object type. For `Property` images it lists first-layer property names and
+simple scalar values by default. `--depth 0` prints only the object type, while
+`--depth 2` can expand one nested `Property` layer.
 
 ## Suggested Next Prompt
 
@@ -94,9 +100,9 @@ Use this in a new Codex project conversation:
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Then continue Milestone 2 by adding a
-bounded recursive IMG property preview, or by adding key auto-detection for
-preview workflows. Add fixture-backed tests, run build/test, update docs/logs,
-and commit the work on the current branch.
+next IMG value reader such as Canvas, Vector, or UOL preview support, or by
+adding key auto-detection for preview workflows. Add fixture-backed tests, run
+build/test, update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution

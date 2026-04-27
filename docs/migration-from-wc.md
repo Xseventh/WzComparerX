@@ -144,6 +144,7 @@ For each migrated feature, record:
   - Read the top-level IMG object type name from calculated image offsets.
   - Read first-layer `Property` entries, including simple scalar values and
     nested object summaries.
+  - Expand nested IMG `Property` objects to a caller-provided bounded depth.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
@@ -157,9 +158,12 @@ For each migrated feature, record:
   - First-layer IMG `Property` scalar entries.
   - PKG1 encrypted-version detection against deterministic synthetic offsets.
   - Core text formatter output for decoded preview entries.
+  - Bounded nested IMG `Property` preview.
 - Known unsupported cases:
   - Key auto-detection is not implemented yet.
-  - Recursive IMG property/value parsing is not implemented yet.
+  - Full unbounded IMG property/value parsing is not implemented yet.
+  - Non-`Property` nested IMG object parsing is still summarized by object
+    type.
 - UI dependency removed or isolated:
   - Implemented in `WzComparerX.WzLib` and Core CLI services only; no UI
     dependency.

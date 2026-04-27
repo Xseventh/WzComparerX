@@ -112,12 +112,14 @@ To preview the top-level IMG object type for a PKG1 image entry:
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Base_000.wz smap.img
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --json path/to/Base_000.wz 1
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --depth 2 path/to/Base_000.wz StandardPDD.img
 ```
 
 The selector can be an image name, image path, or preview entry index.
 For top-level `Property` images, `preview-img` also lists the first layer of
 property names and simple scalar values. Nested objects are summarized by object
-type.
+type by default. Use `--depth 0` to print only the top-level object type, or
+`--depth 2` to expand one nested `Property` layer.
 
 ## Run Avalonia App
 

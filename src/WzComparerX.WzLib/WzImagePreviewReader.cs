@@ -5,10 +5,17 @@ namespace WzComparerX.WzLib;
 public sealed class WzImagePreviewReader
 {
     private readonly WzStringDecryptor stringDecryptor;
+    private readonly int maxPropertyDepth;
 
-    public WzImagePreviewReader(WzStringDecryptor? stringDecryptor = null)
+    public WzImagePreviewReader(WzStringDecryptor? stringDecryptor = null, int maxPropertyDepth = 1)
     {
+        if (maxPropertyDepth < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxPropertyDepth), "Property preview depth cannot be negative.");
+        }
+
         this.stringDecryptor = stringDecryptor ?? new WzStringDecryptor();
+        this.maxPropertyDepth = maxPropertyDepth;
     }
 
     public WzImagePreview Read(
@@ -37,10 +44,18 @@ public sealed class WzImagePreviewReader
             throw new InvalidDataException($"Selected image offset is outside the file: {offset}.");
         }
 
+        var imageEndOffset = offset + entry.DataSize;
+        if (imageEndOffset > stream.Length)
+        {
+            throw new InvalidDataException($"Selected image extends past the file: {imageEndOffset}.");
+        }
+
         stream.Position = offset;
         var objectType = ReadImageObjectTypeName(stream, offset);
         int? propertyCount = null;
-        var properties = objectType == "Property" ? ReadPropertyEntries(stream, offset, out propertyCount) : null;
+        var properties = objectType == "Property" && maxPropertyDepth > 0
+            ? ReadPropertyEntries(stream, offset, imageEndOffset, depth: 0, parentPath: string.Empty, out propertyCount)
+            : null;
         return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties);
     }
 
@@ -58,6 +73,9 @@ public sealed class WzImagePreviewReader
     private List<WzImagePropertyPreviewEntry>? ReadPropertyEntries(
         Stream stream,
         long imageBaseOffset,
+        long imageEndOffset,
+        int depth,
+        string parentPath,
         out int? propertyCount)
     {
         SkipBytes(stream, 2);
@@ -69,7 +87,8 @@ public sealed class WzImagePreviewReader
         {
             var name = ReadImageString(stream, imageBaseOffset);
             var type = ReadByte(stream);
-            properties.Add(ReadPropertyValue(stream, imageBaseOffset, i, name, type));
+            var path = CombinePath(parentPath, name);
+            properties.Add(ReadPropertyValue(stream, imageBaseOffset, imageEndOffset, i, name, type, depth, path));
         }
 
         return properties;
@@ -78,20 +97,23 @@ public sealed class WzImagePreviewReader
     private WzImagePropertyPreviewEntry ReadPropertyValue(
         Stream stream,
         long imageBaseOffset,
+        long imageEndOffset,
         int index,
         string? name,
-        byte type)
+        byte type,
+        int depth,
+        string? path)
     {
         return type switch
         {
-            0x00 => new WzImagePropertyPreviewEntry(index, name, type, "null"),
-            0x02 or 0x0b => new WzImagePropertyPreviewEntry(index, name, type, "int16", ReadInt16LittleEndian(stream)),
-            0x03 or 0x13 => new WzImagePropertyPreviewEntry(index, name, type, "int32", ReadCompressedInt32(stream)),
-            0x14 => new WzImagePropertyPreviewEntry(index, name, type, "int64", ReadCompressedInt64(stream)),
-            0x04 => new WzImagePropertyPreviewEntry(index, name, type, "single", ReadCompressedSingle(stream)),
-            0x05 => new WzImagePropertyPreviewEntry(index, name, type, "double", ReadDoubleLittleEndian(stream)),
-            0x08 => new WzImagePropertyPreviewEntry(index, name, type, "string", ReadImageString(stream, imageBaseOffset)),
-            0x09 => ReadObjectPropertyValue(stream, imageBaseOffset, index, name, type),
+            0x00 => new WzImagePropertyPreviewEntry(index, name, type, "null", Depth: depth, Path: path),
+            0x02 or 0x0b => new WzImagePropertyPreviewEntry(index, name, type, "int16", ReadInt16LittleEndian(stream), depth, path),
+            0x03 or 0x13 => new WzImagePropertyPreviewEntry(index, name, type, "int32", ReadCompressedInt32(stream), depth, path),
+            0x14 => new WzImagePropertyPreviewEntry(index, name, type, "int64", ReadCompressedInt64(stream), depth, path),
+            0x04 => new WzImagePropertyPreviewEntry(index, name, type, "single", ReadCompressedSingle(stream), depth, path),
+            0x05 => new WzImagePropertyPreviewEntry(index, name, type, "double", ReadDoubleLittleEndian(stream), depth, path),
+            0x08 => new WzImagePropertyPreviewEntry(index, name, type, "string", ReadImageString(stream, imageBaseOffset), depth, path),
+            0x09 => ReadObjectPropertyValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             _ => throw new InvalidDataException($"Unknown image property value type 0x{type:X2}.")
         };
     }
@@ -99,9 +121,12 @@ public sealed class WzImagePreviewReader
     private WzImagePropertyPreviewEntry ReadObjectPropertyValue(
         Stream stream,
         long imageBaseOffset,
+        long imageEndOffset,
         int index,
         string? name,
-        byte type)
+        byte type,
+        int depth,
+        string? path)
     {
         var objectDataLength = ReadInt32LittleEndian(stream);
         if (objectDataLength < 0)
@@ -110,14 +135,35 @@ public sealed class WzImagePreviewReader
         }
 
         var endPosition = stream.Position + objectDataLength;
-        if (endPosition > stream.Length)
+        if (endPosition > imageEndOffset)
         {
             throw new InvalidDataException($"Object data extends past the image stream: {endPosition}.");
         }
 
         var objectType = ReadImageObjectTypeName(stream, imageBaseOffset);
+        int? childCount = null;
+        List<WzImagePropertyPreviewEntry>? children = null;
+        if (objectType == "Property" && depth + 1 < maxPropertyDepth)
+        {
+            children = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
+            if (stream.Position > endPosition)
+            {
+                throw new InvalidDataException($"Object data parser moved past the object boundary: {stream.Position}.");
+            }
+        }
+
         stream.Position = endPosition;
-        return new WzImagePropertyPreviewEntry(index, name, type, "object", objectType);
+        return new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path, childCount, children);
+    }
+
+    private static string? CombinePath(string parentPath, string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return string.IsNullOrEmpty(parentPath) ? null : parentPath;
+        }
+
+        return string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
     }
 
     private string? ReadImageString(Stream stream, long imageBaseOffset)

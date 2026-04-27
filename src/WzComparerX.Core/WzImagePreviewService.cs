@@ -15,10 +15,10 @@ public sealed class WzImagePreviewService
         this.imageReader = imageReader ?? new WzImagePreviewReader();
     }
 
-    public WzImagePreviewService(WzStringEncryptionKind stringEncryptionKind)
+    public WzImagePreviewService(WzStringEncryptionKind stringEncryptionKind, int maxPropertyDepth = 1)
         : this(
             new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(stringEncryptionKind)),
-            new WzImagePreviewReader(new WzStringDecryptor(stringEncryptionKind)))
+            new WzImagePreviewReader(new WzStringDecryptor(stringEncryptionKind), maxPropertyDepth))
     {
     }
 
