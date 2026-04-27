@@ -273,6 +273,58 @@ public class WzImagePreviewReaderTests
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
     }
 
+    [Fact]
+    public void Read_ReturnsVideoMetadata()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "clip",
+            CreateObjectValue(
+                "Canvas#Video",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString("kind"),
+                0x03,
+                7,
+                5,
+                4,
+                0x01,
+                0x02,
+                0x03,
+                0x04)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(preview.Properties);
+        var property = Assert.Single(preview.Properties);
+        Assert.Equal("video", property.Kind);
+        Assert.Equal(1, property.ChildCount);
+        Assert.NotNull(property.Children);
+        Assert.Equal("kind", Assert.Single(property.Children).Name);
+        var video = Assert.IsType<WzImageVideoPreview>(property.Value);
+        Assert.Equal(5, video.Unknown);
+        Assert.Equal(4, video.DataLength);
+    }
+
+    [Fact]
+    public void Read_RejectsVideoExtendingPastImage()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "clip",
+            CreateObjectValue("Canvas#Video", 0x00, 0x00, 5, 100)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        Assert.Throws<InvalidDataException>(
+            () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
+    }
+
     private static WzPackageHeader CreateHeader()
     {
         return new WzPackageHeader(

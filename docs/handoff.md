@@ -72,8 +72,8 @@ a0858cb Bootstrap WCX modernization project
   - minimal IMG payload preview for top-level object type,
   - bounded IMG `Property` preview for first-layer scalar values and nested
     `Property` objects,
-  - IMG Vector, Convex2D, UOL, Canvas metadata, and RawData metadata value
-    preview.
+  - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
+    Canvas#Video metadata value preview.
 
 ## Important Decisions
 
@@ -94,7 +94,7 @@ object type. For `Property` images it lists first-layer property names and
 simple scalar values by default. `--depth 0` prints only the object type, while
 `--depth 2` can expand one nested `Property` layer. Deeper previews can expose
 Canvas metadata and Vector child values in local UI files. Canvas pixel decoding
-and RawData payload decoding are not implemented yet.
+and RawData/Video payload decoding are not implemented yet.
 
 ## Suggested Next Prompt
 
@@ -104,10 +104,9 @@ Use this in a new Codex project conversation:
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Then continue Milestone 2 by adding the
-next IMG value reader such as Sound metadata or Video metadata, Canvas pixel
-metadata refinements, or key auto-detection for preview workflows. Add
-fixture-backed tests, run build/test, update docs/logs, and commit the work on
-the current branch.
+next IMG value reader such as Sound metadata, Canvas pixel metadata refinements,
+or key auto-detection for preview workflows. Add fixture-backed tests, run
+build/test, update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution

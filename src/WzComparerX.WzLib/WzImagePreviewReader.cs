@@ -153,6 +153,7 @@ public sealed class WzImagePreviewReader
             "Shape2D#Convex2D" => ReadConvexObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "UOL" => ReadUolObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "RawData" => ReadRawDataObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "Canvas#Video" => ReadVideoObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             _ => new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path)
         };
 
@@ -304,17 +305,63 @@ public sealed class WzImagePreviewReader
         string? path)
     {
         var version = ReadByte(stream);
-        int? childCount = null;
-        List<WzImagePropertyPreviewEntry>? children = null;
         if (version == 1 && ReadByte(stream) == 0x01)
         {
-            var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
-            if (depth + 1 < maxPropertyDepth)
-            {
-                children = parsedChildren;
-            }
+            ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out var childCount, out var children);
+            return ReadRawDataPayload(stream, imageEndOffset, index, name, type, depth, path, version, childCount, children);
         }
 
+        return ReadRawDataPayload(stream, imageEndOffset, index, name, type, depth, path, version, null, null);
+    }
+
+    private WzImagePropertyPreviewEntry ReadVideoObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        SkipBytes(stream, 1);
+        int? childCount = null;
+        List<WzImagePropertyPreviewEntry>? children = null;
+        if (ReadByte(stream) == 0x01)
+        {
+            ReadMiniProperty(stream, imageBaseOffset, imageEndOffset, depth, path, out childCount, out children);
+        }
+
+        var unknown = ReadByte(stream);
+        var dataLength = ReadCompressedInt32(stream);
+        if (dataLength < 0)
+        {
+            throw new InvalidDataException($"Cannot read a negative video data length: {dataLength}.");
+        }
+
+        var dataOffset = stream.Position;
+        if (dataOffset + dataLength > imageEndOffset)
+        {
+            throw new InvalidDataException($"Video data extends past the image stream: {dataOffset + dataLength}.");
+        }
+
+        SkipBytes(stream, dataLength);
+        var video = new WzImageVideoPreview(unknown, dataOffset, dataLength);
+        return new WzImagePropertyPreviewEntry(index, name, type, "video", video, depth, path, childCount, children);
+    }
+
+    private WzImagePropertyPreviewEntry ReadRawDataPayload(
+        Stream stream,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path,
+        int version,
+        int? childCount,
+        List<WzImagePropertyPreviewEntry>? children)
+    {
         var dataLength = ReadCompressedInt32(stream);
         if (dataLength < 0)
         {
@@ -330,6 +377,19 @@ public sealed class WzImagePreviewReader
         SkipBytes(stream, dataLength);
         var rawData = new WzImageRawDataPreview(version, dataOffset, dataLength);
         return new WzImagePropertyPreviewEntry(index, name, type, "rawData", rawData, depth, path, childCount, children);
+    }
+
+    private void ReadMiniProperty(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int depth,
+        string? path,
+        out int? childCount,
+        out List<WzImagePropertyPreviewEntry>? children)
+    {
+        var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
+        children = depth + 1 < maxPropertyDepth ? parsedChildren : null;
     }
 
     private static WzImageVectorPreview ReadVectorPreview(Stream stream)
