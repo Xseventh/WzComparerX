@@ -81,6 +81,13 @@ Header output also supports JSON:
 dotnet run --project src/WzComparerX.Cli --no-build -- header --json path/to/file.wz
 ```
 
+To scan WZ package headers recursively under a file or directory:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- headers path/to/Data/Base
+dotnet run --project src/WzComparerX.Cli --no-build -- headers --json path/to/Data/Base
+```
+
 ## Run Avalonia App
 
 ```bash

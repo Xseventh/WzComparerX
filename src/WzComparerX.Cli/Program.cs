@@ -26,9 +26,9 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
     }
 
     var path = args[pathIndex];
-    if (!File.Exists(path))
+    if (!File.Exists(path) && !Directory.Exists(path))
     {
-        error.WriteLine($"File not found: {path}");
+        error.WriteLine($"File or directory not found: {path}");
         return 1;
     }
 
@@ -59,6 +59,17 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             return header.IsValid ? 0 : 1;
         }
 
+        if (string.Equals(command, "headers", StringComparison.OrdinalIgnoreCase))
+        {
+            var scanService = new WzPackageHeaderScanService();
+
+            var headers = await scanService.ScanAsync(path);
+            output.Write(json
+                ? new WzPackageHeaderScanJsonFormatter().Format(headers)
+                : new WzPackageHeaderScanFormatter().Format(headers));
+            return headers.All(header => header.IsValid) ? 0 : 1;
+        }
+
         WriteUsage(error);
         return 2;
     }
@@ -74,4 +85,5 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("Usage:");
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
+    error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
 }

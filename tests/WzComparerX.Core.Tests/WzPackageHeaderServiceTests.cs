@@ -65,6 +65,56 @@ public class WzPackageHeaderServiceTests
         }
     }
 
+    [Fact]
+    public async Task ScanAsync_ReturnsSortedHeadersForDirectory()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-header-scan-");
+        var firstPath = Path.Combine(directory.FullName, "A.wz");
+        var secondPath = Path.Combine(directory.FullName, "B.wz");
+        File.WriteAllBytes(secondPath, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+        File.WriteAllBytes(firstPath, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+
+        var service = new WzPackageHeaderScanService();
+
+        try
+        {
+            var headers = await service.ScanAsync(directory.FullName);
+
+            Assert.Equal([firstPath, secondPath], headers.Select(header => header.SourcePath));
+            Assert.All(headers, header => Assert.True(header.IsValid));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ScanFormatJson_ReturnsHeaderCollection()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-header-scan-json-");
+        var path = Path.Combine(directory.FullName, "Base.wz");
+        File.WriteAllBytes(path, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+
+        var service = new WzPackageHeaderScanService();
+        var formatter = new WzPackageHeaderScanJsonFormatter();
+
+        try
+        {
+            var headers = await service.ScanAsync(directory.FullName);
+            var output = formatter.Format(headers);
+
+            Assert.Contains("\"Files\": 1", output);
+            Assert.Contains("\"Headers\": [", output);
+            Assert.Contains("\"SourcePath\":", output);
+            Assert.Contains("\"Format\": \"Pkg1\"", output);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
     private static string WriteTemporaryPkg1File()
     {
         var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");

@@ -68,3 +68,15 @@ Initial WCX support covers only package header detection:
 
 This does not yet validate WZ version profiles, decrypt directory strings, or
 read the directory tree.
+
+## Local MapleStory Client Smoke Path
+
+A local MapleStoryNA client was found at:
+
+```text
+~/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data
+```
+
+This path is useful for manual smoke tests only. Do not commit files from it.
+Initial header scans show current local files use `PKG1` headers with 60-byte
+package headers, including `Data/Base/Base.wz` and `Data/Base/Base_000.wz`.
