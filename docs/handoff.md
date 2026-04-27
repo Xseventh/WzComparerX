@@ -86,7 +86,8 @@ a0858cb Bootstrap WCX modernization project
     text-format IMG streams, and Lua IMG scripts,
   - export `--out` file output, byte-oriented export documents, Lua multi-block
     concatenation, and structured export diagnostics for unsupported exports,
-  - split Lua and text IMG inspection readers out of `WzImageInspectionReader`,
+  - split Lua, text IMG, and binary IMG inspection readers out of
+    `WzImageInspectionReader`,
   - stable diagnostic codes/sources for parser payload limitations and export
     conditions.
 
@@ -129,6 +130,10 @@ IMG blocks. Text-format IMG streams starting with `#Property` or
 `--out <path>`; future binary exporters should use `--out`. Diagnostics carry
 stable codes and sources, and CLI text output prints codes in brackets when
 present.
+`WzImageInspectionReader` is now the small image-entry dispatcher; binary IMG
+property/object parsing lives in `WzImageBinaryInspectionReader`, with text and
+Lua stream shapes in their own readers. The next reader split should target
+Canvas/RawData/Video/Sound payload metadata inside the binary reader.
 
 ## Suggested Next Prompt
 
