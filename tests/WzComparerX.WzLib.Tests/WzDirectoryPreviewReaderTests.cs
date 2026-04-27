@@ -51,8 +51,8 @@ public class WzDirectoryPreviewReaderTests
         Assert.Equal(777, preview.WzVersion);
         Assert.Equal(59192u, preview.HashVersion);
         Assert.Equal(24, preview.Entries[0].HashOffsetPosition);
-        Assert.Equal(0x22c1230cu, preview.Entries[0].HashOffset);
-        Assert.Equal(16, preview.Entries[0].Offset);
+        Assert.Equal(0x22c12300u, preview.Entries[0].HashOffset);
+        Assert.Equal(28, preview.Entries[0].Offset);
     }
 
     [Fact]
@@ -83,7 +83,8 @@ public class WzDirectoryPreviewReaderTests
         [
             0x02,
             0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0x78, 0x56, 0x34, 0x12,
-            0x04, 0xfd, 0xce, 0xce, 0xca, 0x07, 0x02, 0xef, 0xcd, 0xab, 0x90
+            0x04, 0xfd, 0xce, 0xce, 0xca, 0x07, 0x02, 0xef, 0xcd, 0xab, 0x90,
+            0x00
         ];
         byte[] encryptedVersion = [0x7b, 0x00];
         var header = CreateHeader("PKG1", "Copyright", dataSize: encryptedVersion.Length + directoryData.Length);
@@ -95,7 +96,8 @@ public class WzDirectoryPreviewReaderTests
         byte[] directoryData =
         [
             0x01,
-            0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0x0c, 0x23, 0xc1, 0x22
+            0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0x00, 0x23, 0xc1, 0x22,
+            0x00
         ];
         var header = CreateHeader("PKG1", string.Empty, dataSize: directoryData.Length);
         return [.. header, .. directoryData];

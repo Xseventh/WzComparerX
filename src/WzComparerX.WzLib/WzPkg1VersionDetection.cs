@@ -83,7 +83,7 @@ public static class WzPkg1VersionDetector
 
                 case WzDirectoryEntryKind.Directory:
                     var directoryEnd = offset + 1;
-                    if (offset < header.DirectoryStartPosition || directoryEnd > header.FileSize)
+                    if (offset < header.DirectoryStartPosition || directoryEnd > directoryEndPosition)
                     {
                         return false;
                     }

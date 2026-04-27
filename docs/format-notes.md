@@ -93,5 +93,5 @@ KMS/GMS key modes are still exposed for older or region-specific files.
 
 PKG1 version detection resolves the local `Data/Base/Base.wz` header as WZ
 version `264` with hash version `54037`. Its top-level directory offsets resolve
-to byte positions `360` through `375`, a compact directory-stub region after the
-directory table rather than nested directory data inside the table.
+to byte positions `360` through `375`, a compact sequence of empty child
+directory tables immediately after the top-level directory table.

@@ -83,7 +83,7 @@ public sealed class WzDirectoryPreviewReader
                 hashOffset));
         }
 
-        var directoryEndPosition = stream.Position;
+        var directoryEndPosition = SkipChildDirectoryTrees(stream, entries, cancellationToken);
         var version = WzPkg1VersionDetector.Detect(header, entries, directoryEndPosition);
         if (version is not null)
         {
@@ -128,6 +128,76 @@ public sealed class WzDirectoryPreviewReader
         }
 
         return string.Empty;
+    }
+
+    private static long SkipChildDirectoryTrees(
+        Stream stream,
+        IReadOnlyList<WzDirectoryEntryPreview> entries,
+        CancellationToken cancellationToken)
+    {
+        var directoryCount = entries.Count(static entry => entry.Kind == WzDirectoryEntryKind.Directory);
+        for (var i = 0; i < directoryCount; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            SkipDirectoryTree(stream, cancellationToken);
+        }
+
+        return stream.Position;
+    }
+
+    private static void SkipDirectoryTree(Stream stream, CancellationToken cancellationToken)
+    {
+        var count = ReadCompressedInt32(stream);
+        var directoryCount = 0;
+
+        for (var i = 0; i < count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var nodeType = ReadByte(stream);
+            switch (nodeType)
+            {
+                case 0x02:
+                    SkipBytes(stream, sizeof(int));
+                    break;
+                case 0x03:
+                    SkipString(stream);
+                    directoryCount++;
+                    break;
+                case 0x04:
+                    SkipString(stream);
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown PKG1 directory node type 0x{nodeType:X2}.");
+            }
+
+            _ = ReadCompressedInt32(stream);
+            _ = ReadCompressedInt32(stream);
+            SkipBytes(stream, sizeof(uint));
+        }
+
+        for (var i = 0; i < directoryCount; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            SkipDirectoryTree(stream, cancellationToken);
+        }
+    }
+
+    private static void SkipString(Stream stream)
+    {
+        var size = ReadSByte(stream);
+        if (size < 0)
+        {
+            var byteCount = size == sbyte.MinValue ? ReadInt32LittleEndian(stream) : -size;
+            SkipBytes(stream, byteCount);
+            return;
+        }
+
+        if (size > 0)
+        {
+            var charCount = size == sbyte.MaxValue ? ReadInt32LittleEndian(stream) : size;
+            SkipBytes(stream, charCount * sizeof(char));
+        }
     }
 
     private static int ReadCompressedInt32(Stream stream)

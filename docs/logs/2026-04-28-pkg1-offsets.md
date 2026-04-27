@@ -22,10 +22,10 @@ directory offsets `360` through `375`.
 
 ## Notes
 
-The local split-package style stores top-level directory stubs after the
-directory table. WCX therefore validates PKG1 directory offsets as non-
-overlapping in-file locations rather than requiring every directory offset to
-land inside the directory table.
+The local split-package style stores top-level empty child directory tables
+immediately after the top-level directory table. WCX now mirrors WC's pre-read
+shape: recursively skip child directory tables to compute the directory-table
+end, then require directory offsets to land within that computed range.
 
 ## Verification
 
