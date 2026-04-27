@@ -90,6 +90,8 @@ The same file's top-level names decode with the no-op PKG1 string key
 The default `preview-dir` path now uses that key and can list names such as
 `Character`, `Effect`, `Etc`, `Item`, `Map`, `Mob`, `Npc`, `String`, and `UI`.
 KMS/GMS key modes are still exposed for older or region-specific files.
+`preview-dir --key auto` also selects the no-op key for this local GMS
+`Data/Base/Base.wz` smoke file.
 
 PKG1 version detection resolves the local `Data/Base/Base.wz` header as WZ
 version `264` with hash version `54037`. Its top-level directory offsets resolve

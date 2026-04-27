@@ -138,6 +138,27 @@ public class WzPackageHeaderServiceTests
         }
     }
 
+    [Fact]
+    public async Task PreviewDir_AutoDetectsNoOpStringKey()
+    {
+        var path = WriteTemporaryPkg1DirectoryFile();
+        var formatter = new WzDirectoryPreviewFormatter();
+
+        try
+        {
+            var preview = await WzDirectoryPreviewService.ReadAutoAsync(path);
+            var output = formatter.Format(preview);
+
+            Assert.Equal(WzStringEncryptionKind.None, preview.StringEncryptionKind);
+            Assert.Contains("stringKey: none", output);
+            Assert.Contains("0 | directory | name=abc", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string WriteTemporaryPkg1File()
     {
         var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");

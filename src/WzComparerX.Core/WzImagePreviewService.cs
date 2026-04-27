@@ -41,6 +41,30 @@ public sealed class WzImagePreviewService
         return imageReader.Read(stream, directoryPreview.Header, entry, selector);
     }
 
+    public static async Task<WzImagePreview> ReadAutoAsync(
+        string path,
+        string selector,
+        int maxPropertyDepth = 1,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentException.ThrowIfNullOrWhiteSpace(selector);
+
+        var directoryPreview = await WzDirectoryPreviewService.ReadAutoAsync(path, cancellationToken);
+        if (!directoryPreview.Header.IsValid)
+        {
+            return new WzImagePreview(directoryPreview.Header, selector, Entry: null, ObjectType: null);
+        }
+
+        var entry = FindImageEntry(directoryPreview, selector);
+        var stringEncryptionKind = directoryPreview.StringEncryptionKind ?? WzStringEncryptionKind.None;
+        await using var stream = File.OpenRead(path);
+        var imageReader = new WzImagePreviewReader(
+            new WzStringDecryptor(stringEncryptionKind),
+            maxPropertyDepth);
+        return imageReader.Read(stream, directoryPreview.Header, entry, selector);
+    }
+
     private static WzDirectoryEntryPreview FindImageEntry(WzDirectoryPreview preview, string selector)
     {
         if (int.TryParse(selector, out var index))

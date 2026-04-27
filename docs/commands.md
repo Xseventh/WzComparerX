@@ -94,16 +94,18 @@ child payloads:
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Base.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --json path/to/Base.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key auto path/to/Base.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms path/to/older-client.wz
 ```
 
 `preview-dir` defaults to `--key none`, which matches the current local
-MapleStoryNA client. Use `--key kms` or `--key gms` for files that need those
-legacy PKG1 string keys. `--key bms` remains accepted as a compatibility alias
-for WC's historical no-op key name.
+MapleStoryNA client. Use `--key auto` to try no-op, KMS, and GMS string keys
+and select the most plausible decoded directory names. Use `--key kms` or
+`--key gms` for files that need those legacy PKG1 string keys. `--key bms`
+remains accepted as a compatibility alias for WC's historical no-op key name.
 
-When PKG1 version detection succeeds, `preview-dir` also prints `wzVersion`,
-`hashVersion`, and calculated entry offsets.
+When PKG1 version detection succeeds, `preview-dir` also prints `stringKey`,
+`wzVersion`, `hashVersion`, and calculated entry offsets.
 If nested directory tables are present, `preview-dir` prints all discovered
 entries in linear read order and adds `totalEntries`.
 
@@ -112,10 +114,13 @@ To preview the top-level IMG object type for a PKG1 image entry:
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Base_000.wz smap.img
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --json path/to/Base_000.wz 1
+dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --key auto path/to/Base_000.wz StandardPDD.img
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --depth 2 path/to/Base_000.wz StandardPDD.img
 ```
 
 The selector can be an image name, image path, or preview entry index.
+`preview-img --key auto` reuses the directory preview key detection before
+reading the selected IMG payload.
 For top-level `Property` images, `preview-img` also lists the first layer of
 property names and simple scalar values. Nested objects are summarized by object
 type by default. Use `--depth 0` to print only the top-level object type, or

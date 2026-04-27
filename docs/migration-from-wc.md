@@ -148,6 +148,8 @@ For each migrated feature, record:
   - Preview nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
     object values.
+  - Auto-detect preview string key selection across no-op, KMS, and GMS modes
+    using conservative directory-name scoring.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
@@ -160,13 +162,14 @@ For each migrated feature, record:
   - IMG object type inline and referenced strings.
   - First-layer IMG `Property` scalar entries.
   - PKG1 encrypted-version detection against deterministic synthetic offsets.
+  - Core preview string key auto-detection against deterministic synthetic
+    directory data.
   - Core text formatter output for decoded preview entries.
   - Bounded nested IMG `Property` preview.
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview.
   - IMG Sound_DX8 metadata value preview.
 - Known unsupported cases:
-  - Key auto-detection is not implemented yet.
   - Full unbounded IMG property/value parsing is not implemented yet.
   - Canvas pixel decoding is not implemented yet.
   - RawData payload decoding is not implemented yet.

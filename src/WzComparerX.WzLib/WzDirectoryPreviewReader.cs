@@ -70,7 +70,8 @@ public sealed class WzDirectoryPreviewReader
             entryCount,
             entries,
             version?.WzVersion,
-            version?.HashVersion);
+            version?.HashVersion,
+            stringDecryptor.Kind);
     }
 
     private int ReadDirectoryTree(

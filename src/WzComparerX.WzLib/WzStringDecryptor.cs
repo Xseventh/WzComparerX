@@ -27,6 +27,8 @@ public sealed class WzStringDecryptor
         this.kind = kind;
     }
 
+    public WzStringEncryptionKind Kind => kind;
+
     public string Decode(ReadOnlySpan<byte> bytes, bool unicode)
     {
         var buffer = bytes.ToArray();

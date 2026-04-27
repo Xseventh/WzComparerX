@@ -5,4 +5,5 @@ public sealed record WzDirectoryPreview(
     int EntryCount,
     IReadOnlyList<WzDirectoryEntryPreview> Entries,
     int? WzVersion = null,
-    uint? HashVersion = null);
+    uint? HashVersion = null,
+    WzStringEncryptionKind? StringEncryptionKind = null);

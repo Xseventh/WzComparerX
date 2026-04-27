@@ -20,4 +20,11 @@ public sealed class WzDirectoryPreviewService
     {
         return reader.ReadAsync(path, cancellationToken);
     }
+
+    public static Task<WzDirectoryPreview> ReadAutoAsync(
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        return WzStringKeyAutoDetector.ReadDirectoryPreviewAsync(path, cancellationToken);
+    }
 }

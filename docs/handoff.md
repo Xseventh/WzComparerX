@@ -20,6 +20,12 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+9af2181 Add bounded IMG property depth preview
+2a275e7 Preview IMG object value metadata
+6e1f495 Preview IMG Convex2D values
+8fc50ba Bound preview image depth option
+84e4b49 Preview IMG video metadata
+2d3d8b3 Preview IMG sound metadata
 f3118ae Add shallow IMG property preview
 7b0c917 Add IMG object type preview
 25a599f Add recursive PKG1 directory preview
@@ -74,7 +80,8 @@ a0858cb Bootstrap WCX modernization project
     `Property` objects,
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview,
-  - IMG Sound_DX8 metadata value preview.
+  - IMG Sound_DX8 metadata value preview,
+  - preview string-key auto-detection across no-op/KMS/GMS modes.
 
 ## Important Decisions
 
@@ -94,8 +101,10 @@ calculate entry offsets, and enumerate recursively nested directory tables.
 object type. For `Property` images it lists first-layer property names and
 simple scalar values by default. `--depth 0` prints only the object type, while
 `--depth 2` can expand one nested `Property` layer. Deeper previews can expose
-Canvas metadata and Vector child values in local UI files. Canvas pixel decoding
-and RawData/Video/Sound payload decoding are not implemented yet.
+Canvas metadata and Vector child values in local UI files. `preview-dir` and
+`preview-img` support `--key auto` to select among no-op/KMS/GMS directory
+string decoding. Canvas pixel decoding and RawData/Video/Sound payload decoding
+are not implemented yet.
 
 ## Suggested Next Prompt
 
@@ -106,7 +115,7 @@ We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Then continue Milestone 2 by adding the
 next IMG value reader or refinement such as PNG/Canvas pixel metadata,
-additional sound format metadata, or key auto-detection for preview workflows.
+additional sound format metadata, or broader IMG property value support.
 Add fixture-backed tests, run build/test, update docs/logs, and commit the work
 on the current branch.
 ```

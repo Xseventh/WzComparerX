@@ -13,7 +13,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
 
     var command = args[0];
     var json = false;
-    var stringKey = WzStringEncryptionKind.None;
+    WzStringEncryptionKind? stringKey = WzStringEncryptionKind.None;
     var imagePropertyDepth = 1;
     string? path = null;
     string? selector = null;
@@ -121,9 +121,9 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
 
         if (string.Equals(command, "preview-dir", StringComparison.OrdinalIgnoreCase))
         {
-            var previewService = new WzDirectoryPreviewService(stringKey);
-
-            var preview = await previewService.ReadAsync(path);
+            var preview = stringKey is null
+                ? await WzDirectoryPreviewService.ReadAutoAsync(path)
+                : await new WzDirectoryPreviewService(stringKey.Value).ReadAsync(path);
             output.Write(json
                 ? new WzDirectoryPreviewJsonFormatter().Format(preview)
                 : new WzDirectoryPreviewFormatter().Format(preview));
@@ -138,9 +138,9 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
                 return 2;
             }
 
-            var previewService = new WzImagePreviewService(stringKey, imagePropertyDepth);
-
-            var preview = await previewService.ReadAsync(path, selector);
+            var preview = stringKey is null
+                ? await WzImagePreviewService.ReadAutoAsync(path, selector, imagePropertyDepth)
+                : await new WzImagePreviewService(stringKey.Value, imagePropertyDepth).ReadAsync(path, selector);
             output.Write(json
                 ? new WzImagePreviewJsonFormatter().Format(preview)
                 : new WzImagePreviewFormatter().Format(preview));
@@ -163,12 +163,18 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
-    error.WriteLine("  wcx preview-dir [--json] [--key none|kms|gms] <pkg1-wz-file>");
-    error.WriteLine("  wcx preview-img [--json] [--key none|kms|gms] [--depth 0-64] <pkg1-wz-file> <image-name-or-index>");
+    error.WriteLine("  wcx preview-dir [--json] [--key auto|none|kms|gms] <pkg1-wz-file>");
+    error.WriteLine("  wcx preview-img [--json] [--key auto|none|kms|gms] [--depth 0-64] <pkg1-wz-file> <image-name-or-index>");
 }
 
-static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)
+static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)
 {
+    if (string.Equals(value, "auto", StringComparison.OrdinalIgnoreCase))
+    {
+        kind = null;
+        return true;
+    }
+
     if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(value, "noop", StringComparison.OrdinalIgnoreCase) ||
         string.Equals(value, "bms", StringComparison.OrdinalIgnoreCase))

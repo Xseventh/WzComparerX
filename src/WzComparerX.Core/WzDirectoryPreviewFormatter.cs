@@ -12,6 +12,11 @@ public sealed class WzDirectoryPreviewFormatter
         var builder = new StringBuilder();
         builder.AppendLine($"source: {preview.Header.SourcePath}");
         builder.AppendLine($"format: {preview.Header.Format.ToString().ToLowerInvariant()}");
+        if (preview.StringEncryptionKind is not null)
+        {
+            builder.AppendLine($"stringKey: {FormatStringKey(preview.StringEncryptionKind.Value)}");
+        }
+
         if (preview.WzVersion is not null && preview.HashVersion is not null)
         {
             builder.AppendLine($"wzVersion: {preview.WzVersion}");
@@ -58,5 +63,10 @@ public sealed class WzDirectoryPreviewFormatter
         }
 
         return builder.ToString();
+    }
+
+    private static string FormatStringKey(WzStringEncryptionKind kind)
+    {
+        return kind.ToString().ToLowerInvariant();
     }
 }
