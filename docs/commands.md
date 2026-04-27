@@ -119,7 +119,8 @@ The selector can be an image name, image path, or preview entry index.
 For top-level `Property` images, `preview-img` also lists the first layer of
 property names and simple scalar values. Nested objects are summarized by object
 type by default. Use `--depth 0` to print only the top-level object type, or
-`--depth 2` to expand one nested `Property` layer.
+`--depth 2` to expand one nested `Property` layer. The accepted depth range is
+`0` through `64`.
 
 ## Run Avalonia App
 

@@ -103,6 +103,13 @@ public class WzImagePreviewReaderTests
         Assert.Equal(42, child.Value);
     }
 
+    [Fact]
+    public void Constructor_RejectsDepthAboveLimit()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => new WzImagePreviewReader(maxPropertyDepth: WzImagePreviewReader.MaxPropertyPreviewDepth + 1));
+    }
+
     private static WzPackageHeader CreateHeader()
     {
         return new WzPackageHeader(

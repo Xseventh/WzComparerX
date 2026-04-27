@@ -4,14 +4,18 @@ namespace WzComparerX.WzLib;
 
 public sealed class WzImagePreviewReader
 {
+    public const int MaxPropertyPreviewDepth = 64;
+
     private readonly WzStringDecryptor stringDecryptor;
     private readonly int maxPropertyDepth;
 
     public WzImagePreviewReader(WzStringDecryptor? stringDecryptor = null, int maxPropertyDepth = 1)
     {
-        if (maxPropertyDepth < 0)
+        if (maxPropertyDepth is < 0 or > MaxPropertyPreviewDepth)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxPropertyDepth), "Property preview depth cannot be negative.");
+            throw new ArgumentOutOfRangeException(
+                nameof(maxPropertyDepth),
+                $"Property preview depth must be between 0 and {MaxPropertyPreviewDepth}.");
         }
 
         this.stringDecryptor = stringDecryptor ?? new WzStringDecryptor();

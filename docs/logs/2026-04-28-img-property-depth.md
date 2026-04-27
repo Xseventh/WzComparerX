@@ -5,6 +5,7 @@
 - Added bounded recursive IMG `Property` preview support.
 - Added `preview-img --depth n`; the default remains first-layer preview.
 - Kept `--depth 0` available for object-type-only smoke checks.
+- Bounded accepted preview depth to `0` through `64`.
 - Added deterministic nested-property reader coverage.
 
 ## Validation

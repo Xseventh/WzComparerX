@@ -41,8 +41,10 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
         {
             if (i + 1 >= args.Length ||
                 !int.TryParse(args[i + 1], out imagePropertyDepth) ||
-                imagePropertyDepth < 0)
+                imagePropertyDepth < 0 ||
+                imagePropertyDepth > WzImagePreviewReader.MaxPropertyPreviewDepth)
             {
+                error.WriteLine($"Depth must be between 0 and {WzImagePreviewReader.MaxPropertyPreviewDepth}.");
                 WriteUsage(error);
                 return 2;
             }
@@ -162,7 +164,7 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
     error.WriteLine("  wcx preview-dir [--json] [--key none|kms|gms] <pkg1-wz-file>");
-    error.WriteLine("  wcx preview-img [--json] [--key none|kms|gms] [--depth n] <pkg1-wz-file> <image-name-or-index>");
+    error.WriteLine("  wcx preview-img [--json] [--key none|kms|gms] [--depth 0-64] <pkg1-wz-file> <image-name-or-index>");
 }
 
 static bool TryParseStringKey(string value, out WzStringEncryptionKind kind)
