@@ -1,3 +1,4 @@
+using System.Text;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.Core;
@@ -40,7 +41,8 @@ public sealed class ResourceExportService
             inspection.SourcePath,
             ResourceExportKind.Metadata,
             "application/json",
-            new ResourceInspectionJsonFormatter().Format(inspection));
+            Encoding.UTF8.GetBytes(new ResourceInspectionJsonFormatter().Format(inspection)),
+            inspection.Diagnostics);
     }
 
     private static async Task<ResourceExportDocument> ExportTextImageAsync(
@@ -52,14 +54,14 @@ public sealed class ResourceExportService
         var inspection = await ReadImageInspectionAsync(path, selector, options, cancellationToken);
         if (inspection.ObjectValue is not WzImageTextInspection text)
         {
-            throw new InvalidDataException($"Selected image is not a supported text IMG: {selector}.");
+            throw Unsupported(ResourceExportKind.Text, selector);
         }
 
         return new ResourceExportDocument(
             inspection.Header.SourcePath,
             ResourceExportKind.Text,
             "text/plain; charset=utf-8",
-            text.Text);
+            Encoding.UTF8.GetBytes(text.Text));
     }
 
     private static async Task<ResourceExportDocument> ExportLuaAsync(
@@ -72,14 +74,24 @@ public sealed class ResourceExportService
         var scripts = ExtractLuaScripts(inspection).ToArray();
         if (scripts.Length == 0)
         {
-            throw new InvalidDataException($"Selected image is not a supported Lua IMG: {selector}.");
+            throw Unsupported(ResourceExportKind.Lua, selector);
         }
 
+        var diagnostics = scripts.Length > 1
+            ? new[]
+            {
+                new ResourceInspectionDiagnostic(
+                    "info",
+                    $"Exported {scripts.Length} Lua blocks in stream order.",
+                    selector)
+            }
+            : null;
         return new ResourceExportDocument(
             inspection.Header.SourcePath,
             ResourceExportKind.Lua,
             "text/x-lua; charset=utf-8",
-            string.Join(Environment.NewLine, scripts));
+            Encoding.UTF8.GetBytes(string.Concat(scripts)),
+            diagnostics);
     }
 
     private static IEnumerable<string> ExtractLuaScripts(WzImageInspection inspection)
@@ -122,5 +134,17 @@ public sealed class ResourceExportService
             options.MaxPropertyDepth,
             cancellationToken);
         return context.ImageInspection;
+    }
+
+    private static ResourceExportException Unsupported(ResourceExportKind kind, string? selector)
+    {
+        var message = kind switch
+        {
+            ResourceExportKind.Text => $"Selected image is not a supported text IMG: {selector}.",
+            ResourceExportKind.Lua => $"Selected image is not a supported Lua IMG: {selector}.",
+            _ => $"Unsupported export type: {kind}."
+        };
+
+        return new ResourceExportException(new ResourceInspectionDiagnostic("error", message, selector));
     }
 }

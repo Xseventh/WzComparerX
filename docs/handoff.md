@@ -83,7 +83,10 @@ a0858cb Bootstrap WCX modernization project
   - CLI-level golden tests for representative `inspect` and `inspect --debug`
     text/JSON output,
   - initial Core export abstraction and CLI `export` command for metadata, WC
-    text-format IMG streams, and Lua IMG scripts.
+    text-format IMG streams, and Lua IMG scripts,
+  - export `--out` file output, byte-oriented export documents, Lua multi-block
+    concatenation, and structured export diagnostics for unsupported exports,
+  - split Lua and text IMG inspection readers out of `WzImageInspectionReader`.
 
 ## Important Decisions
 
@@ -120,7 +123,8 @@ implemented yet. Lua image entries report script length and a short UTF-8
 snippet; `export --type lua` writes the full decoded script for supported Lua
 IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
-`export --type text`.
+`export --type text`. Text exports write to stdout by default or exact bytes to
+`--out <path>`; future binary exporters should use `--out`.
 
 ## Suggested Next Prompt
 

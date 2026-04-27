@@ -305,6 +305,68 @@ public class CliApplicationTests
         }
     }
 
+    [Fact]
+    public async Task ExportLuaImage_ConcatenatesMultipleBlocksWithoutSeparator()
+    {
+        var path = WriteTemporaryPkg1ImageFile("Script.lua", CreateLuaImage("return ", "42\n"));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "lua", "--key", "none", path, "Script.lua");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal("return 42\n", result.Output);
+            Assert.Contains("info: Exported 2 Lua blocks in stream order. (Script.lua)", result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExportWithOut_WritesContentToFileAndKeepsStdoutEmpty()
+    {
+        const string text = "#Property\nname=hello\n";
+        var path = WriteTemporaryPkg1ImageFile("Text.img", CreateTextImage(text));
+        var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-export-{Guid.NewGuid():N}.txt");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "text", "--out", outputPath, "--key", "none", path, "Text.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(text, await File.ReadAllTextAsync(outputPath));
+        }
+        finally
+        {
+            File.Delete(path);
+            File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ExportUnsupportedType_ReturnsStructuredDiagnostic()
+    {
+        const string text = "#Property\nname=hello\n";
+        var path = WriteTemporaryPkg1ImageFile("Text.img", CreateTextImage(text));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "lua", "--key", "none", path, "Text.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Contains("error: Selected image is not a supported Lua IMG: Text.img. (Text.img)", result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static async Task<CliResult> RunCliAsync(params string[] args)
     {
         using var output = new StringWriter();
@@ -417,15 +479,23 @@ public class CliApplicationTests
         return [0x00, 0x00, 0x00, 0x00, .. Encoding.UTF8.GetBytes(text)];
     }
 
-    private static byte[] CreateLuaImage(string script)
+    private static byte[] CreateLuaImage(params string[] scripts)
     {
-        var payload = Encoding.UTF8.GetBytes(script);
-        if (payload.Length > sbyte.MaxValue)
+        var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00 };
+        foreach (var script in scripts)
         {
-            throw new ArgumentOutOfRangeException(nameof(script), "Test Lua payload must fit in one compressed-int byte.");
+            var payload = Encoding.UTF8.GetBytes(script);
+            if (payload.Length > sbyte.MaxValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(scripts), "Test Lua payloads must fit in one compressed-int byte.");
+            }
+
+            bytes.Add(0x01);
+            bytes.Add((byte)payload.Length);
+            bytes.AddRange(payload);
         }
 
-        return [0x00, 0x00, 0x00, 0x00, 0x01, (byte)payload.Length, .. payload];
+        return bytes.ToArray();
     }
 
     private static byte[] CreateObjectProperty(string name, byte[] objectValue)

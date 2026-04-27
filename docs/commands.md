@@ -137,12 +137,19 @@ To export data through the Core export abstraction:
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type metadata fixtures/synthetic/basic-tree.json
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type text --key auto path/to/String.wz SomeText.img
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key auto path/to/UI.wz SomeScript.lua
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --out script.lua --key auto path/to/UI.wz SomeScript.lua
 ```
 
 `export --type metadata` writes the same stable inspection JSON shape used by
 `inspect --debug --json`. `export --type text` currently supports WC text-format
 IMG streams. `export --type lua` writes the full decoded Lua script for
-supported Lua IMG blocks.
+supported Lua IMG blocks. If a Lua image contains multiple blocks, they are
+concatenated in stream order without inserting extra separators.
+
+By default, text exports write their payload to stdout and keep diagnostics on
+stderr so shell pipelines receive only exported content. Use `--out <path>` to
+write exact export bytes to a file. Future binary exporters should require
+`--out` instead of writing binary data through text stdout.
 
 ## Run Avalonia App
 

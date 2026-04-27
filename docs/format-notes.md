@@ -124,6 +124,8 @@ instead of the normal IMG object-tag stream. Lua blocks use flag `0x01`,
 compressed payload length, key-stream-only decryption, and UTF-8 text. WCX now
 inspects Lua block count, payload length, and a short text snippet.
 `export --type lua` writes the full decoded script for supported Lua IMG blocks.
+Multiple Lua blocks are exported by concatenating decoded blocks in stream order
+without adding separators.
 The local client contains WZ2Lua and `_Canvas` packages with Lua-related
 strings, but the currently supported directory inspection paths do not yet
 expose a direct local `.lua` smoke entry.

@@ -21,11 +21,25 @@ public static class CliApplication
         var imagePropertyDepth = 1;
         string? path = null;
         string? selector = null;
+        string? exportOutputPath = null;
         for (var i = 1; i < args.Length; i++)
         {
             if (string.Equals(args[i], "--json", StringComparison.OrdinalIgnoreCase))
             {
                 json = true;
+                continue;
+            }
+
+            if (string.Equals(args[i], "--out", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i + 1 >= args.Length)
+                {
+                    WriteUsage(error);
+                    return 2;
+                }
+
+                exportOutputPath = args[i + 1];
+                i++;
                 continue;
             }
 
@@ -161,12 +175,31 @@ public static class CliApplication
 
                 var options = new ResourceExportOptions(exportKind, stringKey, imagePropertyDepth);
                 var document = await service.ExportAsync(path, selector, options);
-                output.Write(document.Content);
+                if (exportOutputPath is not null)
+                {
+                    await File.WriteAllBytesAsync(exportOutputPath, document.Content);
+                    WriteDiagnostics(document.Diagnostics, error);
+                    return 0;
+                }
+
+                if (!document.IsText)
+                {
+                    error.WriteLine("Binary export requires --out <path>.");
+                    return 2;
+                }
+
+                output.Write(document.GetTextContent());
+                WriteDiagnostics(document.Diagnostics, error);
                 return 0;
             }
 
             WriteUsage(error);
             return 2;
+        }
+        catch (ResourceExportException ex)
+        {
+            WriteDiagnostics([ex.Diagnostic], error);
+            return 1;
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
@@ -182,7 +215,32 @@ public static class CliApplication
         error.WriteLine("  wcx header [--json] <wz-file>");
         error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
         error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
-        error.WriteLine("  wcx export [--type metadata|text|lua] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+        error.WriteLine("  wcx export [--type metadata|text|lua] [--out <path>] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+    }
+
+    private static void WriteDiagnostics(
+        IReadOnlyList<ResourceInspectionDiagnostic>? diagnostics,
+        TextWriter error)
+    {
+        if (diagnostics is null)
+        {
+            return;
+        }
+
+        foreach (var diagnostic in diagnostics)
+        {
+            error.Write(diagnostic.Severity);
+            error.Write(": ");
+            error.Write(diagnostic.Message);
+            if (!string.IsNullOrWhiteSpace(diagnostic.Path))
+            {
+                error.Write(" (");
+                error.Write(diagnostic.Path);
+                error.Write(')');
+            }
+
+            error.WriteLine();
+        }
     }
 
     private static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)
