@@ -83,7 +83,23 @@ public sealed class WzDirectoryPreviewReader
                 hashOffset));
         }
 
-        return new WzDirectoryPreview(header, entryCount, entries);
+        var directoryEndPosition = stream.Position;
+        var version = WzPkg1VersionDetector.Detect(header, entries, directoryEndPosition);
+        if (version is not null)
+        {
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var offset = WzPkg1VersionDetector.CalculateOffset(header, entries[i], version.HashVersion);
+                entries[i] = entries[i] with { Offset = offset };
+            }
+        }
+
+        return new WzDirectoryPreview(
+            header,
+            entryCount,
+            entries,
+            version?.WzVersion,
+            version?.HashVersion);
     }
 
     private static WzDirectoryEntryKind ToEntryKind(byte nodeType)

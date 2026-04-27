@@ -88,8 +88,8 @@ dotnet run --project src/WzComparerX.Cli --no-build -- headers path/to/Data/Base
 dotnet run --project src/WzComparerX.Cli --no-build -- headers --json path/to/Data/Base
 ```
 
-To preview raw PKG1 top-level directory entries without decrypting names or
-calculating real offsets:
+To preview raw PKG1 top-level directory entries without recursively loading
+child payloads:
 
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Base.wz
@@ -101,6 +101,9 @@ dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms pat
 MapleStoryNA client. Use `--key kms` or `--key gms` for files that need those
 legacy PKG1 string keys. `--key bms` remains accepted as a compatibility alias
 for WC's historical no-op key name.
+
+When PKG1 version detection succeeds, `preview-dir` also prints `wzVersion`,
+`hashVersion`, and calculated entry offsets.
 
 ## Run Avalonia App
 

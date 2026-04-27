@@ -83,11 +83,15 @@ package headers, including `Data/Base/Base.wz` and `Data/Base/Base_000.wz`.
 
 `Data/Base/Base.wz` can be raw-previewed without name decryption. It currently
 contains 16 top-level directory entries (`nodeType` `0x03`) with zero data size
-and checksum fields. This confirms the PKG1 directory entry shape before WZ
-version/hash and string decryption are migrated.
+and checksum fields. This confirms the PKG1 directory entry shape.
 
 The same file's top-level names decode with the no-op PKG1 string key
 (`--key none`; WC historically names this `BMS`).
 The default `preview-dir` path now uses that key and can list names such as
 `Character`, `Effect`, `Etc`, `Item`, `Map`, `Mob`, `Npc`, `String`, and `UI`.
 KMS/GMS key modes are still exposed for older or region-specific files.
+
+PKG1 version detection resolves the local `Data/Base/Base.wz` header as WZ
+version `264` with hash version `54037`. Its top-level directory offsets resolve
+to byte positions `360` through `375`, a compact directory-stub region after the
+directory table rather than nested directory data inside the table.

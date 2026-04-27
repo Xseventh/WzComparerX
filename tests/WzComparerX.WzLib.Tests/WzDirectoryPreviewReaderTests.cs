@@ -34,6 +34,49 @@ public class WzDirectoryPreviewReaderTests
         Assert.Equal(0x90abcdefu, preview.Entries[1].HashOffset);
     }
 
+    [Fact]
+    public void Read_MissingEncryptedVersionComputesPkg1Offsets()
+    {
+        var bytes = CreatePkg1WithMissingEncryptedVersion();
+        var headerReader = new WzPackageHeaderReader();
+        var previewReader = new WzDirectoryPreviewReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Base.wz");
+
+        var preview = previewReader.Read(stream, header);
+
+        Assert.True(header.IsEncryptedVersionMissing);
+        Assert.Equal(777, preview.WzVersion);
+        Assert.Equal(59192u, preview.HashVersion);
+        Assert.Equal(24, preview.Entries[0].HashOffsetPosition);
+        Assert.Equal(0x22c1230cu, preview.Entries[0].HashOffset);
+        Assert.Equal(16, preview.Entries[0].Offset);
+    }
+
+    [Fact]
+    public void Read_EncryptedVersionDetectsPkg1VersionAndDirectoryStubOffset()
+    {
+        var bytes = CreatePkg1WithEncryptedVersionAndDirectoryStubOffset();
+        var headerReader = new WzPackageHeaderReader();
+        var previewReader = new WzDirectoryPreviewReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Base.wz");
+
+        var preview = previewReader.Read(stream, header);
+
+        Assert.False(header.IsEncryptedVersionMissing);
+        Assert.Equal(0x20, header.EncryptedVersion);
+        Assert.Equal(777, preview.WzVersion);
+        Assert.Equal(59192u, preview.HashVersion);
+        Assert.Equal(26, preview.Entries[0].HashOffsetPosition);
+        Assert.Equal(0x3176a2c0u, preview.Entries[0].HashOffset);
+        Assert.Equal(30, preview.Entries[0].Offset);
+    }
+
     private static byte[] CreatePkg1WithDirectoryEntries()
     {
         byte[] directoryData =
@@ -44,6 +87,30 @@ public class WzDirectoryPreviewReaderTests
         ];
         byte[] encryptedVersion = [0x7b, 0x00];
         var header = CreateHeader("PKG1", "Copyright", dataSize: encryptedVersion.Length + directoryData.Length);
+        return [.. header, .. encryptedVersion, .. directoryData];
+    }
+
+    private static byte[] CreatePkg1WithMissingEncryptedVersion()
+    {
+        byte[] directoryData =
+        [
+            0x01,
+            0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0x0c, 0x23, 0xc1, 0x22
+        ];
+        var header = CreateHeader("PKG1", string.Empty, dataSize: directoryData.Length);
+        return [.. header, .. directoryData];
+    }
+
+    private static byte[] CreatePkg1WithEncryptedVersionAndDirectoryStubOffset()
+    {
+        byte[] encryptedVersion = [0x20, 0x00];
+        byte[] directoryData =
+        [
+            0x01,
+            0x03, 0xfd, 0xcb, 0xc9, 0xcf, 0x05, 0x01, 0xc0, 0xa2, 0x76, 0x31,
+            0x00
+        ];
+        var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
         return [.. header, .. encryptedVersion, .. directoryData];
     }
 

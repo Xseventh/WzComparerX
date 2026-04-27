@@ -12,6 +12,12 @@ public sealed class WzDirectoryPreviewFormatter
         var builder = new StringBuilder();
         builder.AppendLine($"source: {preview.Header.SourcePath}");
         builder.AppendLine($"format: {preview.Header.Format.ToString().ToLowerInvariant()}");
+        if (preview.WzVersion is not null && preview.HashVersion is not null)
+        {
+            builder.AppendLine($"wzVersion: {preview.WzVersion}");
+            builder.AppendLine($"hashVersion: {preview.HashVersion}");
+        }
+
         builder.AppendLine($"entries: {preview.EntryCount}");
 
         foreach (var entry in preview.Entries)
@@ -33,6 +39,12 @@ public sealed class WzDirectoryPreviewFormatter
             builder.Append(entry.Checksum);
             builder.Append(" | hashOffset=");
             builder.Append(entry.HashOffset);
+            if (entry.Offset is not null)
+            {
+                builder.Append(" | offset=");
+                builder.Append(entry.Offset);
+            }
+
             builder.AppendLine();
         }
 
