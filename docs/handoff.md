@@ -132,8 +132,9 @@ stable codes and sources, and CLI text output prints codes in brackets when
 present.
 `WzImageInspectionReader` is now the small image-entry dispatcher; binary IMG
 property/object parsing lives in `WzImageBinaryInspectionReader`, with text and
-Lua stream shapes in their own readers. The next reader split should target
-Canvas/RawData/Video/Sound payload metadata inside the binary reader.
+Lua stream shapes in their own readers. Canvas/RawData/Video/Sound payload
+metadata now lives in `WzImagePayloadInspectionReader`; the next reader split
+should target binary object value dispatch and nested property recursion.
 
 ## Suggested Next Prompt
 
