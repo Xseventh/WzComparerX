@@ -112,6 +112,11 @@ width, height, texture format, scale, page count, payload offset, and payload
 length. With `--depth 3`, Canvas mini-properties expose child values such as
 `origin` vectors.
 
+The same object readers are also used when an IMG root object is a supported
+non-`Property` type. For example, top-level Canvas and `Shape2D#Vector2D`
+objects produce direct `objectValue` metadata instead of only printing their
+object type.
+
 `Data/Sound/Sound_000.wz` contains sound image entries such as
 `AchievementEff.img` and `Bgm00.img`. With `preview-img --depth 2`, their
 `Sound_DX8` values preview as metadata including duration, sound declaration,

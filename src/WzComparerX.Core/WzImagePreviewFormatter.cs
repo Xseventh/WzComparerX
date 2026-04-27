@@ -27,6 +27,11 @@ public sealed class WzImagePreviewFormatter
             builder.AppendLine($"objectType: {preview.ObjectType}");
         }
 
+        if (preview.ObjectValue is not null)
+        {
+            builder.AppendLine($"objectValue: {preview.ObjectValue}");
+        }
+
         if (preview.PropertyCount is not null)
         {
             builder.AppendLine($"properties: {preview.PropertyCount}");

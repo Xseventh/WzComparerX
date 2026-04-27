@@ -142,6 +142,7 @@ For each migrated feature, record:
   - Detect encrypted-version PKG1 files by validating calculated offsets.
   - Enumerate recursively nested PKG1 directory tables in WC's linear layout.
   - Read the top-level IMG object type name from calculated image offsets.
+  - Preview supported top-level non-`Property` IMG object values.
   - Read first-layer `Property` entries, including simple scalar values and
     nested object summaries.
   - Expand nested IMG `Property` objects to a caller-provided bounded depth.
@@ -169,6 +170,7 @@ For each migrated feature, record:
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview.
   - IMG Sound_DX8 metadata value preview.
+  - Top-level IMG Canvas metadata and Vector value preview.
 - Known unsupported cases:
   - Full unbounded IMG property/value parsing is not implemented yet.
   - Canvas pixel decoding is not implemented yet.

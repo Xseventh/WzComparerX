@@ -57,10 +57,21 @@ public sealed class WzImagePreviewReader
         stream.Position = offset;
         var objectType = ReadImageObjectTypeName(stream, offset);
         int? propertyCount = null;
-        var properties = objectType == "Property" && maxPropertyDepth > 0
-            ? ReadPropertyEntries(stream, offset, imageEndOffset, depth: 0, parentPath: string.Empty, out propertyCount)
-            : null;
-        return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties);
+        IReadOnlyList<WzImagePropertyPreviewEntry>? properties = null;
+        object? objectValue = null;
+        if (objectType == "Property" && maxPropertyDepth > 0)
+        {
+            properties = ReadPropertyEntries(stream, offset, imageEndOffset, depth: 0, parentPath: string.Empty, out propertyCount);
+        }
+        else if (maxPropertyDepth > 0)
+        {
+            var objectPreview = ReadTopLevelObjectValue(stream, offset, imageEndOffset, objectType);
+            objectValue = objectPreview?.Value;
+            propertyCount = objectPreview?.ChildCount;
+            properties = objectPreview?.Children;
+        }
+
+        return new WzImagePreview(header, selector, entry, objectType, propertyCount, properties, objectValue);
     }
 
     private string ReadImageObjectTypeName(Stream stream, long imageBaseOffset)
@@ -165,6 +176,25 @@ public sealed class WzImagePreviewReader
 
         stream.Position = endPosition;
         return property;
+    }
+
+    private WzImagePropertyPreviewEntry? ReadTopLevelObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        string objectType)
+    {
+        return objectType switch
+        {
+            "Shape2D#Vector2D" => ReadVectorObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            "Canvas" => ReadCanvasObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            "Shape2D#Convex2D" => ReadConvexObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            "UOL" => ReadUolObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            "RawData" => ReadRawDataObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            "Canvas#Video" => ReadVideoObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            "Sound_DX8" => ReadSoundObjectValue(stream, imageBaseOffset, imageEndOffset, 0, null, 0x09, 0, null),
+            _ => null
+        };
     }
 
     private WzImagePropertyPreviewEntry ReadNestedPropertyObjectValue(

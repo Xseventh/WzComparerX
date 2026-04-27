@@ -184,6 +184,67 @@ public class WzImagePreviewReaderTests
     }
 
     [Fact]
+    public void Read_ReturnsTopLevelCanvasMetadata()
+    {
+        var bytes = CreateImage(
+            "Canvas",
+            0x00,
+            0x00,
+            16,
+            8,
+            2,
+            0x00,
+            1,
+            0,
+            (byte)0x00,
+            (byte)0x00,
+            BitConverter.GetBytes(3),
+            0x01,
+            0x02,
+            0x03);
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.Equal("Canvas", preview.ObjectType);
+        var canvas = Assert.IsType<WzImageCanvasPreview>(preview.ObjectValue);
+        Assert.Equal(16, canvas.Width);
+        Assert.Equal(8, canvas.Height);
+        Assert.Equal(2, canvas.Format);
+        Assert.Equal(1, canvas.Pages);
+        Assert.Equal(3, canvas.DataLength);
+    }
+
+    [Fact]
+    public void Read_ReturnsTopLevelVectorValue()
+    {
+        var bytes = CreateImage("Shape2D#Vector2D", 12, 34);
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.Equal("Shape2D#Vector2D", preview.ObjectType);
+        Assert.Equal(new WzImageVectorPreview(12, 34), preview.ObjectValue);
+    }
+
+    [Fact]
+    public void Read_DoesNotReadTopLevelObjectValueWhenDepthIsZero()
+    {
+        var bytes = CreateImage("Shape2D#Vector2D", 12, 34);
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 0);
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.Equal("Shape2D#Vector2D", preview.ObjectType);
+        Assert.Null(preview.ObjectValue);
+    }
+
+    [Fact]
     public void Read_ReturnsConvexObjectValue()
     {
         var bytes = CreatePropertyImage(CreateObjectProperty(
@@ -428,8 +489,7 @@ public class WzImagePreviewReaderTests
 
     private static byte[] CreatePropertyImage(params byte[][] entries)
     {
-        var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00 };
-        AddImageObjectName(bytes, "Property");
+        var bytes = new List<byte>(CreateImage("Property"));
         bytes.Add(0x00);
         bytes.Add(0x00);
         bytes.Add((byte)entries.Length);
@@ -438,6 +498,14 @@ public class WzImagePreviewReaderTests
             bytes.AddRange(entry);
         }
 
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateImage(string objectType, params object[] payloadParts)
+    {
+        var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00 };
+        AddImageObjectName(bytes, objectType);
+        AddPayloadParts(bytes, payloadParts);
         return bytes.ToArray();
     }
 
@@ -455,6 +523,13 @@ public class WzImagePreviewReaderTests
     {
         var bytes = new List<byte>();
         AddImageObjectName(bytes, objectType);
+        AddPayloadParts(bytes, payloadParts);
+
+        return bytes.ToArray();
+    }
+
+    private static void AddPayloadParts(List<byte> bytes, params object[] payloadParts)
+    {
         foreach (var part in payloadParts)
         {
             switch (part)
@@ -472,8 +547,6 @@ public class WzImagePreviewReaderTests
                     throw new ArgumentException($"Unsupported payload part type: {part.GetType()}.");
             }
         }
-
-        return bytes.ToArray();
     }
 
     private static byte[] CreateImageString(string value)

@@ -129,7 +129,9 @@ type by default. Use `--depth 0` to print only the top-level object type, or
 `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas metadata, and RawData
 metadata, Canvas#Video metadata, and Sound_DX8 metadata; Canvas pixel decoding,
 RawData payload decoding, video payload decoding, and audio payload decoding are
-not implemented yet.
+not implemented yet. When the IMG root object is one of those supported
+non-`Property` object types, `preview-img` prints its top-level `objectValue`
+metadata directly.
 
 ## Run Avalonia App
 

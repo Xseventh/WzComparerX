@@ -20,6 +20,7 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+b2b972d Add preview string key auto detection
 9af2181 Add bounded IMG property depth preview
 2a275e7 Preview IMG object value metadata
 6e1f495 Preview IMG Convex2D values
@@ -81,7 +82,9 @@ a0858cb Bootstrap WCX modernization project
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value preview,
   - IMG Sound_DX8 metadata value preview,
-  - preview string-key auto-detection across no-op/KMS/GMS modes.
+  - preview string-key auto-detection across no-op/KMS/GMS modes,
+  - top-level IMG object value previews for supported non-`Property` object
+    types.
 
 ## Important Decisions
 
@@ -98,13 +101,14 @@ header detection and PKG1 directory preview working against the local
 MapleStoryNA client. `preview-dir` can decode names, detect PKG1 version/hash,
 calculate entry offsets, and enumerate recursively nested directory tables.
 `preview-img` can select an image by name/path/index and read its top-level IMG
-object type. For `Property` images it lists first-layer property names and
-simple scalar values by default. `--depth 0` prints only the object type, while
-`--depth 2` can expand one nested `Property` layer. Deeper previews can expose
-Canvas metadata and Vector child values in local UI files. `preview-dir` and
-`preview-img` support `--key auto` to select among no-op/KMS/GMS directory
-string decoding. Canvas pixel decoding and RawData/Video/Sound payload decoding
-are not implemented yet.
+object type. For supported non-`Property` root objects it also exposes direct
+`objectValue` metadata. For `Property` images it lists first-layer property
+names and simple scalar values by default. `--depth 0` prints only the object
+type, while `--depth 2` can expand one nested `Property` layer. Deeper previews
+can expose Canvas metadata and Vector child values in local UI files.
+`preview-dir` and `preview-img` support `--key auto` to select among
+no-op/KMS/GMS directory string decoding. Canvas pixel decoding and
+RawData/Video/Sound payload decoding are not implemented yet.
 
 ## Suggested Next Prompt
 
