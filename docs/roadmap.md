@@ -67,7 +67,7 @@ Goal: make CLI useful for automation.
 
 Tasks:
 
-- Add `inspect`.
+- Add `inspect`. Started with the initial Core inspection model and CLI command.
 - Add WZ package header CLI output.
 - Add JSON dump. In progress for `list` and `header`.
 - Add XML dump if parser coverage allows.

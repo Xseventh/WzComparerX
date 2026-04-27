@@ -145,6 +145,20 @@ WC text-format IMG streams are also recognized when their payload starts with
 `#Property` or `Root <Property>`. They preview as `objectType: Property` with
 scalar values and bounded nested property entries.
 
+To inspect resources through the stable Core inspection model instead of the
+migration-oriented preview DTOs:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect fixtures/synthetic/basic-tree.json
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto path/to/Base.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto --depth 2 path/to/Base_000.wz StandardPDD.img
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --json fixtures/synthetic/basic-tree.json
+```
+
+`inspect` is intended as the shared model surface for future UI, export, search,
+and automation workflows. `preview-*` commands remain useful parser-migration
+diagnostics and may expose lower-level parser details.
+
 ## Run Avalonia App
 
 ```bash

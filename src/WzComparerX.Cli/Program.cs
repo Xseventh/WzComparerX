@@ -59,7 +59,9 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             continue;
         }
 
-        if (selector is null && string.Equals(command, "preview-img", StringComparison.OrdinalIgnoreCase))
+        if (selector is null &&
+            (string.Equals(command, "preview-img", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase)))
         {
             selector = args[i];
             continue;
@@ -147,6 +149,17 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             return preview.IsValid ? 0 : 1;
         }
 
+        if (string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase))
+        {
+            var service = new ResourceInspectionService();
+
+            var inspection = await service.InspectAsync(path, selector, stringKey, imagePropertyDepth);
+            output.Write(json
+                ? new ResourceInspectionJsonFormatter().Format(inspection)
+                : new ResourceInspectionFormatter().Format(inspection));
+            return 0;
+        }
+
         WriteUsage(error);
         return 2;
     }
@@ -163,6 +176,7 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
+    error.WriteLine("  wcx inspect [--json] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
     error.WriteLine("  wcx preview-dir [--json] [--key auto|none|kms|gms] <pkg1-wz-file>");
     error.WriteLine("  wcx preview-img [--json] [--key auto|none|kms|gms] [--depth 0-64] <pkg1-wz-file> <image-name-or-index>");
 }

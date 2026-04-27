@@ -64,6 +64,55 @@ public class ResourceDocumentServiceTests
         Assert.Contains("Beginner Cap", output);
     }
 
+    [Fact]
+    public async Task InspectSynthetic_ReturnsStableInspectionTree()
+    {
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        var inspection = await service.InspectAsync(FixturePath("basic-tree.json"));
+        var output = formatter.Format(inspection);
+
+        Assert.Equal("synthetic", inspection.Format);
+        Assert.Equal("basic-tree", inspection.Root.Name);
+        Assert.Contains("source: ", output);
+        Assert.Contains("basic-tree [directory]", output);
+        Assert.Contains("name [value] : string = \"Beginner Cap\"", output);
+    }
+
+    [Fact]
+    public async Task InspectSyntheticJson_ReturnsInspectionDocument()
+    {
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionJsonFormatter();
+
+        var inspection = await service.InspectAsync(FixturePath("basic-tree.json"));
+        var output = formatter.Format(inspection);
+        using var json = JsonDocument.Parse(output);
+
+        Assert.Equal("synthetic", json.RootElement.GetProperty("Format").GetString());
+        Assert.Equal("basic-tree", json.RootElement.GetProperty("Root").GetProperty("Name").GetString());
+    }
+
+    [Fact]
+    public async Task InspectInvalidWz_ThrowsInvalidDataException()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-invalid-{Guid.NewGuid():N}.wz");
+        await File.WriteAllTextAsync(path, "NOPE");
+
+        try
+        {
+            var service = new ResourceInspectionService();
+
+            await Assert.ThrowsAsync<InvalidDataException>(
+                () => service.InspectAsync(path, stringKey: WzComparerX.WzLib.WzStringEncryptionKind.None));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string FixturePath(string fileName)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

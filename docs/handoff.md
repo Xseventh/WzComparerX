@@ -20,13 +20,18 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+19cd8a9 Preview Canvas payload metadata
+115a38f Preview text image properties
+50e6b90 Preview Lua image entries
+3604f66 Preview top-level IMG object values
 b2b972d Add preview string key auto detection
-9af2181 Add bounded IMG property depth preview
-2a275e7 Preview IMG object value metadata
-6e1f495 Preview IMG Convex2D values
-8fc50ba Bound preview image depth option
-84e4b49 Preview IMG video metadata
 2d3d8b3 Preview IMG sound metadata
+84e4b49 Preview IMG video metadata
+ebf41c8 Preview IMG RawData metadata
+6e1f495 Preview IMG Convex2D values
+2a275e7 Preview IMG object value metadata
+8fc50ba Bound preview image depth option
+9af2181 Add bounded IMG property depth preview
 f3118ae Add shallow IMG property preview
 7b0c917 Add IMG object type preview
 25a599f Add recursive PKG1 directory preview
@@ -87,7 +92,8 @@ a0858cb Bootstrap WCX modernization project
   - top-level IMG object value previews for supported non-`Property` object
     types,
   - Lua image block preview for `.lua` entries,
-  - text-format IMG v1/v2 property preview.
+  - text-format IMG v1/v2 property preview,
+  - initial Core `inspect` model and CLI command.
 
 ## Important Decisions
 
@@ -117,6 +123,9 @@ RawData/Video/Sound payload decoding are not implemented yet. Lua image entries
 preview block count, payload length, and a short UTF-8 snippet, but full script
 export is not implemented yet. Text-format IMG streams starting with
 `#Property` or `Root <Property>` preview as bounded `Property` trees.
+The first stable `inspect` abstraction now projects synthetic fixtures, WZ
+directory previews, and WZ IMG previews into a generic inspection tree so future
+UI/export/search work does not depend directly on preview DTOs.
 
 ## Suggested Next Prompt
 
@@ -125,9 +134,11 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Then continue Milestone 2 by adding the
-next IMG value reader or refinement such as PNG/Canvas pixel metadata,
-additional sound format metadata, or broader IMG property value support.
+docs/development-guidelines.md first. Milestone 2 parser migration remains in
+progress, and Milestone 3 inspect/export work has started with the initial Core
+inspection model. Continue with either the next parser migration item such as
+Canvas pixel decoding, or the next inspect/export refinement that uses the new
+inspection model.
 Add fixture-backed tests, run build/test, update docs/logs, and commit the work
 on the current branch.
 ```

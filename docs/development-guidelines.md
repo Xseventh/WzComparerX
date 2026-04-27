@@ -10,6 +10,9 @@ These rules are meant to keep WCX understandable across long development gaps.
 - Make CLI workflows available before UI-only workflows.
 - Keep changes small enough to review and revert.
 - Record meaningful architectural choices in `docs/adr/`.
+- WCX is still in early development. Do not preserve awkward internal APIs just
+  for compatibility with previous WCX commits; prefer timely refactors when a
+  cleaner module boundary appears.
 
 ## Project Boundaries
 
@@ -36,6 +39,7 @@ Allowed:
 
 - Workspace/session orchestration.
 - File open/close workflows.
+- Stable inspect models used by CLI, UI, export, and search workflows.
 - Search, export, compare services.
 - Progress, cancellation, diagnostics abstractions.
 
