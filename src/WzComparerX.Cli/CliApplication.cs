@@ -230,6 +230,13 @@ public static class CliApplication
         foreach (var diagnostic in diagnostics)
         {
             error.Write(diagnostic.Severity);
+            if (!string.IsNullOrWhiteSpace(diagnostic.Code))
+            {
+                error.Write(" [");
+                error.Write(diagnostic.Code);
+                error.Write(']');
+            }
+
             error.Write(": ");
             error.Write(diagnostic.Message);
             if (!string.IsNullOrWhiteSpace(diagnostic.Path))

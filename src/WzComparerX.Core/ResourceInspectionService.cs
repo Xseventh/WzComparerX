@@ -341,18 +341,38 @@ public sealed class ResourceInspectionService
 
     private static IReadOnlyList<ResourceInspectionDiagnostic>? BuildValueDiagnostics(object? value, string? path)
     {
-        var message = value switch
+        var diagnostic = value switch
         {
-            WzImageCanvasInspection => "Canvas pixel decoding is not implemented.",
-            WzImageRawDataInspection => "RawData payload decoding is not implemented.",
-            WzImageVideoInspection => "Video payload decoding is not implemented.",
-            WzImageSoundInspection => "Audio payload decoding is not implemented.",
+            WzImageCanvasInspection => new ResourceInspectionDiagnostic(
+                "info",
+                "Canvas pixel decoding is not implemented.",
+                path,
+                ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported,
+                "parser"),
+            WzImageRawDataInspection => new ResourceInspectionDiagnostic(
+                "info",
+                "RawData payload decoding is not implemented.",
+                path,
+                ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported,
+                "parser"),
+            WzImageVideoInspection => new ResourceInspectionDiagnostic(
+                "info",
+                "Video payload decoding is not implemented.",
+                path,
+                ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported,
+                "parser"),
+            WzImageSoundInspection => new ResourceInspectionDiagnostic(
+                "info",
+                "Audio payload decoding is not implemented.",
+                path,
+                ResourceDiagnosticCodes.AudioPayloadDecodingUnsupported,
+                "parser"),
             _ => null
         };
 
-        return message is null
+        return diagnostic is null
             ? null
-            : [new ResourceInspectionDiagnostic("info", message, path)];
+            : [diagnostic];
     }
 
     private static void AddOptional(List<ResourceInspectionMetadata> metadata, string name, object? value)

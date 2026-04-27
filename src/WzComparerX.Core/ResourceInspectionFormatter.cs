@@ -77,6 +77,13 @@ public sealed class ResourceInspectionFormatter
         {
             builder.Append(' ', (depth + 1) * 2);
             builder.Append(diagnostic.Severity);
+            if (!string.IsNullOrWhiteSpace(diagnostic.Code))
+            {
+                builder.Append(" [");
+                builder.Append(diagnostic.Code);
+                builder.Append(']');
+            }
+
             builder.Append(": ");
             builder.Append(diagnostic.Message);
             if (!string.IsNullOrWhiteSpace(diagnostic.Path))

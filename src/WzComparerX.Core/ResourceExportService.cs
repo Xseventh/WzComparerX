@@ -83,7 +83,9 @@ public sealed class ResourceExportService
                 new ResourceInspectionDiagnostic(
                     "info",
                     $"Exported {scripts.Length} Lua blocks in stream order.",
-                    selector)
+                    selector,
+                    ResourceDiagnosticCodes.ExportLuaMultipleBlocks,
+                    "export")
             }
             : null;
         return new ResourceExportDocument(
@@ -145,6 +147,11 @@ public sealed class ResourceExportService
             _ => $"Unsupported export type: {kind}."
         };
 
-        return new ResourceExportException(new ResourceInspectionDiagnostic("error", message, selector));
+        return new ResourceExportException(new ResourceInspectionDiagnostic(
+            "error",
+            message,
+            selector,
+            ResourceDiagnosticCodes.ExportUnsupported,
+            "export"));
     }
 }

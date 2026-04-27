@@ -43,7 +43,8 @@ Allowed:
 - Workspace/session orchestration.
 - File open/close workflows.
 - Stable inspect models used by CLI, UI, export, and search workflows.
-- Structured inspect diagnostics and debug metadata.
+- Structured inspect diagnostics and debug metadata. Diagnostics should include
+  stable codes for user-visible or automatable conditions.
 - Search, export, compare services.
 - Progress, cancellation, diagnostics abstractions.
 

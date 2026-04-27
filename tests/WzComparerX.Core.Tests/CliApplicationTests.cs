@@ -316,7 +316,7 @@ public class CliApplicationTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal("return 42\n", result.Output);
-            Assert.Contains("info: Exported 2 Lua blocks in stream order. (Script.lua)", result.Error);
+            Assert.Contains("info [wcx.export.lua.multipleBlocks]: Exported 2 Lua blocks in stream order. (Script.lua)", result.Error);
         }
         finally
         {
@@ -359,7 +359,7 @@ public class CliApplicationTests
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains("error: Selected image is not a supported Lua IMG: Text.img. (Text.img)", result.Error);
+            Assert.Contains("error [wcx.export.unsupported]: Selected image is not a supported Lua IMG: Text.img. (Text.img)", result.Error);
         }
         finally
         {

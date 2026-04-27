@@ -80,7 +80,8 @@ Tasks:
 - Add XML dump if parser coverage allows.
 - Add export abstraction in Core. Started for metadata, text IMG, Lua, and
   `--out` file output.
-- Add error diagnostics model.
+- Add error diagnostics model. Started with stable diagnostic codes and sources
+  shared by inspect/export formatting.
 
 Exit criteria:
 
