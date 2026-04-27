@@ -1,3 +1,4 @@
+using System.Text.Json;
 using WzComparerX.Core;
 
 namespace WzComparerX.Core.Tests;
@@ -43,6 +44,24 @@ public class ResourceDocumentServiceTests
 
             """.ReplaceLineEndings(),
             output);
+    }
+
+    [Fact]
+    public async Task FormatJson_ReturnsDeterministicTreeDocument()
+    {
+        var service = new ResourceDocumentService();
+        var formatter = new ResourceTreeJsonFormatter();
+
+        var document = await service.OpenAsync(FixturePath("basic-tree.json"));
+
+        var output = formatter.Format(document);
+        using var json = JsonDocument.Parse(output);
+        var root = json.RootElement.GetProperty("Root");
+
+        Assert.True(json.RootElement.TryGetProperty("SourcePath", out _));
+        Assert.Equal("basic-tree", root.GetProperty("Name").GetString());
+        Assert.Equal("Directory", root.GetProperty("Kind").GetString());
+        Assert.Contains("Beginner Cap", output);
     }
 
     private static string FixturePath(string fileName)

@@ -69,7 +69,7 @@ Tasks:
 
 - Add `inspect`.
 - Add WZ package header CLI output.
-- Add JSON dump.
+- Add JSON dump. In progress for `list` and `header`.
 - Add XML dump if parser coverage allows.
 - Add export abstraction in Core.
 - Add error diagnostics model.

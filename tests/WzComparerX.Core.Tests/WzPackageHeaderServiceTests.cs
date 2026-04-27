@@ -41,6 +41,30 @@ public class WzPackageHeaderServiceTests
         }
     }
 
+    [Fact]
+    public async Task ReadAsync_FormatsPkg1HeaderJsonDeterministically()
+    {
+        var path = WriteTemporaryPkg1File();
+        var service = new WzPackageHeaderService();
+        var formatter = new WzPackageHeaderJsonFormatter();
+
+        try
+        {
+            var header = await service.ReadAsync(path);
+            var output = formatter.Format(header);
+
+            Assert.Contains("\"Format\": \"Pkg1\"", output);
+            Assert.Contains("\"Signature\": \"PKG1\"", output);
+            Assert.Contains("\"HeaderSize\": 25", output);
+            Assert.Contains("\"EncryptedVersion\": 123", output);
+            Assert.Contains("\"IsEncryptedVersionMissing\": false", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string WriteTemporaryPkg1File()
     {
         var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");

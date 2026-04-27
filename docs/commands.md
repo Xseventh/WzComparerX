@@ -63,10 +63,22 @@ After building, the Milestone 1 fixture browser can be run with:
 dotnet run --project src/WzComparerX.Cli --no-build -- list fixtures/synthetic/basic-tree.json
 ```
 
+For machine-readable output:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- list --json fixtures/synthetic/basic-tree.json
+```
+
 To inspect the package header of a WZ-like file:
 
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- header path/to/file.wz
+```
+
+Header output also supports JSON:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- header --json path/to/file.wz
 ```
 
 ## Run Avalonia App

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace WzComparerX.WzLib;
 
 public sealed record RawResourceNode(
@@ -7,6 +9,6 @@ public sealed record RawResourceNode(
     string? ValueKind = null,
     string? Value = null)
 {
+    [JsonIgnore]
     public bool HasChildren => Children.Count > 0;
 }
-
