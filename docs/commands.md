@@ -137,6 +137,10 @@ Lua image entries (`*.lua`) are previewed as `objectType: Lua` with block count,
 payload length, and a short UTF-8 snippet. Full Lua script export is not
 implemented yet.
 
+WC text-format IMG streams are also recognized when their payload starts with
+`#Property` or `Root <Property>`. They preview as `objectType: Property` with
+scalar values and bounded nested property entries.
+
 ## Run Avalonia App
 
 ```bash

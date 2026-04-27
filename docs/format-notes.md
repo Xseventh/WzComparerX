@@ -125,6 +125,13 @@ export full scripts yet. The local client contains WZ2Lua and `_Canvas` packages
 with Lua-related strings, but the currently supported directory preview paths do
 not yet expose a direct local `.lua` smoke entry.
 
+WC also supports text-format IMG streams. V1 starts with `#Property` and uses
+`key = value` lines with `{ ... }` property blocks. V2 starts with
+`Root <Property>` and uses tab indentation plus explicit node types such as
+`<I4>`, `<I8>`, `<R8>`, `<String>`, `<Vector>`, and `<Property>`. WCX previews
+both variants into the same bounded property preview model. Current local GMS
+data did not expose a direct text IMG smoke sample in the scanned WZ files.
+
 `Data/Sound/Sound_000.wz` contains sound image entries such as
 `AchievementEff.img` and `Bgm00.img`. With `preview-img --depth 2`, their
 `Sound_DX8` values preview as metadata including duration, sound declaration,

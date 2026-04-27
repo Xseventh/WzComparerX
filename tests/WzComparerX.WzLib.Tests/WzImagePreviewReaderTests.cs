@@ -288,6 +288,67 @@ public class WzImagePreviewReaderTests
     }
 
     [Fact]
+    public void Read_ReturnsTextPropertyV1Preview()
+    {
+        var bytes = CreateTextImage("""
+            #Property
+            name = Beginner Cap
+            reqLevel = 0
+            info = {
+              attack = 1
+            }
+            """);
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.Equal("Property", preview.ObjectType);
+        Assert.Equal(3, preview.PropertyCount);
+        Assert.NotNull(preview.Properties);
+        Assert.Equal("name", preview.Properties[0].Name);
+        Assert.Equal("string", preview.Properties[0].Kind);
+        Assert.Equal("Beginner Cap", preview.Properties[0].Value);
+        Assert.Equal("int32", preview.Properties[1].Kind);
+        Assert.Equal(0, preview.Properties[1].Value);
+        var info = preview.Properties[2];
+        Assert.Equal("object", info.Kind);
+        Assert.Equal(1, info.ChildCount);
+        Assert.NotNull(info.Children);
+        Assert.Equal("info/attack", Assert.Single(info.Children).Path);
+    }
+
+    [Fact]
+    public void Read_ReturnsTextPropertyV2Preview()
+    {
+        var bytes = CreateTextImage(
+            "Root <Property>\n" +
+            "\ttab <Vector>\t12,34\n" +
+            "\ttitle <String>\tHello\n" +
+            "\tnested <Property>\t[no_binary]\n" +
+            "\t\tcount <I4>\t7\n");
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.Equal("Property", preview.ObjectType);
+        Assert.Equal(3, preview.PropertyCount);
+        Assert.NotNull(preview.Properties);
+        Assert.Equal(new WzImageVectorPreview(12, 34), preview.Properties[0].Value);
+        Assert.Equal("Hello", preview.Properties[1].Value);
+        var nested = preview.Properties[2];
+        Assert.Equal("object", nested.Kind);
+        Assert.Equal(1, nested.ChildCount);
+        Assert.NotNull(nested.Children);
+        Assert.Equal(7, Assert.Single(nested.Children).Value);
+    }
+
+    [Fact]
     public void Read_ReturnsConvexObjectValue()
     {
         var bytes = CreatePropertyImage(CreateObjectProperty(
@@ -552,6 +613,14 @@ public class WzImagePreviewReaderTests
         var payload = System.Text.Encoding.UTF8.GetBytes(script);
         var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00, 0x01 };
         bytes.Add((byte)payload.Length);
+        bytes.AddRange(payload);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateTextImage(string text)
+    {
+        var payload = System.Text.Encoding.UTF8.GetBytes(text.ReplaceLineEndings("\n"));
+        var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00 };
         bytes.AddRange(payload);
         return bytes.ToArray();
     }

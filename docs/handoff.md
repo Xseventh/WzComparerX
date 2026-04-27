@@ -85,7 +85,8 @@ a0858cb Bootstrap WCX modernization project
   - preview string-key auto-detection across no-op/KMS/GMS modes,
   - top-level IMG object value previews for supported non-`Property` object
     types,
-  - Lua image block preview for `.lua` entries.
+  - Lua image block preview for `.lua` entries,
+  - text-format IMG v1/v2 property preview.
 
 ## Important Decisions
 
@@ -111,7 +112,8 @@ can expose Canvas metadata and Vector child values in local UI files.
 no-op/KMS/GMS directory string decoding. Canvas pixel decoding and
 RawData/Video/Sound payload decoding are not implemented yet. Lua image entries
 preview block count, payload length, and a short UTF-8 snippet, but full script
-export is not implemented yet.
+export is not implemented yet. Text-format IMG streams starting with
+`#Property` or `Root <Property>` preview as bounded `Property` trees.
 
 ## Suggested Next Prompt
 

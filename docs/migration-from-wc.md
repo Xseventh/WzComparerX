@@ -152,6 +152,8 @@ For each migrated feature, record:
   - Auto-detect preview string key selection across no-op, KMS, and GMS modes
     using conservative directory-name scoring.
   - Preview `.lua` IMG entries through WC's Lua-specific block stream path.
+  - Preview WC text-format IMG v1 (`#Property`) and v2 (`Root <Property>`)
+    streams.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
@@ -173,9 +175,11 @@ For each migrated feature, record:
   - IMG Sound_DX8 metadata value preview.
   - Top-level IMG Canvas metadata and Vector value preview.
   - Lua image block preview and `--depth 0` behavior.
+  - Text IMG v1/v2 scalar and nested property preview.
 - Known unsupported cases:
   - Full unbounded IMG property/value parsing is not implemented yet.
   - Full Lua script export is not implemented yet.
+  - Text IMG v2 multiline string parsing is not implemented yet.
   - Canvas pixel decoding is not implemented yet.
   - RawData payload decoding is not implemented yet.
   - Canvas#Video payload decoding is not implemented yet.
