@@ -1,5 +1,8 @@
+using System.Buffers.Binary;
+using System.Text;
 using System.Text.Json;
 using WzComparerX.Core;
+using WzComparerX.WzLib;
 
 namespace WzComparerX.Core.Tests;
 
@@ -113,6 +116,107 @@ public class ResourceDocumentServiceTests
         }
     }
 
+    [Fact]
+    public async Task InspectDebugImage_IncludesEntryPropertyAndPayloadMetadata()
+    {
+        var imageBytes = CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x00,
+                16,
+                8,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(3),
+                0x00,
+                0x78,
+                0x9c)));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
+
+            Assert.Contains("entryDataSize:", output);
+            Assert.Contains("objectType: Property", output);
+            Assert.Contains("icon [canvas]", output);
+            Assert.Contains("type: 0x09", output);
+            Assert.Contains("dataOffset:", output);
+            Assert.Contains("dataLength: 3", output);
+            Assert.Contains("compressionKind: Zlib", output);
+            Assert.Contains("Canvas pixel decoding is not implemented.", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectNormalImage_DoesNotIncludeDebugMetadata()
+    {
+        var path = WriteTemporaryPkg1ImageFile(CreatePropertyImage());
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+            var output = formatter.Format(inspection);
+
+            Assert.DoesNotContain("debug:", output);
+            Assert.DoesNotContain("entryDataSize", output);
+            Assert.DoesNotContain("nodeType", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugJson_IncludesStructuredMetadata()
+    {
+        var path = WriteTemporaryPkg1ImageFile(CreatePropertyImage());
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionJsonFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
+            using var json = JsonDocument.Parse(output);
+
+            Assert.True(json.RootElement.TryGetProperty("DebugMetadata", out var metadata));
+            Assert.Contains(metadata.EnumerateArray(), item =>
+                item.GetProperty("Name").GetString() == "stringKey" &&
+                item.GetProperty("Value").GetString() == "none");
+            Assert.True(json.RootElement.GetProperty("Root").TryGetProperty("DebugMetadata", out _));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     private static string FixturePath(string fileName)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -128,5 +232,141 @@ public class ResourceDocumentServiceTests
         }
 
         throw new FileNotFoundException($"Could not locate fixture '{fileName}'.");
+    }
+
+    private static string WriteTemporaryPkg1ImageFile(byte[] imageBytes)
+    {
+        var directoryData = CreateDirectoryDataForImage("Canvas.img", imageBytes.Length - 4);
+        var header = CreateHeader("PKG1", string.Empty, dataSize: directoryData.Length + imageBytes.Length);
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-image-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, [.. header, .. directoryData, .. imageBytes]);
+        return path;
+    }
+
+    private static byte[] CreateDirectoryDataForImage(string name, int imageSize)
+    {
+        var bytes = new List<byte> { 0x01, 0x04 };
+        AddWzString(bytes, name);
+        bytes.Add((byte)imageSize);
+        bytes.Add(0x00);
+        var hashOffsetPosition = bytes.Count + 16;
+        var imageOffset = 16 + bytes.Count + sizeof(uint) + 4;
+        var hashOffset = CreateHashOffset(
+            hashOffsetPosition: checked((uint)hashOffsetPosition),
+            desiredOffset: checked((uint)imageOffset));
+        bytes.AddRange(BitConverter.GetBytes(hashOffset));
+        return bytes.ToArray();
+    }
+
+    private static uint CreateHashOffset(uint hashOffsetPosition, uint desiredOffset)
+    {
+        const uint headerSize = 16;
+        var hashVersion = WzPkg1VersionHash.CalculateHashVersion(777);
+        unchecked
+        {
+            var offset = hashOffsetPosition - headerSize;
+            offset = ~offset;
+            offset *= hashVersion;
+            offset -= 0x581C3F6D;
+            var distance = (int)offset & 0x1F;
+            offset = (offset << distance) | (offset >> (32 - distance));
+            return offset ^ (desiredOffset - headerSize * 2);
+        }
+    }
+
+    private static byte[] CreatePropertyImage(params byte[][] entries)
+    {
+        var bytes = new List<byte>(CreateImage("Property"));
+        bytes.Add(0x00);
+        bytes.Add(0x00);
+        bytes.Add((byte)entries.Length);
+        foreach (var entry in entries)
+        {
+            bytes.AddRange(entry);
+        }
+
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateObjectProperty(string name, byte[] objectValue)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x09);
+        bytes.AddRange(BitConverter.GetBytes(objectValue.Length));
+        bytes.AddRange(objectValue);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateObjectValue(string objectType, params object[] payloadParts)
+    {
+        var bytes = new List<byte>();
+        AddImageObjectName(bytes, objectType);
+        AddPayloadParts(bytes, payloadParts);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateImage(string objectType, params object[] payloadParts)
+    {
+        var bytes = new List<byte> { 0x00, 0x00, 0x00, 0x00 };
+        AddImageObjectName(bytes, objectType);
+        AddPayloadParts(bytes, payloadParts);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateImageString(string value)
+    {
+        var bytes = new List<byte> { 0x00 };
+        AddWzString(bytes, value);
+        return bytes.ToArray();
+    }
+
+    private static void AddPayloadParts(List<byte> bytes, params object[] payloadParts)
+    {
+        foreach (var part in payloadParts)
+        {
+            switch (part)
+            {
+                case byte value:
+                    bytes.Add(value);
+                    break;
+                case int value:
+                    bytes.Add((byte)value);
+                    break;
+                case byte[] value:
+                    bytes.AddRange(value);
+                    break;
+                default:
+                    throw new ArgumentException($"Unsupported payload part type: {part.GetType()}.");
+            }
+        }
+    }
+
+    private static void AddImageObjectName(List<byte> bytes, string value)
+    {
+        bytes.Add(0x73);
+        AddWzString(bytes, value);
+    }
+
+    private static void AddWzString(List<byte> bytes, string value)
+    {
+        bytes.Add(unchecked((byte)(sbyte)-value.Length));
+        for (var i = 0; i < value.Length; i++)
+        {
+            bytes.Add((byte)(value[i] ^ (byte)(0xAA + i)));
+        }
+    }
+
+    private static byte[] CreateHeader(string signature, string copyright, long dataSize)
+    {
+        var copyrightBytes = Encoding.ASCII.GetBytes(copyright);
+        var headerSize = 4 + sizeof(long) + sizeof(int) + copyrightBytes.Length;
+        var bytes = new byte[headerSize];
+
+        Encoding.ASCII.GetBytes(signature, bytes);
+        BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(4, sizeof(long)), dataSize);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(12, sizeof(int)), headerSize);
+        copyrightBytes.CopyTo(bytes.AsSpan(16));
+        return bytes;
     }
 }

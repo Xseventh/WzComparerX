@@ -117,20 +117,26 @@ public class WzPackageHeaderServiceTests
     }
 
     [Fact]
-    public async Task PreviewDir_FormatsDirectoryPreview()
+    public async Task InspectDebug_FormatsDirectoryDiagnostics()
     {
         var path = WriteTemporaryPkg1DirectoryFile();
-        var service = new WzDirectoryPreviewService(
-            new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(WzStringEncryptionKind.None)));
-        var formatter = new WzDirectoryPreviewFormatter();
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
 
         try
         {
-            var preview = await service.ReadAsync(path);
-            var output = formatter.Format(preview);
+            var inspection = await service.InspectAsync(
+                path,
+                selector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
 
-            Assert.Contains("entries: 1", output);
-            Assert.Contains("0 | directory | name=abc | type=0x03 | size=5 | checksum=1 | hashOffset=305419896", output);
+            Assert.Contains("entryCount: 1", output);
+            Assert.Contains("abc [directory]", output);
+            Assert.Contains("nodeType: 0x03", output);
+            Assert.Contains("dataSize: 5", output);
+            Assert.Contains("checksum: 1", output);
+            Assert.Contains("hashOffset: 305419896", output);
         }
         finally
         {
@@ -139,19 +145,22 @@ public class WzPackageHeaderServiceTests
     }
 
     [Fact]
-    public async Task PreviewDir_AutoDetectsNoOpStringKey()
+    public async Task InspectDebug_AutoDetectsNoOpStringKey()
     {
         var path = WriteTemporaryPkg1DirectoryFile();
-        var formatter = new WzDirectoryPreviewFormatter();
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
 
         try
         {
-            var preview = await WzDirectoryPreviewService.ReadAutoAsync(path);
-            var output = formatter.Format(preview);
+            var inspection = await service.InspectAsync(
+                path,
+                selector: null,
+                new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
 
-            Assert.Equal(WzStringEncryptionKind.None, preview.StringEncryptionKind);
             Assert.Contains("stringKey: none", output);
-            Assert.Contains("0 | directory | name=abc", output);
+            Assert.Contains("abc [directory]", output);
         }
         finally
         {

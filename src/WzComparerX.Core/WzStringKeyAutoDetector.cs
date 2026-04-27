@@ -11,7 +11,7 @@ public static class WzStringKeyAutoDetector
         WzStringEncryptionKind.Gms
     ];
 
-    public static async Task<WzDirectoryPreview> ReadDirectoryPreviewAsync(
+    public static async Task<WzDirectoryPreview> ReadDirectoryAsync(
         string path,
         CancellationToken cancellationToken = default)
     {
@@ -26,8 +26,8 @@ public static class WzStringKeyAutoDetector
             WzDirectoryPreview preview;
             try
             {
-                var service = new WzDirectoryPreviewService(candidate);
-                preview = await service.ReadAsync(path, cancellationToken);
+                var reader = new WzDirectoryPreviewReader(stringDecryptor: new WzStringDecryptor(candidate));
+                preview = await reader.ReadAsync(path, cancellationToken);
             }
             catch (InvalidDataException)
             {

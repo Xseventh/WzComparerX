@@ -20,6 +20,7 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+84a5f88 Add resource inspect abstraction
 19cd8a9 Preview Canvas payload metadata
 115a38f Preview text image properties
 50e6b90 Preview Lua image entries
@@ -93,7 +94,8 @@ a0858cb Bootstrap WCX modernization project
     types,
   - Lua image block preview for `.lua` entries,
   - text-format IMG v1/v2 property preview,
-  - initial Core `inspect` model and CLI command.
+  - initial Core `inspect` model and CLI command,
+  - `inspect --debug` with structured directory and IMG diagnostics.
 
 ## Important Decisions
 
@@ -102,30 +104,30 @@ a0858cb Bootstrap WCX modernization project
 - Build headless core and CLI before feature-heavy UI.
 - Treat WC as a reference implementation, not a compatibility target.
 - Preserve WC's format knowledge through tests before refactoring.
+- `inspect` is the long-term resource observation surface.
+- `inspect --debug` is the development diagnostic surface for low-level parser
+  metadata.
 
 ## Current State
 
-Milestone 1 is implemented. Milestone 2 is in progress with real WZ package
+Milestone 1 is implemented. Milestone 2 is closing with real WZ package
 header detection and PKG1 directory preview working against the local
-MapleStoryNA client. `preview-dir` can decode names, detect PKG1 version/hash,
-calculate entry offsets, and enumerate recursively nested directory tables.
-`preview-img` can select an image by name/path/index and read its top-level IMG
-object type. For supported non-`Property` root objects it also exposes direct
-`objectValue` metadata. For `Property` images it lists first-layer property
-names and simple scalar values by default. `--depth 0` prints only the object
-type, while `--depth 2` can expand one nested `Property` layer. Deeper previews
-can expose Canvas metadata and Vector child values in local UI files.
-Canvas metadata includes direct zlib vs chunked encrypted zlib detection and
-expected uncompressed byte length for known texture formats.
-`preview-dir` and `preview-img` support `--key auto` to select among
-no-op/KMS/GMS directory string decoding. Canvas pixel decoding and
-RawData/Video/Sound payload decoding are not implemented yet. Lua image entries
-preview block count, payload length, and a short UTF-8 snippet, but full script
-export is not implemented yet. Text-format IMG streams starting with
-`#Property` or `Root <Property>` preview as bounded `Property` trees.
-The first stable `inspect` abstraction now projects synthetic fixtures, WZ
-directory previews, and WZ IMG previews into a generic inspection tree so future
-UI/export/search work does not depend directly on preview DTOs.
+MapleStoryNA client. `inspect` now projects synthetic fixtures, WZ directories,
+and WZ IMG payloads into a generic inspection tree so future UI/export/search
+work does not depend directly on parser DTOs. `inspect --debug` exposes the
+low-level fields that were useful during parser migration, including PKG1 node
+types, sizes, checksums, hash offsets, calculated offsets, selected string key,
+WZ/hash version, selected IMG entry metadata, object type, object value
+metadata, property type/kind metadata, and Canvas/RawData/Video/Sound payload
+offsets and lengths. `--key auto` selects among no-op/KMS/GMS directory string
+decoding. `--depth 0` prints only the top-level IMG object type, while deeper
+values expand bounded property/object metadata.
+
+Canvas pixel decoding and RawData/Video/Sound payload decoding are not
+implemented yet. Lua image entries report script length and a short UTF-8
+snippet, but full script export is not implemented yet. Text-format IMG streams
+starting with `#Property` or `Root <Property>` inspect as bounded `Property`
+trees.
 
 ## Suggested Next Prompt
 
@@ -134,13 +136,10 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Milestone 2 parser migration remains in
-progress, and Milestone 3 inspect/export work has started with the initial Core
-inspection model. Continue with either the next parser migration item such as
-Canvas pixel decoding, or the next inspect/export refinement that uses the new
-inspection model.
-Add fixture-backed tests, run build/test, update docs/logs, and commit the work
-on the current branch.
+docs/development-guidelines.md first. Continue Milestone 3 by refining inspect
+JSON/export workflows or by adding the next parser behavior, such as Canvas
+pixel decoding, through the Core inspection model. Add fixture-backed tests, run
+build/test, update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution

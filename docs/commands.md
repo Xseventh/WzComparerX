@@ -88,65 +88,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- headers path/to/Data/Base
 dotnet run --project src/WzComparerX.Cli --no-build -- headers --json path/to/Data/Base
 ```
 
-To preview raw PKG1 top-level directory entries without recursively loading
-child payloads:
-
-```bash
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Base.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --json path/to/Base.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key auto path/to/Base.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms path/to/older-client.wz
-```
-
-`preview-dir` defaults to `--key none`, which matches the current local
-MapleStoryNA client. Use `--key auto` to try no-op, KMS, and GMS string keys
-and select the most plausible decoded directory names. Use `--key kms` or
-`--key gms` for files that need those legacy PKG1 string keys. `--key bms`
-remains accepted as a compatibility alias for WC's historical no-op key name.
-
-When PKG1 version detection succeeds, `preview-dir` also prints `stringKey`,
-`wzVersion`, `hashVersion`, and calculated entry offsets.
-If nested directory tables are present, `preview-dir` prints all discovered
-entries in linear read order and adds `totalEntries`.
-
-To preview the top-level IMG object type for a PKG1 image entry:
-
-```bash
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Base_000.wz smap.img
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --json path/to/Base_000.wz 1
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --key auto path/to/Base_000.wz StandardPDD.img
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --depth 2 path/to/Base_000.wz StandardPDD.img
-```
-
-The selector can be an image name, image path, or preview entry index.
-`preview-img --key auto` reuses the directory preview key detection before
-reading the selected IMG payload.
-For top-level `Property` images, `preview-img` also lists the first layer of
-property names and simple scalar values. Nested objects are summarized by object
-type by default. Use `--depth 0` to print only the top-level object type, or
-`--depth 2` to expand one nested `Property` layer. The accepted depth range is
-`0` through `64`. IMG object previews currently include `Property`,
-`Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas metadata, and RawData
-metadata, Canvas#Video metadata, and Sound_DX8 metadata; Canvas pixel decoding,
-RawData payload decoding, video payload decoding, and audio payload decoding are
-not implemented yet. When the IMG root object is one of those supported
-non-`Property` object types, `preview-img` prints its top-level `objectValue`
-metadata directly.
-
-Canvas metadata includes payload compression kind and expected uncompressed byte
-length when the texture format is known. Pixel conversion/export is still a
-later step.
-
-Lua image entries (`*.lua`) are previewed as `objectType: Lua` with block count,
-payload length, and a short UTF-8 snippet. Full Lua script export is not
-implemented yet.
-
-WC text-format IMG streams are also recognized when their payload starts with
-`#Property` or `Root <Property>`. They preview as `objectType: Property` with
-scalar values and bounded nested property entries.
-
-To inspect resources through the stable Core inspection model instead of the
-migration-oriented preview DTOs:
+To inspect resources through the stable Core inspection model:
 
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect fixtures/synthetic/basic-tree.json
@@ -156,8 +98,38 @@ dotnet run --project src/WzComparerX.Cli --no-build -- inspect --json fixtures/s
 ```
 
 `inspect` is intended as the shared model surface for future UI, export, search,
-and automation workflows. `preview-*` commands remain useful parser-migration
-diagnostics and may expose lower-level parser details.
+and automation workflows. Use `--key auto` to try no-op, KMS, and GMS PKG1
+string keys and select the most plausible decoded directory names. Use
+`--key kms` or `--key gms` for files that need those legacy PKG1 string keys.
+`--key bms` remains accepted as a compatibility alias for WC's historical
+no-op key name.
+
+For IMG inspection, the selector can be an image name, image path, or entry
+index. `--depth 0` prints only the top-level object type, while larger values
+expand nested property/object metadata up to the accepted `0` through `64`
+range.
+
+For development diagnostics, add `--debug`:
+
+```bash
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --debug --key auto path/to/Base.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --debug --json --key auto --depth 2 path/to/Base_000.wz StandardPDD.img
+```
+
+`inspect --debug` exposes structured low-level metadata and diagnostics through
+the Core inspection model while normal `inspect` remains compact and stable.
+Directory debug metadata includes node types, data sizes, checksums, hash offset
+positions, hash offsets, calculated offsets, string key selection, WZ version,
+and hash version. IMG debug metadata includes selected entry fields, object
+types, object value metadata, property type/kind data, and Canvas/RawData/Video/
+Sound payload offsets and lengths.
+
+Canvas metadata includes payload compression kind and expected uncompressed byte
+length when the texture format is known. Pixel conversion/export is still a
+later step. Lua image entries (`*.lua`) report script length and a short UTF-8
+snippet; full Lua script export is not implemented yet. WC text-format IMG
+streams are also recognized when their payload starts with `#Property` or
+`Root <Property>` and are inspected as bounded `Property` trees.
 
 ## Run Avalonia App
 

@@ -11,6 +11,8 @@ public sealed class ResourceInspectionFormatter
         var builder = new StringBuilder();
         builder.AppendLine($"source: {document.SourcePath}");
         builder.AppendLine($"format: {document.Format}");
+        AppendMetadata(builder, document.DebugMetadata, depth: 0);
+        AppendDiagnostics(builder, document.Diagnostics, depth: 0);
         AppendNode(builder, document.Root, depth: 0);
         return builder.ToString();
     }
@@ -29,10 +31,72 @@ public sealed class ResourceInspectionFormatter
         }
 
         builder.AppendLine();
+        AppendMetadata(builder, node.DebugMetadata, depth + 1);
+        AppendDiagnostics(builder, node.Diagnostics, depth + 1);
 
         foreach (var child in node.Children)
         {
             AppendNode(builder, child, depth + 1);
         }
+    }
+
+    private static void AppendMetadata(
+        StringBuilder builder,
+        IReadOnlyList<ResourceInspectionMetadata>? metadata,
+        int depth)
+    {
+        if (metadata is null || metadata.Count == 0)
+        {
+            return;
+        }
+
+        builder.Append(' ', depth * 2);
+        builder.AppendLine("debug:");
+        foreach (var item in metadata)
+        {
+            builder.Append(' ', (depth + 1) * 2);
+            builder.Append(item.Name);
+            builder.Append(": ");
+            builder.AppendLine(FormatMetadataValue(item.Value));
+        }
+    }
+
+    private static void AppendDiagnostics(
+        StringBuilder builder,
+        IReadOnlyList<ResourceInspectionDiagnostic>? diagnostics,
+        int depth)
+    {
+        if (diagnostics is null || diagnostics.Count == 0)
+        {
+            return;
+        }
+
+        builder.Append(' ', depth * 2);
+        builder.AppendLine("diagnostics:");
+        foreach (var diagnostic in diagnostics)
+        {
+            builder.Append(' ', (depth + 1) * 2);
+            builder.Append(diagnostic.Severity);
+            builder.Append(": ");
+            builder.Append(diagnostic.Message);
+            if (!string.IsNullOrWhiteSpace(diagnostic.Path))
+            {
+                builder.Append(" (");
+                builder.Append(diagnostic.Path);
+                builder.Append(')');
+            }
+
+            builder.AppendLine();
+        }
+    }
+
+    private static string FormatMetadataValue(object? value)
+    {
+        return value switch
+        {
+            null => string.Empty,
+            IFormattable formattable => formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+            _ => value.ToString() ?? string.Empty
+        };
     }
 }

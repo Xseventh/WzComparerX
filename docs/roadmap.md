@@ -37,7 +37,7 @@ Exit criteria:
 
 ## Milestone 2: First Real WC Migration
 
-Status: in progress.
+Status: closing.
 
 Goal: migrate the smallest useful WC parsing behavior.
 
@@ -61,13 +61,20 @@ Exit criteria:
 - Tests lock behavior.
 - `docs/format-notes.md` is updated.
 
+Closeout notes:
+
+- Real PKG1 directory and IMG preview behavior now exceeds the original scope.
+- Remaining work should focus on documenting unsupported cases and ensuring new
+  parser behavior is reachable through `inspect`.
+
 ## Milestone 3: Export And Inspect
 
 Goal: make CLI useful for automation.
 
 Tasks:
 
-- Add `inspect`. Started with the initial Core inspection model and CLI command.
+- Add `inspect`.
+- Add `inspect --debug` and structured parser diagnostics.
 - Add WZ package header CLI output.
 - Add JSON dump. In progress for `list` and `header`.
 - Add XML dump if parser coverage allows.
@@ -78,6 +85,7 @@ Exit criteria:
 
 - CLI can inspect and dump at least synthetic/raw nodes.
 - Output is covered by snapshot-like expected files.
+- Parser diagnostics are available through `inspect --debug`.
 
 ## Milestone 4: Basic Avalonia Browser
 

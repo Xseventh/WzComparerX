@@ -13,6 +13,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
 
     var command = args[0];
     var json = false;
+    var debug = false;
     WzStringEncryptionKind? stringKey = WzStringEncryptionKind.None;
     var imagePropertyDepth = 1;
     string? path = null;
@@ -22,6 +23,12 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
         if (string.Equals(args[i], "--json", StringComparison.OrdinalIgnoreCase))
         {
             json = true;
+            continue;
+        }
+
+        if (string.Equals(args[i], "--debug", StringComparison.OrdinalIgnoreCase))
+        {
+            debug = true;
             continue;
         }
 
@@ -59,9 +66,7 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             continue;
         }
 
-        if (selector is null &&
-            (string.Equals(command, "preview-img", StringComparison.OrdinalIgnoreCase) ||
-             string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase)))
+        if (selector is null && string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase))
         {
             selector = args[i];
             continue;
@@ -121,39 +126,12 @@ static async Task<int> RunAsync(string[] args, TextWriter output, TextWriter err
             return headers.All(header => header.IsValid) ? 0 : 1;
         }
 
-        if (string.Equals(command, "preview-dir", StringComparison.OrdinalIgnoreCase))
-        {
-            var preview = stringKey is null
-                ? await WzDirectoryPreviewService.ReadAutoAsync(path)
-                : await new WzDirectoryPreviewService(stringKey.Value).ReadAsync(path);
-            output.Write(json
-                ? new WzDirectoryPreviewJsonFormatter().Format(preview)
-                : new WzDirectoryPreviewFormatter().Format(preview));
-            return preview.Header.IsValid ? 0 : 1;
-        }
-
-        if (string.Equals(command, "preview-img", StringComparison.OrdinalIgnoreCase))
-        {
-            if (selector is null)
-            {
-                WriteUsage(error);
-                return 2;
-            }
-
-            var preview = stringKey is null
-                ? await WzImagePreviewService.ReadAutoAsync(path, selector, imagePropertyDepth)
-                : await new WzImagePreviewService(stringKey.Value, imagePropertyDepth).ReadAsync(path, selector);
-            output.Write(json
-                ? new WzImagePreviewJsonFormatter().Format(preview)
-                : new WzImagePreviewFormatter().Format(preview));
-            return preview.IsValid ? 0 : 1;
-        }
-
         if (string.Equals(command, "inspect", StringComparison.OrdinalIgnoreCase))
         {
             var service = new ResourceInspectionService();
 
-            var inspection = await service.InspectAsync(path, selector, stringKey, imagePropertyDepth);
+            var options = new ResourceInspectionOptions(stringKey, imagePropertyDepth, debug);
+            var inspection = await service.InspectAsync(path, selector, options);
             output.Write(json
                 ? new ResourceInspectionJsonFormatter().Format(inspection)
                 : new ResourceInspectionFormatter().Format(inspection));
@@ -176,9 +154,7 @@ static void WriteUsage(TextWriter error)
     error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
     error.WriteLine("  wcx header [--json] <wz-file>");
     error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
-    error.WriteLine("  wcx inspect [--json] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
-    error.WriteLine("  wcx preview-dir [--json] [--key auto|none|kms|gms] <pkg1-wz-file>");
-    error.WriteLine("  wcx preview-img [--json] [--key auto|none|kms|gms] [--depth 0-64] <pkg1-wz-file> <image-name-or-index>");
+    error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
 }
 
 static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)

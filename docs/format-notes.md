@@ -81,16 +81,16 @@ This path is useful for manual smoke tests only. Do not commit files from it.
 Initial header scans show current local files use `PKG1` headers with 60-byte
 package headers, including `Data/Base/Base.wz` and `Data/Base/Base_000.wz`.
 
-`Data/Base/Base.wz` can be raw-previewed without name decryption. It currently
+`Data/Base/Base.wz` can be inspected without name decryption. It currently
 contains 16 top-level directory entries (`nodeType` `0x03`) with zero data size
 and checksum fields. This confirms the PKG1 directory entry shape.
 
 The same file's top-level names decode with the no-op PKG1 string key
 (`--key none`; WC historically names this `BMS`).
-The default `preview-dir` path now uses that key and can list names such as
+The default `inspect` path now uses that key and can list names such as
 `Character`, `Effect`, `Etc`, `Item`, `Map`, `Mob`, `Npc`, `String`, and `UI`.
 KMS/GMS key modes are still exposed for older or region-specific files.
-`preview-dir --key auto` also selects the no-op key for this local GMS
+`inspect --debug --key auto` also selects the no-op key for this local GMS
 `Data/Base/Base.wz` smoke file.
 
 PKG1 version detection resolves the local `Data/Base/Base.wz` header as WZ
@@ -103,11 +103,11 @@ directory tables immediately after the top-level directory table.
 payloads whose top-level object type currently reads as `Property`.
 `smap.img` previews as 151 first-layer properties, mostly string mappings and
 null placeholders. `StandardPDD.img` previews as six nested `Property` objects.
-With `preview-img --depth 2`, those nested `Property` objects expand into
+With `inspect --debug --depth 2`, those nested `Property` objects expand into
 scalar child entries such as integer threshold values.
 
 `Data/UI/UI_000.wz` contains UI image entries such as `Basic.img`. With
-`preview-img --depth 2`, many nested Canvas values now preview as metadata:
+`inspect --debug --depth 2`, many nested Canvas values now expose metadata:
 width, height, texture format, scale, page count, payload offset, and payload
 length. Canvas preview also reports whether the payload looks like direct zlib
 or WC's chunked encrypted zlib stream, plus the expected uncompressed byte
@@ -135,6 +135,6 @@ both variants into the same bounded property preview model. Current local GMS
 data did not expose a direct text IMG smoke sample in the scanned WZ files.
 
 `Data/Sound/Sound_000.wz` contains sound image entries such as
-`AchievementEff.img` and `Bgm00.img`. With `preview-img --depth 2`, their
+`AchievementEff.img` and `Bgm00.img`. With `inspect --debug --depth 2`, their
 `Sound_DX8` values preview as metadata including duration, sound declaration,
 payload length, and payload offset. Audio payload decoding is not implemented.

@@ -13,6 +13,9 @@ These rules are meant to keep WCX understandable across long development gaps.
 - WCX is still in early development. Do not preserve awkward internal APIs just
   for compatibility with previous WCX commits; prefer timely refactors when a
   cleaner module boundary appears.
+- New parser behavior should be reachable through `inspect` before it is treated
+  as complete. Do not add new parser behavior behind separate diagnostic CLI
+  surfaces; use `inspect --debug` for low-level development metadata.
 
 ## Project Boundaries
 
@@ -40,6 +43,7 @@ Allowed:
 - Workspace/session orchestration.
 - File open/close workflows.
 - Stable inspect models used by CLI, UI, export, and search workflows.
+- Structured inspect diagnostics and debug metadata.
 - Search, export, compare services.
 - Progress, cancellation, diagnostics abstractions.
 
@@ -166,3 +170,15 @@ When migrating from WC:
 
 Do not port `MainForm` patterns, global `PluginManager.FindWz`, or Designer UI
 code into WCX core layers.
+
+## Inspect And Preview Rules
+
+- `inspect` is the preferred stable resource observation surface.
+- `inspect --debug` is the preferred long-term diagnostic surface.
+- Parser selection, key detection, property-depth behavior, and user-facing
+  resource output should flow through `inspect`.
+- If a low-level field is useful beyond one parser migration session, add it to
+  structured inspect metadata or diagnostics instead of formatting it only in a
+  separate command.
+- Preserve underlying parser coverage and tests through `inspect` /
+  `inspect --debug`.
