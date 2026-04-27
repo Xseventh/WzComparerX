@@ -59,7 +59,7 @@ public sealed class WzDirectoryPreviewReader
                 case 0x02:
                     name = ReadStringAt(
                         stream,
-                        ReadInt32LittleEndian(stream) + GetStringReferenceOffset(header));
+                        header.DirectoryStartPosition + ReadInt32LittleEndian(stream) + GetStringReferenceOffset(header));
                     break;
                 case 0x03:
                 case 0x04:
