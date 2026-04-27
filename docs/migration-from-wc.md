@@ -121,7 +121,7 @@ For each migrated feature, record:
 - UI dependency removed or isolated:
   - Implemented in `WzComparerX.WzLib` only; no UI dependency.
 
-### PKG1 Directory Preview And Names
+### PKG1 Directory Inspection And Names
 
 - WC source files referenced:
   - `WzComparerR2.WzLib/Wz_File.cs`
@@ -142,23 +142,23 @@ For each migrated feature, record:
   - Detect encrypted-version PKG1 files by validating calculated offsets.
   - Enumerate recursively nested PKG1 directory tables in WC's linear layout.
   - Read the top-level IMG object type name from calculated image offsets.
-  - Preview supported top-level non-`Property` IMG object values.
+  - Inspect supported top-level non-`Property` IMG object values.
   - Read first-layer `Property` entries, including simple scalar values and
     nested object summaries.
   - Expand nested IMG `Property` objects to a caller-provided bounded depth.
-  - Preview nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
+  - Inspect nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
     object values.
   - Detect Canvas payload compression kind and expected uncompressed data
     length for WC texture formats.
-  - Auto-detect preview string key selection across no-op, KMS, and GMS modes
+  - Auto-detect inspection string key selection across no-op, KMS, and GMS modes
     using conservative directory-name scoring.
-  - Preview `.lua` IMG entries through WC's Lua-specific block stream path.
-  - Preview WC text-format IMG v1 (`#Property`) and v2 (`Root <Property>`)
+  - Inspect `.lua` IMG entries through WC's Lua-specific block stream path.
+  - Inspect WC text-format IMG v1 (`#Property`) and v2 (`Root <Property>`)
     streams.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
-    `WzDirectoryPreviewReaderTests`.
+    `WzDirectoryInspectionReaderTests`.
   - Local-only MapleStoryNA smoke file `Data/Base/Base.wz`.
 - Test coverage added:
   - PKG1 directory entry pre-read with encoded no-op strings.
@@ -168,17 +168,17 @@ For each migrated feature, record:
   - IMG object type inline and referenced strings.
   - First-layer IMG `Property` scalar entries.
   - PKG1 encrypted-version detection against deterministic synthetic offsets.
-  - Core preview string key auto-detection against deterministic synthetic
+  - Core inspection string key auto-detection against deterministic synthetic
     directory data.
-  - Core text formatter output for decoded preview entries.
-  - Bounded nested IMG `Property` preview.
+  - Core text formatter output for decoded inspection entries.
+  - Bounded nested IMG `Property` inspection.
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
-    Canvas#Video metadata value preview.
+    Canvas#Video metadata value inspection.
   - Canvas zlib/chunked payload metadata and uncompressed data size estimates.
-  - IMG Sound_DX8 metadata value preview.
-  - Top-level IMG Canvas metadata and Vector value preview.
-  - Lua image block preview and `--depth 0` behavior.
-  - Text IMG v1/v2 scalar and nested property preview.
+  - IMG Sound_DX8 metadata value inspection.
+  - Top-level IMG Canvas metadata and Vector value inspection.
+  - Lua image block inspection and `--depth 0` behavior.
+  - Text IMG v1/v2 scalar and nested property inspection.
 - Known unsupported cases:
   - Full unbounded IMG property/value parsing is not implemented yet.
   - Full Lua script export is not implemented yet.

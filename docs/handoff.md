@@ -20,6 +20,7 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+a42af46 Rename parser diagnostic models to inspection
 d6fc84b Add inspect debug diagnostics
 84a5f88 Add resource inspect abstraction
 41e1ad0 Fix PKG1 string reference offset base
@@ -78,7 +79,9 @@ a0858cb Bootstrap WCX modernization project
   - Lua image block inspection for `.lua` entries,
   - text-format IMG v1/v2 property inspection,
   - initial Core `inspect` model and CLI command,
-  - `inspect --debug` with structured directory and IMG diagnostics.
+  - `inspect --debug` with structured directory and IMG diagnostics,
+  - CLI-level golden tests for representative `inspect` and `inspect --debug`
+    text/JSON output.
 
 ## Important Decisions
 
@@ -106,6 +109,10 @@ offsets and lengths. `--key auto` selects among no-op/KMS/GMS directory string
 decoding. `--depth 0` prints only the top-level IMG object type, while deeper
 values expand bounded property/object metadata.
 
+The old temporary parser/CLI terminology has been retired from active design
+and command documentation. Historical logs may still mention migration-era
+steps, but the supported surface is now `inspect` and `inspect --debug`.
+
 Canvas pixel decoding and RawData/Video/Sound payload decoding are not
 implemented yet. Lua image entries report script length and a short UTF-8
 snippet, but full script export is not implemented yet. Text-format IMG streams
@@ -119,10 +126,10 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Continue Milestone 3 by refining inspect
-JSON/export workflows or by adding the next parser behavior, such as Canvas
-pixel decoding, through the Core inspection model. Add fixture-backed tests, run
-build/test, update docs/logs, and commit the work on the current branch.
+docs/development-guidelines.md first. Continue Milestone 3 by starting the
+export abstraction or by expanding diagnostics into a stable warning/error
+model shared by CLI and future UI. Add fixture-backed tests, run build/test,
+update docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution

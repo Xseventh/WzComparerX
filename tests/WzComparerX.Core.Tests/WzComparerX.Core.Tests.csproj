@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\WzComparerX.Cli\WzComparerX.Cli.csproj" />
     <ProjectReference Include="..\..\src\WzComparerX.Core\WzComparerX.Core.csproj" />
   </ItemGroup>
 

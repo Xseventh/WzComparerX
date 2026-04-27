@@ -108,7 +108,7 @@ Desktop application shell:
 
 - Workspace UI.
 - Node tree.
-- Preview panes.
+- Inspection/detail panes.
 - Search and compare results.
 - Settings.
 - Task/log panel.
