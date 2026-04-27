@@ -9,4 +9,6 @@ public sealed record WzDirectoryEntryPreview(
     int Checksum,
     long HashOffsetPosition,
     uint HashOffset,
-    long? Offset = null);
+    long? Offset = null,
+    int Depth = 0,
+    string? Path = null);

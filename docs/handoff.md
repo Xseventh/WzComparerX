@@ -20,6 +20,11 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+d22d231 Fix preview-dir review issues
+2cb2722 Align PKG1 directory offset validation with WC
+ddd9ddc Add PKG1 version offset preview
+5d32743 Clarify no-op PKG1 string key naming
+3601367 Decode PKG1 directory entry names
 e65c73a Add PKG1 directory preview
 6f18aef Add WZ header scan command
 3285065 Add JSON output for CLI workflows
@@ -57,7 +62,9 @@ a0858cb Bootstrap WCX modernization project
   - JSON output for `list` and header workflows,
   - PKG1 top-level directory preview,
   - PKG1 directory-name decoding with no-op/KMS/GMS key modes,
-  - PKG1 version hash and entry offset calculation.
+  - PKG1 version hash and entry offset calculation,
+  - PKG1 `0x02` string-reference name decoding,
+  - PKG1 recursive directory-table pre-read and preview enumeration.
 
 ## Important Decisions
 
@@ -70,8 +77,9 @@ a0858cb Bootstrap WCX modernization project
 ## Current State
 
 Milestone 1 is implemented. Milestone 2 is in progress with real WZ package
-header detection and PKG1 top-level directory preview working against the local
-MapleStoryNA client.
+header detection and PKG1 directory preview working against the local
+MapleStoryNA client. `preview-dir` can decode names, detect PKG1 version/hash,
+calculate entry offsets, and enumerate recursively nested directory tables.
 
 ## Suggested Next Prompt
 
@@ -81,9 +89,9 @@ Use this in a new Codex project conversation:
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Then continue Milestone 2 by migrating
-PKG1 version/hash and offset calculation so previewed directory entries can
-resolve child payload locations. Add fixture-backed tests, run build/test,
-update docs/logs, and commit the work on the current branch.
+the smallest IMG payload reader using the previewed PKG1 image offsets. Add
+fixture-backed tests, run build/test, update docs/logs, and commit the work on
+the current branch.
 ```
 
 ## Caution

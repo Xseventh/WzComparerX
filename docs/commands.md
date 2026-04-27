@@ -104,6 +104,8 @@ for WC's historical no-op key name.
 
 When PKG1 version detection succeeds, `preview-dir` also prints `wzVersion`,
 `hashVersion`, and calculated entry offsets.
+If nested directory tables are present, `preview-dir` prints all discovered
+entries in linear read order and adds `totalEntries`.
 
 ## Run Avalonia App
 

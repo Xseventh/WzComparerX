@@ -19,9 +19,18 @@ public sealed class WzDirectoryPreviewFormatter
         }
 
         builder.AppendLine($"entries: {preview.EntryCount}");
+        if (preview.Entries.Count != preview.EntryCount)
+        {
+            builder.AppendLine($"totalEntries: {preview.Entries.Count}");
+        }
 
         foreach (var entry in preview.Entries)
         {
+            if (entry.Depth > 0)
+            {
+                builder.Append(' ', entry.Depth * 2);
+            }
+
             builder.Append(entry.Index);
             builder.Append(" | ");
             builder.Append(entry.Kind.ToString().ToLowerInvariant());

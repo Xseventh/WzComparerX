@@ -140,6 +140,7 @@ For each migrated feature, record:
   - Calculate PKG1 hash versions and entry offsets.
   - Detect missing-encrypted-version PKG1 files as WZ version `777`.
   - Detect encrypted-version PKG1 files by validating calculated offsets.
+  - Enumerate recursively nested PKG1 directory tables in WC's linear layout.
 - Fixture or sample used:
   - Minimal in-memory synthetic WZ byte streams in
     `WzDirectoryPreviewReaderTests`.
@@ -147,12 +148,13 @@ For each migrated feature, record:
 - Test coverage added:
   - PKG1 directory entry pre-read with encoded no-op strings.
   - PKG1 `0x02` string-reference names.
+  - PKG1 recursive child directory table enumeration.
   - PKG1 hash-version and offset calculation.
   - PKG1 encrypted-version detection against deterministic synthetic offsets.
   - Core text formatter output for decoded preview entries.
 - Known unsupported cases:
   - Key auto-detection is not implemented yet.
-  - Recursive child directory loading is not implemented yet.
+  - IMG payload parsing is not implemented yet.
 - UI dependency removed or isolated:
   - Implemented in `WzComparerX.WzLib` and Core CLI services only; no UI
     dependency.

@@ -45,8 +45,44 @@ public sealed class WzDirectoryPreviewReader
         }
 
         stream.Position = header.DirectoryStartPosition;
+        var entries = new List<WzDirectoryEntryPreview>();
+        var entryCount = ReadDirectoryTree(
+            stream,
+            header,
+            entries,
+            depth: 0,
+            parentPath: string.Empty,
+            cancellationToken);
+
+        var directoryEndPosition = stream.Position;
+        var version = WzPkg1VersionDetector.Detect(header, entries, directoryEndPosition);
+        if (version is not null)
+        {
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var offset = WzPkg1VersionDetector.CalculateOffset(header, entries[i], version.HashVersion);
+                entries[i] = entries[i] with { Offset = offset };
+            }
+        }
+
+        return new WzDirectoryPreview(
+            header,
+            entryCount,
+            entries,
+            version?.WzVersion,
+            version?.HashVersion);
+    }
+
+    private int ReadDirectoryTree(
+        Stream stream,
+        WzPackageHeader header,
+        List<WzDirectoryEntryPreview> entries,
+        int depth,
+        string parentPath,
+        CancellationToken cancellationToken)
+    {
         var entryCount = ReadCompressedInt32(stream);
-        var entries = new List<WzDirectoryEntryPreview>(Math.Max(entryCount, 0));
+        var directoryEntries = new List<WzDirectoryEntryPreview>();
 
         for (var i = 0; i < entryCount; i++)
         {
@@ -73,35 +109,44 @@ public sealed class WzDirectoryPreviewReader
             var checksum = ReadCompressedInt32(stream);
             var hashOffsetPosition = stream.Position;
             var hashOffset = ReadUInt32LittleEndian(stream);
+            var path = CombinePath(parentPath, name);
 
-            entries.Add(new WzDirectoryEntryPreview(
-                i,
+            var entry = new WzDirectoryEntryPreview(
+                entries.Count,
                 nodeType,
                 ToEntryKind(nodeType),
                 name,
                 dataSize,
                 checksum,
                 hashOffsetPosition,
-                hashOffset));
-        }
+                hashOffset,
+                Depth: depth,
+                Path: path);
+            entries.Add(entry);
 
-        var directoryEndPosition = SkipChildDirectoryTrees(stream, entries, cancellationToken);
-        var version = WzPkg1VersionDetector.Detect(header, entries, directoryEndPosition);
-        if (version is not null)
-        {
-            for (var i = 0; i < entries.Count; i++)
+            if (entry.Kind == WzDirectoryEntryKind.Directory)
             {
-                var offset = WzPkg1VersionDetector.CalculateOffset(header, entries[i], version.HashVersion);
-                entries[i] = entries[i] with { Offset = offset };
+                directoryEntries.Add(entry);
             }
         }
 
-        return new WzDirectoryPreview(
-            header,
-            entryCount,
-            entries,
-            version?.WzVersion,
-            version?.HashVersion);
+        foreach (var entry in directoryEntries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ReadDirectoryTree(stream, header, entries, depth + 1, entry.Path ?? string.Empty, cancellationToken);
+        }
+
+        return entryCount;
+    }
+
+    private static string? CombinePath(string parentPath, string? name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return string.IsNullOrEmpty(parentPath) ? null : parentPath;
+        }
+
+        return string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
     }
 
     private static WzDirectoryEntryKind ToEntryKind(byte nodeType)
@@ -149,76 +194,6 @@ public sealed class WzDirectoryPreviewReader
     private static int GetStringReferenceOffset(WzPackageHeader header)
     {
         return header.IsEncryptedVersionMissing ? 2 : -1;
-    }
-
-    private static long SkipChildDirectoryTrees(
-        Stream stream,
-        IReadOnlyList<WzDirectoryEntryPreview> entries,
-        CancellationToken cancellationToken)
-    {
-        var directoryCount = entries.Count(static entry => entry.Kind == WzDirectoryEntryKind.Directory);
-        for (var i = 0; i < directoryCount; i++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            SkipDirectoryTree(stream, cancellationToken);
-        }
-
-        return stream.Position;
-    }
-
-    private static void SkipDirectoryTree(Stream stream, CancellationToken cancellationToken)
-    {
-        var count = ReadCompressedInt32(stream);
-        var directoryCount = 0;
-
-        for (var i = 0; i < count; i++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var nodeType = ReadByte(stream);
-            switch (nodeType)
-            {
-                case 0x02:
-                    SkipBytes(stream, sizeof(int));
-                    break;
-                case 0x03:
-                    SkipString(stream);
-                    directoryCount++;
-                    break;
-                case 0x04:
-                    SkipString(stream);
-                    break;
-                default:
-                    throw new InvalidDataException($"Unknown PKG1 directory node type 0x{nodeType:X2}.");
-            }
-
-            _ = ReadCompressedInt32(stream);
-            _ = ReadCompressedInt32(stream);
-            SkipBytes(stream, sizeof(uint));
-        }
-
-        for (var i = 0; i < directoryCount; i++)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            SkipDirectoryTree(stream, cancellationToken);
-        }
-    }
-
-    private static void SkipString(Stream stream)
-    {
-        var size = ReadSByte(stream);
-        if (size < 0)
-        {
-            var byteCount = size == sbyte.MinValue ? ReadInt32LittleEndian(stream) : -size;
-            SkipBytes(stream, byteCount);
-            return;
-        }
-
-        if (size > 0)
-        {
-            var charCount = size == sbyte.MaxValue ? ReadInt32LittleEndian(stream) : size;
-            SkipBytes(stream, charCount * sizeof(char));
-        }
     }
 
     private static int ReadCompressedInt32(Stream stream)
