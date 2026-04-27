@@ -223,6 +223,56 @@ public class WzImagePreviewReaderTests
             () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
     }
 
+    [Fact]
+    public void Read_ReturnsRawDataMetadata()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "payload",
+            CreateObjectValue(
+                "RawData",
+                1,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString("kind"),
+                0x03,
+                42,
+                3,
+                0x01,
+                0x02,
+                0x03)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var preview = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(preview.Properties);
+        var property = Assert.Single(preview.Properties);
+        Assert.Equal("rawData", property.Kind);
+        Assert.Equal(1, property.ChildCount);
+        Assert.NotNull(property.Children);
+        Assert.Equal("kind", Assert.Single(property.Children).Name);
+        var rawData = Assert.IsType<WzImageRawDataPreview>(property.Value);
+        Assert.Equal(1, rawData.Version);
+        Assert.Equal(3, rawData.DataLength);
+    }
+
+    [Fact]
+    public void Read_RejectsRawDataExtendingPastImage()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "payload",
+            CreateObjectValue("RawData", 0, 100)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImagePreviewReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        Assert.Throws<InvalidDataException>(
+            () => reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0"));
+    }
+
     private static WzPackageHeader CreateHeader()
     {
         return new WzPackageHeader(

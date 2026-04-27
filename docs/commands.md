@@ -121,8 +121,9 @@ property names and simple scalar values. Nested objects are summarized by object
 type by default. Use `--depth 0` to print only the top-level object type, or
 `--depth 2` to expand one nested `Property` layer. The accepted depth range is
 `0` through `64`. IMG object previews currently include `Property`,
-`Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, and Canvas metadata; Canvas
-pixel decoding is not implemented yet.
+`Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas metadata, and RawData
+metadata; Canvas pixel decoding and RawData payload decoding are not
+implemented yet.
 
 ## Run Avalonia App
 

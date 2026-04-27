@@ -152,6 +152,7 @@ public sealed class WzImagePreviewReader
             "Canvas" => ReadCanvasObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "Shape2D#Convex2D" => ReadConvexObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             "UOL" => ReadUolObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
+            "RawData" => ReadRawDataObjectValue(stream, imageBaseOffset, imageEndOffset, index, name, type, depth, path),
             _ => new WzImagePropertyPreviewEntry(index, name, type, "object", objectType, depth, path)
         };
 
@@ -290,6 +291,45 @@ public sealed class WzImagePreviewReader
         _ = imageEndOffset;
         SkipBytes(stream, 1);
         return new WzImagePropertyPreviewEntry(index, name, type, "uol", ReadImageString(stream, imageBaseOffset), depth, path);
+    }
+
+    private WzImagePropertyPreviewEntry ReadRawDataObjectValue(
+        Stream stream,
+        long imageBaseOffset,
+        long imageEndOffset,
+        int index,
+        string? name,
+        byte type,
+        int depth,
+        string? path)
+    {
+        var version = ReadByte(stream);
+        int? childCount = null;
+        List<WzImagePropertyPreviewEntry>? children = null;
+        if (version == 1 && ReadByte(stream) == 0x01)
+        {
+            var parsedChildren = ReadPropertyEntries(stream, imageBaseOffset, imageEndOffset, depth + 1, path ?? string.Empty, out childCount);
+            if (depth + 1 < maxPropertyDepth)
+            {
+                children = parsedChildren;
+            }
+        }
+
+        var dataLength = ReadCompressedInt32(stream);
+        if (dataLength < 0)
+        {
+            throw new InvalidDataException($"Cannot read a negative raw data length: {dataLength}.");
+        }
+
+        var dataOffset = stream.Position;
+        if (dataOffset + dataLength > imageEndOffset)
+        {
+            throw new InvalidDataException($"Raw data extends past the image stream: {dataOffset + dataLength}.");
+        }
+
+        SkipBytes(stream, dataLength);
+        var rawData = new WzImageRawDataPreview(version, dataOffset, dataLength);
+        return new WzImagePropertyPreviewEntry(index, name, type, "rawData", rawData, depth, path, childCount, children);
     }
 
     private static WzImageVectorPreview ReadVectorPreview(Stream stream)
