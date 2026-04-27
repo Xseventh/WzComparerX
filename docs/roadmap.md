@@ -68,6 +68,7 @@ Goal: make CLI useful for automation.
 Tasks:
 
 - Add `inspect`.
+- Add WZ package header CLI output.
 - Add JSON dump.
 - Add XML dump if parser coverage allows.
 - Add export abstraction in Core.

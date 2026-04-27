@@ -1,0 +1,69 @@
+using System.Buffers.Binary;
+using System.Text;
+using WzComparerX.Core;
+
+namespace WzComparerX.Core.Tests;
+
+public class WzPackageHeaderServiceTests
+{
+    [Fact]
+    public async Task ReadAsync_FormatsPkg1HeaderDeterministically()
+    {
+        var path = WriteTemporaryPkg1File();
+        var service = new WzPackageHeaderService();
+        var formatter = new WzPackageHeaderFormatter();
+
+        try
+        {
+            var header = await service.ReadAsync(path);
+            var output = formatter.Format(header);
+
+            Assert.Equal(
+                $"""
+                source: {path}
+                format: pkg1
+                signature: PKG1
+                valid: true
+                headerSize: 25
+                dataSize: 3
+                fileSize: 28
+                directoryStartPosition: 27
+                copyright: Copyright
+                encryptedVersion: 123
+                encryptedVersionMissing: false
+
+                """.ReplaceLineEndings(),
+                output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static string WriteTemporaryPkg1File()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+        return path;
+    }
+
+    private static byte[] CreatePkg1(string copyright, byte[] encryptedVersionBytes)
+    {
+        var header = CreateHeader("PKG1", copyright, dataSize: encryptedVersionBytes.Length + 1);
+        return [.. header, .. encryptedVersionBytes, 0x00];
+    }
+
+    private static byte[] CreateHeader(string signature, string copyright, long dataSize)
+    {
+        var copyrightBytes = Encoding.ASCII.GetBytes(copyright);
+        var headerSize = 4 + sizeof(long) + sizeof(int) + copyrightBytes.Length;
+        var bytes = new byte[headerSize];
+
+        Encoding.ASCII.GetBytes(signature, bytes);
+        BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(4, sizeof(long)), dataSize);
+        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(12, sizeof(int)), headerSize);
+        copyrightBytes.CopyTo(bytes.AsSpan(16));
+        return bytes;
+    }
+}
