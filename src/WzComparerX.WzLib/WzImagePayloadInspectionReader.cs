@@ -1,4 +1,4 @@
-using System.Buffers.Binary;
+using static WzComparerX.WzLib.WzImageBinaryReaderPrimitives;
 
 namespace WzComparerX.WzLib;
 
@@ -201,54 +201,4 @@ internal static class WzImagePayloadInspectionReader
         return new Guid(ReadBytes(stream, 16)).ToString();
     }
 
-    private static byte ReadByte(Stream stream)
-    {
-        var value = stream.ReadByte();
-        if (value < 0)
-        {
-            throw new EndOfStreamException();
-        }
-
-        return (byte)value;
-    }
-
-    private static sbyte ReadSByte(Stream stream)
-    {
-        return unchecked((sbyte)ReadByte(stream));
-    }
-
-    private static int ReadInt32LittleEndian(Stream stream)
-    {
-        Span<byte> bytes = stackalloc byte[sizeof(int)];
-        stream.ReadExactly(bytes);
-        return BinaryPrimitives.ReadInt32LittleEndian(bytes);
-    }
-
-    private static int ReadCompressedInt32(Stream stream)
-    {
-        var value = ReadSByte(stream);
-        return value == sbyte.MinValue ? ReadInt32LittleEndian(stream) : value;
-    }
-
-    private static byte[] ReadBytes(Stream stream, int count)
-    {
-        if (count < 0)
-        {
-            throw new InvalidDataException($"Cannot read a negative byte count: {count}.");
-        }
-
-        var bytes = new byte[count];
-        stream.ReadExactly(bytes);
-        return bytes;
-    }
-
-    private static void SkipBytes(Stream stream, int count)
-    {
-        if (count < 0)
-        {
-            throw new InvalidDataException($"Cannot skip a negative byte count: {count}.");
-        }
-
-        stream.Seek(count, SeekOrigin.Current);
-    }
 }
