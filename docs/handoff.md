@@ -207,8 +207,10 @@ M4 started:
   diagnostics.
 - The UI has a basic activity log for load, inspection, and error events.
 - `WzComparerX.App.Tests` now owns Avalonia UI/ViewModel tests and uses
-  Avalonia Headless for window/control smoke coverage. Core.Tests no longer
-  references the App project.
+  Avalonia Headless for window/control smoke coverage. Skia-backed headless
+  screenshot smoke tests verify that the main window renders nonblank content
+  and keeps primary controls inside default and compact viewports. Core.Tests no
+  longer references the App project.
 - Richer task/progress handling is still pending.
 
 Local GMS smoke status:

@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Skia;
 
 [assembly: AvaloniaTestApplication(typeof(WzComparerX.App.Tests.AvaloniaHeadlessTestApplication))]
 
@@ -12,6 +13,10 @@ public static class AvaloniaHeadlessTestApplication
     {
         return AppBuilder
             .Configure<WzComparerX.App.App>()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions());
+            .UseSkia()
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions
+            {
+                UseHeadlessDrawing = false
+            });
     }
 }

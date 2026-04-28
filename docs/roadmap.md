@@ -142,7 +142,8 @@ Tasks:
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless
-  plus migrated ViewModel tests.
+  plus migrated ViewModel tests; Skia-backed headless screenshot smoke coverage
+  now checks rendered content and primary-control viewport bounds.
 - No direct parsing in view models.
 
 Exit criteria:

@@ -30,9 +30,10 @@
         <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
             <TextBlock Text="Path" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1"
+                     x:Name="PathTextBox"
                      Text="{Binding PathText}"
                      PlaceholderText="WZ file, folder, or synthetic fixture"/>
-            <Button Grid.Column="2" Content="Browse">
+            <Button Grid.Column="2" x:Name="BrowseButton" Content="Browse">
                 <Button.Flyout>
                     <MenuFlyout>
                         <MenuItem Header="Open Wz..." Click="OpenResourceFileMenuItem_OnClick"/>
@@ -41,6 +42,7 @@
                 </Button.Flyout>
             </Button>
             <Button Grid.Column="3"
+                    x:Name="LoadButton"
                     Command="{Binding LoadCommand}"
                     Content="Load"/>
         </Grid>
@@ -48,6 +50,7 @@
         <Grid Grid.Row="1" ColumnDefinitions="Auto,2*,Auto,120,Auto,80,Auto,Auto" ColumnSpacing="8">
             <TextBlock Text="IMG" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1"
+                     x:Name="SelectorTextBox"
                      Text="{Binding SelectorText}"
                      PlaceholderText="Optional image selector"/>
             <TextBlock Grid.Column="2" Text="Key" VerticalAlignment="Center"/>
@@ -55,9 +58,11 @@
             <TextBlock Grid.Column="4" Text="Depth" VerticalAlignment="Center"/>
             <TextBox Grid.Column="5" Text="{Binding DepthText}"/>
             <Button Grid.Column="6"
+                    x:Name="OpenSelectedPackageButton"
                     Command="{Binding OpenSelectedPackageCommand}"
                     Content="Open Package"/>
             <Button Grid.Column="7"
+                    x:Name="InspectSelectedImageButton"
                     Command="{Binding InspectSelectedImageCommand}"
                     Content="Inspect Image"/>
         </Grid>
@@ -70,6 +75,7 @@
                                Text="{Binding StatusMessage}"
                                TextTrimming="CharacterEllipsis"/>
                     <TreeView Grid.Row="2"
+                              x:Name="ResourcesTree"
                               ItemsSource="{Binding RootNodes}"
                               SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
                               DoubleTapped="ResourcesTree_OnDoubleTapped">
@@ -103,7 +109,7 @@
                 </Border>
 
                 <Border Grid.Row="1" Classes="panel">
-                    <TabControl>
+                    <TabControl x:Name="DetailsTabControl">
                         <TabItem Header="Selection">
                             <ScrollViewer>
                                 <ItemsControl ItemsSource="{Binding SelectedMetadata}">
