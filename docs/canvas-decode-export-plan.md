@@ -84,6 +84,6 @@ conditions through CLI output.
 6. Run real-client smoke tests only after synthetic coverage is deterministic.
 
 Status: steps 1 through 5 are started for direct zlib Canvas payloads with
-format `2` / `2562`, including a committed hex fixture, an `inspect --debug`
-golden output, and raw-byte CLI export coverage. PNG export and broader Canvas
-format coverage are still pending.
+format `2` / `2562`, including a committed hex fixture, `inspect --debug`
+text/JSON golden outputs, and raw-byte CLI export coverage. PNG export and
+broader Canvas format coverage are still pending.

@@ -348,7 +348,7 @@ public class CliApplicationTests
     public async Task InspectDebugCanvasZlibFixture_MatchesGoldenOutput()
     {
         var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
-        var expected = await File.ReadAllTextAsync(ExpectedFixturePath("inspect-canvas-zlib-debug.txt"));
+        var expected = await ReadExpectedFixtureAsync("inspect-canvas-zlib-debug.txt");
 
         try
         {
@@ -356,7 +356,27 @@ public class CliApplicationTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Empty, result.Error);
-            Assert.Equal(expected.ReplaceLineEndings(), NormalizePath(result.Output, path, "<wz>"));
+            Assert.Equal(expected, NormalizePath(result.Output, path, "<wz>"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugCanvasZlibFixtureJson_MatchesGoldenOutput()
+    {
+        var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var expected = await ReadExpectedFixtureAsync("inspect-canvas-zlib-debug.json");
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--json", "--key", "none", "--depth", "2", path, "Canvas.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(expected, NormalizePath(result.Output, path, "<wz>"));
         }
         finally
         {

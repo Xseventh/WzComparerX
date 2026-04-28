@@ -1,0 +1,162 @@
+{
+  "SourcePath": "<wz>",
+  "Format": "pkg1",
+  "Root": {
+    "Name": "Canvas.img",
+    "Kind": "image",
+    "Path": "Canvas.img",
+    "DisplayValue": "Property",
+    "DebugMetadata": [
+      {
+        "Name": "selector",
+        "Value": "Canvas.img"
+      },
+      {
+        "Name": "entryIndex",
+        "Value": 0
+      },
+      {
+        "Name": "entryNodeType",
+        "Value": "0x04"
+      },
+      {
+        "Name": "entryName",
+        "Value": "Canvas.img"
+      },
+      {
+        "Name": "entryPath",
+        "Value": "Canvas.img"
+      },
+      {
+        "Name": "entryDataSize",
+        "Value": 63
+      },
+      {
+        "Name": "entryChecksum",
+        "Value": 0
+      },
+      {
+        "Name": "entryHashOffsetPosition",
+        "Value": 31
+      },
+      {
+        "Name": "entryHashOffset",
+        "Value": 1755135661
+      },
+      {
+        "Name": "entryOffset",
+        "Value": 39
+      },
+      {
+        "Name": "objectType",
+        "Value": "Property"
+      },
+      {
+        "Name": "propertyCount",
+        "Value": 1
+      }
+    ],
+    "Children": [
+      {
+        "Name": "icon",
+        "Kind": "canvas",
+        "Path": "icon",
+        "DisplayValue": "2x1, format=2, scale=0, pages=1, compression=Zlib, dataLength=17, uncompressed=8, dataOffset=85",
+        "DebugMetadata": [
+          {
+            "Name": "index",
+            "Value": 0
+          },
+          {
+            "Name": "type",
+            "Value": "0x09"
+          },
+          {
+            "Name": "kind",
+            "Value": "canvas"
+          },
+          {
+            "Name": "valueType",
+            "Value": "canvas"
+          },
+          {
+            "Name": "width",
+            "Value": 2
+          },
+          {
+            "Name": "height",
+            "Value": 1
+          },
+          {
+            "Name": "format",
+            "Value": 2
+          },
+          {
+            "Name": "scale",
+            "Value": 0
+          },
+          {
+            "Name": "actualScale",
+            "Value": 1
+          },
+          {
+            "Name": "pages",
+            "Value": 1
+          },
+          {
+            "Name": "actualPages",
+            "Value": 1
+          },
+          {
+            "Name": "unknown1",
+            "Value": 0
+          },
+          {
+            "Name": "dataOffset",
+            "Value": 85
+          },
+          {
+            "Name": "dataLength",
+            "Value": 17
+          },
+          {
+            "Name": "compressionKind",
+            "Value": "Zlib"
+          },
+          {
+            "Name": "uncompressedDataLength",
+            "Value": 8
+          }
+        ],
+        "Diagnostics": [
+          {
+            "Severity": "info",
+            "Message": "Canvas pixel decoding is not implemented.",
+            "Path": "icon",
+            "Code": "wcx.payload.canvas.pixelsUnsupported",
+            "Source": "parser"
+          }
+        ],
+        "Children": []
+      }
+    ]
+  },
+  "DebugMetadata": [
+    {
+      "Name": "selector",
+      "Value": "Canvas.img"
+    },
+    {
+      "Name": "stringKey",
+      "Value": "none"
+    },
+    {
+      "Name": "wzVersion",
+      "Value": 777
+    },
+    {
+      "Name": "hashVersion",
+      "Value": 59192
+    }
+  ]
+}
