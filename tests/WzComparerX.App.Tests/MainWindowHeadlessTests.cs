@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.VisualTree;
@@ -108,6 +109,43 @@ public class MainWindowHeadlessTests
             var child = viewModel.RootNodes[0].Children[0];
 
             tree.SelectedItem = child;
+            using var frame = CaptureFrame(window);
+
+            Assert.Same(child, viewModel.SelectedNode);
+            Assert.Contains(viewModel.SelectedMetadata, item => item.Name == "name" && item.Value == "Character.wz");
+            Assert.Contains(viewModel.SelectedMetadata, item => item.Name == "kind" && item.Value == "directory");
+            AssertPngCanBeSaved(frame);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_MouseClickOnTreeNodeUpdatesSelectionPanelInHeadless()
+    {
+        var viewModel = new MainWindowViewModel
+        {
+            PathText = FixturePath("basic-tree.json")
+        };
+        await viewModel.LoadAsync();
+        var window = CreateWindow(viewModel);
+
+        try
+        {
+            using var initialFrame = CaptureFrame(window);
+            AssertPngCanBeSaved(initialFrame);
+
+            var child = viewModel.RootNodes[0].Children[0];
+            var item = FindTreeViewItem(window, child);
+            Assert.NotNull(item);
+            var topLeft = item.TranslatePoint(new Point(0, 0), window);
+            Assert.True(topLeft.HasValue);
+            var clickPoint = topLeft.Value + new Point(24, item.Bounds.Height / 2);
+
+            window.MouseDown(clickPoint, MouseButton.Left);
+            window.MouseUp(clickPoint, MouseButton.Left);
             using var frame = CaptureFrame(window);
 
             Assert.Same(child, viewModel.SelectedNode);
@@ -305,6 +343,26 @@ public class MainWindowHeadlessTests
         foreach (var child in root.GetVisualChildren().OfType<Control>())
         {
             var match = FindTab(child, header);
+            if (match is not null)
+            {
+                return match;
+            }
+        }
+
+        return null;
+    }
+
+    private static TreeViewItem? FindTreeViewItem(Control root, object dataContext)
+    {
+        if (root is TreeViewItem treeViewItem &&
+            ReferenceEquals(treeViewItem.DataContext, dataContext))
+        {
+            return treeViewItem;
+        }
+
+        foreach (var child in root.GetVisualChildren().OfType<Control>())
+        {
+            var match = FindTreeViewItem(child, dataContext);
             if (match is not null)
             {
                 return match;
