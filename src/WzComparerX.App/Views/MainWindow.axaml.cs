@@ -12,7 +12,7 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
-    private async void BrowsePathButton_OnClick(object? sender, RoutedEventArgs e)
+    private async void OpenResourceFileMenuItem_OnClick(object? sender, RoutedEventArgs e)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -42,4 +42,23 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void OpenResourceFolderMenuItem_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Open resource folder",
+            AllowMultiple = false
+        });
+
+        var path = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            await viewModel.OpenPathAsync(path);
+        }
+    }
 }

@@ -32,9 +32,14 @@
             <TextBox Grid.Column="1"
                      Text="{Binding PathText}"
                      PlaceholderText="WZ file, folder, or synthetic fixture"/>
-            <Button Grid.Column="2"
-                    Click="BrowsePathButton_OnClick"
-                    Content="Browse"/>
+            <Button Grid.Column="2" Content="Browse">
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuItem Header="Open Wz..." Click="OpenResourceFileMenuItem_OnClick"/>
+                        <MenuItem Header="Open Folder..." Click="OpenResourceFolderMenuItem_OnClick"/>
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
             <Button Grid.Column="3"
                     Command="{Binding LoadCommand}"
                     Content="Load"/>

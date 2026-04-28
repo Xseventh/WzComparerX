@@ -9,7 +9,8 @@ separate `Browse` and `Folder` buttons during M4 folder-browser bring-up.
 ## Changes
 
 - Removed the top-level `Folder` button from the path row.
-- Kept one visible `Browse` file picker for WZ packages and synthetic fixtures.
+- Kept one visible `Browse` entry with menu choices for `Open Wz...` and
+  `Open Folder...`.
 - Kept folder inspection support through `Path` plus `Load`, where the ViewModel
   already detects whether the path is a file or directory.
 - Updated M4 handoff and roadmap wording to describe folder handling as a load

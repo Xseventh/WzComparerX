@@ -195,11 +195,11 @@ M4 started:
   inspection nodes into a UI tree.
 - The UI has an IMG selector field plus an `Inspect Image` action for selected
   image nodes. String key and depth inputs mirror the current inspect workflow.
-- The path row has a native file picker for WZ packages and synthetic fixtures.
-  The `Load` action automatically handles file paths and folder paths. Folder
-  paths scan `.wz` headers into a folder inspection tree; selecting a package
-  node enables `Open Package`. Opening a new file or package clears the previous
-  IMG selector before loading.
+- The path row has one `Browse` entry with native file and folder picker menu
+  choices. The `Load` action automatically handles file paths and folder paths.
+  Folder paths scan `.wz` headers into a folder inspection tree; selecting a
+  package node enables `Open Package`. Opening a new file or package clears the
+  previous IMG selector before loading.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
 - Richer task/log handling is still pending.
