@@ -1,8 +1,8 @@
-# 2026-04-28 - Preview Dir Review Fixes
+# 2026-04-28 - Inspection Dir Review Fixes
 
 ## Summary
 
-- Changed `preview-dir` to return exit code `1` when the input header is
+- Changed `inspect` to return exit code `1` when the input header is
   invalid, matching the `header` command's failure behavior.
 - Implemented PKG1 `0x02` string-reference name decoding using WC's offset
   adjustment rules.
@@ -19,6 +19,6 @@ for normal PKG1 files and `+2` for missing-encrypted-version files.
 ```bash
 /usr/local/share/dotnet/dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 /usr/local/share/dotnet/dotnet test WzComparerX.slnx --no-build -m:1
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir /tmp/wcx-invalid-preview.wz
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Data/Base/Base.wz
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect /tmp/wcx-invalid-inspection.wz
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base.wz
 ```

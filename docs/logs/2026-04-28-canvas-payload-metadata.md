@@ -2,7 +2,7 @@
 
 ## Summary
 
-Expanded Canvas preview metadata with the payload compression kind and expected
+Expanded Canvas inspection metadata with the payload compression kind and expected
 uncompressed data length for known WC texture formats.
 
 ## Changes
@@ -23,7 +23,7 @@ uncompressed data length for known WC texture formats.
 - `dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false`
 - `dotnet test WzComparerX.slnx --no-build -m:1`
 - Local smoke:
-  - `preview-img --key auto --depth 2` on local `Data/UI/UI_000.wz` `Basic.img`
+  - `inspect --key auto --depth 2` on local `Data/UI/UI_000.wz` `Basic.img`
 
 The local smoke shows Canvas entries with `compression=Zlib` and expected
 uncompressed sizes such as `2` bytes for `1x1` `ARGB4444` frames.

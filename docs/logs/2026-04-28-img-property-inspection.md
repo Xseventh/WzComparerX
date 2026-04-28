@@ -1,10 +1,10 @@
-# 2026-04-28 - IMG Property Preview
+# 2026-04-28 - IMG Property Inspection
 
 ## Summary
 
-- Extended `preview-img` to read first-layer entries for top-level `Property`
+- Extended `inspect` to read first-layer entries for top-level `Property`
   images.
-- Added preview entries for null, integer, floating point, string, and nested
+- Added inspection entries for null, integer, floating point, string, and nested
   object property values.
 - Kept nested object parsing shallow: `0x09` values report the nested object
   type and skip to the object's end.
@@ -16,9 +16,9 @@
 Verified the local MapleStoryNA `Data/Base/Base_000.wz`:
 
 ```bash
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Data/Base/Base_000.wz smap.img
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Data/Base/Base_000.wz StandardPDD.img
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-img path/to/Data/Base/Base_000.wz zmap.img
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base_000.wz smap.img
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base_000.wz StandardPDD.img
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base_000.wz zmap.img
 ```
 
 - `smap.img` reports 151 first-layer properties.

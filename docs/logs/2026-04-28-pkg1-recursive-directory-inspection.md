@@ -1,10 +1,10 @@
-# 2026-04-28 - PKG1 Recursive Directory Preview
+# 2026-04-28 - PKG1 Recursive Directory Inspection
 
 ## Summary
 
-- Changed PKG1 directory preview from top-level-only enumeration to recursive
+- Changed PKG1 directory inspection from top-level-only enumeration to recursive
   directory-table enumeration.
-- Added depth and path metadata to preview entries.
+- Added depth and path metadata to inspection entries.
 - Updated text output to show `totalEntries` when recursive entries are present
   and indent child entries.
 - Added deterministic WzLib coverage for a nested synthetic PKG1 directory tree.
@@ -21,6 +21,6 @@ left for a later migration step.
 ```bash
 /usr/local/share/dotnet/dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 /usr/local/share/dotnet/dotnet test WzComparerX.slnx --no-build -m:1
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Data/Base/Base.wz
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Data/Base/Base_000.wz
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base.wz
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base_000.wz
 ```

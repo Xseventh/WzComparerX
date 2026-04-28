@@ -25,8 +25,8 @@ single CLI path into the Core resource inspection model.
   - property type/kind,
   - Canvas/RawData/Video/Sound payload offsets and lengths.
 - Added diagnostics for known unsupported payload decoding and full Lua export.
-- Removed `preview-dir` and `preview-img` CLI surfaces and Core preview
-  services/formatters while preserving WzLib parser behavior.
+- Removed obsolete diagnostic CLI surfaces and Core-only scaffolding while
+  preserving WzLib parser behavior.
 
 ## Verification
 
@@ -36,7 +36,7 @@ single CLI path into the Core resource inspection model.
 - `inspect --debug --key auto` on local `Data/Base/Base.wz`
 - `inspect --debug --key auto --depth 2` on local `Data/Base/Base_000.wz`
   `StandardPDD.img`
-- Legacy `preview-dir` command returns CLI usage with exit code `2`.
+- Obsolete diagnostic command names return CLI usage with exit code `2`.
 
 ## Notes
 

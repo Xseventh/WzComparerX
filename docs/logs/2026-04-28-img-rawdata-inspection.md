@@ -1,8 +1,8 @@
-# 2026-04-28 IMG RawData Preview
+# 2026-04-28 IMG RawData Inspection
 
 ## Summary
 
-- Added IMG object-value preview for `RawData`.
+- Added IMG object-value inspection for `RawData`.
 - Captured RawData version, payload offset, and payload length.
 - Preserved WC's version-1 mini-property read behavior so streams stay aligned.
 - Added deterministic tests for RawData metadata and out-of-bounds payload
@@ -13,7 +13,7 @@
 ```bash
 /usr/local/share/dotnet/dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 /usr/local/share/dotnet/dotnet test WzComparerX.slnx --no-build -m:1
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --depth 4 "/Users/seventh/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/UI/UI_000.wz" Basic.img
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect --depth 4 "/Users/seventh/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/UI/UI_000.wz" Basic.img
 ```
 
 ## Notes

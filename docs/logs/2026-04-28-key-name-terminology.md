@@ -3,7 +3,7 @@
 ## Summary
 
 - Renamed WCX's no-op PKG1 string key mode from `Bms` to `None`.
-- Updated `preview-dir` usage and docs to describe the default as `--key none`.
+- Updated `inspect` usage and docs to describe the default as `--key none`.
 - Kept `--key bms` as a compatibility alias for WC's historical no-op key name.
 
 ## Notes

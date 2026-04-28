@@ -1,4 +1,4 @@
-# 2026-04-27 Directory Preview
+# 2026-04-27 Directory Inspection
 
 ## Summary
 
@@ -7,15 +7,15 @@ counts and raw entry metadata without decrypting names or resolving offsets.
 
 ## Completed
 
-- Added `WzDirectoryPreviewReader` in `WzComparerX.WzLib`.
-- Added preview models for directory entry kind, entry metadata, and document
-  preview.
+- Added `WzDirectoryInspectionReader` in `WzComparerX.WzLib`.
+- Added inspection models for directory entry kind, entry metadata, and document
+  inspection.
 - Added Core service and text/JSON formatters.
 - Added CLI command:
 
 ```bash
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/file.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --json path/to/file.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/file.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --json path/to/file.wz
 ```
 
 - Added deterministic byte-level WzLib tests.
@@ -44,7 +44,7 @@ implemented yet.
 ```bash
 /usr/local/share/dotnet/dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 /usr/local/share/dotnet/dotnet test WzComparerX.slnx --no-build -m:1
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir "$HOME/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Base/Base.wz"
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect "$HOME/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Base/Base.wz"
 ```
 
 ## Next Suggested Work

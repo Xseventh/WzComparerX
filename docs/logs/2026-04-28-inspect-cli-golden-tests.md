@@ -8,9 +8,9 @@
   `inspect --debug --json` output against the synthetic fixture.
 - Added CLI-level assertions for WZ directory/image `inspect --debug`
   diagnostics, normal inspect output without debug metadata, and rejected
-  preview-era command names.
-- Cleaned active migration/architecture docs so preview is not presented as a
-  current CLI or parser design surface.
+  obsolete command names.
+- Cleaned active migration/architecture docs so obsolete command surfaces are
+  not presented as current CLI or parser design surfaces.
 
 ## Verification
 

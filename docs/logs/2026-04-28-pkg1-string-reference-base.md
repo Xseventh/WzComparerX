@@ -12,7 +12,7 @@
 WC reads PKG1 directory trees through a `PartialStream` whose position zero is
 `Header.DirStartPosition`. `ReadStringAt(reader.ReadInt32() + stringOffAdd)`
 therefore seeks to `Header.DirStartPosition + encodedOffset + stringOffAdd` in
-the underlying file. WCX reads preview data from the full file stream, so it
+the underlying file. WCX reads inspection data from the full file stream, so it
 must add `DirectoryStartPosition` explicitly.
 
 ## Verification

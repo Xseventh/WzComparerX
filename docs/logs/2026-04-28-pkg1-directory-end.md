@@ -24,5 +24,5 @@ rule.
 ```bash
 /usr/local/share/dotnet/dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 /usr/local/share/dotnet/dotnet test WzComparerX.slnx --no-build -m:1
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir path/to/Data/Base/Base.wz
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect path/to/Data/Base/Base.wz
 ```

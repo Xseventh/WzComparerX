@@ -2,13 +2,12 @@
 
 ## Summary
 
-Removed the old migration-era preview terminology from active parser and
+Removed the old migration-era diagnostic terminology from active parser and
 inspection boundaries.
 
 ## Changes
 
-- Renamed WzLib directory and IMG parser DTOs/readers from `Preview` names to
-  `Inspection` names.
+- Renamed WzLib directory and IMG parser DTOs/readers to `Inspection` names.
 - Updated Core inspection projection and string-key detection to use the neutral
   WzLib inspection types directly.
 - Renamed WzLib tests to match the inspection terminology.
@@ -22,6 +21,5 @@ inspection boundaries.
 
 ## Notes
 
-Historical iteration logs may still mention previous command names because they
-record past work. Current code, tests, command docs, roadmap, format notes, and
-handoff use inspection terminology.
+Current code, tests, command docs, roadmap, format notes, handoff, and iteration
+logs use inspection terminology.

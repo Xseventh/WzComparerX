@@ -1,8 +1,8 @@
-# 2026-04-28 IMG Sound Preview
+# 2026-04-28 IMG Sound Inspection
 
 ## Summary
 
-- Added IMG object-value preview for `Sound_DX8`.
+- Added IMG object-value inspection for `Sound_DX8`.
 - Captured version, duration, sound declaration, AM media type GUIDs, fixed-size
   and temporal-compression flags, optional format-extra length, payload offset,
   and payload length.
@@ -16,8 +16,8 @@
 ```bash
 /usr/local/share/dotnet/dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 /usr/local/share/dotnet/dotnet test WzComparerX.slnx --no-build -m:1
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --depth 2 "/Users/seventh/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Sound/Sound_000.wz" AchievementEff.img
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-img --depth 2 "/Users/seventh/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Sound/Sound_000.wz" Bgm00.img
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect --depth 2 "/Users/seventh/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Sound/Sound_000.wz" AchievementEff.img
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect --depth 2 "/Users/seventh/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Sound/Sound_000.wz" Bgm00.img
 ```
 
 ## Notes

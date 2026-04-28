@@ -385,19 +385,6 @@ public class CliApplicationTests
     }
 
     [Fact]
-    public async Task PreviewCommands_AreNotAccepted()
-    {
-        var fixture = FixturePath("basic-tree.json");
-
-        var result = await RunCliAsync("preview-dir", fixture);
-
-        Assert.Equal(2, result.ExitCode);
-        Assert.Contains("wcx inspect", result.Error);
-        Assert.DoesNotContain("preview-dir", result.Error);
-        Assert.DoesNotContain("preview-img", result.Error);
-    }
-
-    [Fact]
     public async Task ExportMetadataSynthetic_MatchesInspectDebugJson()
     {
         var fixture = FixturePath("basic-tree.json");

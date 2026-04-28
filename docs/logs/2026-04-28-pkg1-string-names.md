@@ -2,22 +2,22 @@
 
 ## Summary
 
-Added PKG1 directory string decoding for previewed directory entries.
+Added PKG1 directory string decoding for inspected directory entries.
 
 ## Completed
 
 - Added `WzStringDecryptor` and `WzStringEncryptionKind`.
 - Implemented no-op, KMS, and GMS PKG1 string key modes.
-- Updated directory preview entries to include decoded names.
+- Updated directory inspection entries to include decoded names.
 - Added CLI key selection:
 
 ```bash
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key none path/to/file.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key kms path/to/file.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms path/to/file.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key none path/to/file.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key kms path/to/file.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key gms path/to/file.wz
 ```
 
-- Defaulted `preview-dir` to no-op because the local MapleStoryNA client
+- Defaulted `inspect` to no-op because the local MapleStoryNA client
   `Data/Base/Base.wz` decodes correctly with that key.
 - `--key bms` remains accepted as a compatibility alias for WC's historical
   no-op key name.
@@ -28,7 +28,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir --key gms pat
 Verified:
 
 ```bash
-/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- preview-dir "$HOME/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Base/Base.wz"
+/usr/local/share/dotnet/dotnet run --project src/WzComparerX.Cli --no-build -- inspect "$HOME/Library/Application Support/MapleStoryNA/Bottles/maplestory/drive_c/Nexon/Library/maplestory/appdata/Data/Base/Base.wz"
 ```
 
 Output now includes names:

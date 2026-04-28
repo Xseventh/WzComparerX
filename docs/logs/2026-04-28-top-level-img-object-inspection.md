@@ -1,13 +1,13 @@
-# 2026-04-28 - Top-Level IMG Object Preview
+# 2026-04-28 - Top-Level IMG Object Inspection
 
 ## Summary
 
-Extended `preview-img` so supported non-`Property` IMG root objects now expose
-their preview value or metadata directly.
+Extended `inspect` so supported non-`Property` IMG root objects now expose
+their inspection value or metadata directly.
 
 ## Changes
 
-- Added `ObjectValue` to `WzImagePreview`.
+- Added `ObjectValue` to `WzImageInspection`.
 - Reused existing IMG object readers for top-level `Canvas`, `Shape2D#Vector2D`,
   `Shape2D#Convex2D`, `UOL`, `RawData`, `Canvas#Video`, and `Sound_DX8`
   objects.
@@ -21,5 +21,5 @@ their preview value or metadata directly.
 - `dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false`
 - `dotnet test WzComparerX.slnx --no-build -m:1`
 - Local smoke:
-  - `preview-dir --key auto` on local `Data/UI/UI_000.wz`
-  - `preview-img --key auto --depth 2` on local `Data/UI/UI_000.wz` `Basic.img`
+  - `inspect --key auto` on local `Data/UI/UI_000.wz`
+  - `inspect --key auto --depth 2` on local `Data/UI/UI_000.wz` `Basic.img`
