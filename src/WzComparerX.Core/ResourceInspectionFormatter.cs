@@ -76,24 +76,7 @@ public sealed class ResourceInspectionFormatter
         foreach (var diagnostic in diagnostics)
         {
             builder.Append(' ', (depth + 1) * 2);
-            builder.Append(diagnostic.Severity);
-            if (!string.IsNullOrWhiteSpace(diagnostic.Code))
-            {
-                builder.Append(" [");
-                builder.Append(diagnostic.Code);
-                builder.Append(']');
-            }
-
-            builder.Append(": ");
-            builder.Append(diagnostic.Message);
-            if (!string.IsNullOrWhiteSpace(diagnostic.Path))
-            {
-                builder.Append(" (");
-                builder.Append(diagnostic.Path);
-                builder.Append(')');
-            }
-
-            builder.AppendLine();
+            builder.AppendLine(ResourceInspectionDiagnosticFormatter.Format(diagnostic));
         }
     }
 

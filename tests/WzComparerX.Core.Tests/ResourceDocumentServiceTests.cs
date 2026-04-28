@@ -217,6 +217,33 @@ public class ResourceDocumentServiceTests
         }
     }
 
+    [Fact]
+    public void DiagnosticFormatter_ReturnsStableCliText()
+    {
+        var diagnostic = new ResourceInspectionDiagnostic(
+            "error",
+            "Selected image is not a supported Lua IMG: Text.img.",
+            "Text.img",
+            ResourceDiagnosticCodes.ExportUnsupported,
+            "export");
+
+        var output = ResourceInspectionDiagnosticFormatter.Format(diagnostic);
+
+        Assert.Equal(
+            "error [wcx.export.unsupported]: Selected image is not a supported Lua IMG: Text.img. (Text.img)",
+            output);
+    }
+
+    [Fact]
+    public void DiagnosticFormatter_OmitsEmptyCodeAndPath()
+    {
+        var diagnostic = new ResourceInspectionDiagnostic("info", "Nothing to report.", Code: " ", Path: "");
+
+        var output = ResourceInspectionDiagnosticFormatter.Format(diagnostic);
+
+        Assert.Equal("info: Nothing to report.", output);
+    }
+
     private static string FixturePath(string fileName)
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
