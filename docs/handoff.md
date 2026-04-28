@@ -20,6 +20,11 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+6383edf Remove retired diagnostic terminology remnants
+5071c93 Sync M3 fixture documentation
+a6206ab Add text and Lua export fixtures
+099c0d4 Stabilize Canvas decode diagnostic
+fb91636 Add Canvas inspect JSON golden
 a42af46 Rename parser diagnostic models to inspection
 d6fc84b Add inspect debug diagnostics
 84a5f88 Add resource inspect abstraction
@@ -104,22 +109,27 @@ a0858cb Bootstrap WCX modernization project
 
 ## Current State
 
-Milestone 1 is implemented. Milestone 2 is closing with real WZ package
-header detection and PKG1 directory inspection working against the local
-MapleStoryNA client. `inspect` now projects synthetic fixtures, WZ directories,
-and WZ IMG payloads into a generic inspection tree so future UI/export/search
-work does not depend directly on parser DTOs. `inspect --debug` exposes the
-low-level fields that were useful during parser migration, including PKG1 node
-types, sizes, checksums, hash offsets, calculated offsets, selected string key,
-WZ/hash version, selected IMG entry metadata, object type, object value
-metadata, property type/kind metadata, and Canvas/RawData/Video/Sound payload
-offsets and lengths. `--key auto` selects among no-op/KMS/GMS directory string
-decoding. `--depth 0` prints only the top-level IMG object type, while deeper
-values expand bounded property/object metadata.
+Milestone 1 and Milestone 2 are complete. The current mainline is Milestone 3
+export/diagnostics hardening, with Milestone 4 UI browsing queued behind stable
+Core models. M2 delivered real WZ package header detection, PKG1 directory
+inspection, recursive directory entries, string-key handling, IMG object and
+property metadata, Lua/text IMG inspection, and payload metadata for Canvas,
+RawData, Video, and Sound values.
 
-The old temporary parser/CLI terminology has been retired from active design
-and command documentation. Historical logs may still mention migration-era
-steps, but the supported surface is now `inspect` and `inspect --debug`.
+`inspect` now projects synthetic fixtures, WZ directories, and WZ IMG payloads
+into a generic inspection tree so future UI/export/search work does not depend
+directly on parser DTOs. `inspect --debug` exposes the low-level fields that
+were useful during parser migration, including PKG1 node types, sizes,
+checksums, hash offsets, calculated offsets, selected string key, WZ/hash
+version, selected IMG entry metadata, object type, object value metadata,
+property type/kind metadata, and Canvas/RawData/Video/Sound payload offsets and
+lengths. `--key auto` selects among no-op/KMS/GMS directory string decoding.
+`--depth 0` prints only the top-level IMG object type, while deeper values
+expand bounded property/object metadata.
+
+The old temporary parser/CLI terminology has been retired from active design,
+command documentation, file names, and active tests. The supported observation
+surface is now `inspect` and `inspect --debug`.
 
 Canvas pixel decoding has the first narrow direct-zlib raw-byte slice for
 format `2` / `2562`; PNG export and broader Canvas format coverage are still

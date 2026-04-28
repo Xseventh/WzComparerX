@@ -86,7 +86,7 @@ contains 16 top-level directory entries (`nodeType` `0x03`) with zero data size
 and checksum fields. This confirms the PKG1 directory entry shape.
 
 The same file's top-level names decode with the no-op PKG1 string key
-(`--key none`; WC historically names this `BMS`).
+(`--key none`).
 The default `inspect` path now uses that key and can list names such as
 `Character`, `Effect`, `Etc`, `Item`, `Map`, `Mob`, `Npc`, `String`, and `UI`.
 KMS/GMS key modes are still exposed for older or region-specific files.
@@ -141,3 +141,34 @@ data did not expose a direct text IMG smoke sample in the scanned WZ files.
 `AchievementEff.img` and `Bgm00.img`. With `inspect --debug --depth 2`, their
 `Sound_DX8` values inspect as metadata including duration, sound declaration,
 payload length, and payload offset. Audio payload decoding is not implemented.
+
+## Milestone 2 Parser Coverage
+
+M2 accepted the following migrated behavior as complete:
+
+- PKG1 and PKG2 package header detection.
+- PKG1 directory enumeration and recursive directory entries.
+- PKG1 name decoding, including string-reference names.
+- WZ version, hash version, and hash-offset calculation.
+- Directory string-key modes: none, KMS, GMS, and auto.
+- IMG root object type detection.
+- Bounded `Property` traversal with scalar and nested property values.
+- Vector, Convex2D, UOL, Canvas, RawData, Video, and Sound metadata.
+- Lua IMG inspection.
+- WC text-format IMG v1/v2 inspection.
+
+The following work moved beyond M2:
+
+- PNG export.
+- Full Canvas pixel decode matrix.
+- Audio and video payload decoding.
+- Full PKG2 directory parsing.
+- UI browsing.
+
+Read-only local smoke verification covered `Base/Base.wz`, `Base/Base_000.wz`,
+`UI/UI_000.wz`, and `Sound/Sound_000.wz`. `UI/WZ2Lua/WZ2Lua.wz` was verified
+as a directory-only smoke sample; the sampled local GMS package did not expose
+a direct `.lua` image through the supported inspection path. Lua IMG and
+text-format IMG parser behavior is currently locked by committed synthetic
+fixtures, and still needs direct real-sample verification when a suitable local
+entry is found.

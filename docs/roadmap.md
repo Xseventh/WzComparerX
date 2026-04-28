@@ -37,7 +37,7 @@ Exit criteria:
 
 ## Milestone 2: First Real WC Migration
 
-Status: closing.
+Status: done.
 
 Goal: migrate the smallest useful WC parsing behavior.
 
@@ -63,9 +63,12 @@ Exit criteria:
 
 Closeout notes:
 
-- Real PKG1 directory and IMG inspection behavior now exceeds the original scope.
-- Remaining work should focus on documenting unsupported cases and ensuring new
-  parser behavior is reachable through `inspect`.
+- Real PKG1 directory and IMG inspection behavior exceeded the original scope
+  and is now routed through `inspect` / `inspect --debug`.
+- M2 covered header detection, PKG1 directory traversal, string-key handling,
+  IMG object/property metadata, Lua/text IMG inspection, and payload metadata
+  for Canvas, RawData, Video, and Sound values.
+- Unsupported decode/export work has moved to M3 or later backlog items.
 
 ## Milestone 3: Export And Inspect
 
@@ -87,6 +90,8 @@ Tasks:
 - Define first Canvas decode/export slice. Documented in
   `docs/canvas-decode-export-plan.md`; WzLib direct-zlib decoder and raw-byte
   CLI export are started and covered by committed synthetic fixtures.
+- Continue export surface decisions for stdout vs `--out`, text vs binary
+  content, and partial/unsupported payload diagnostics.
 
 Exit criteria:
 
@@ -144,3 +149,7 @@ Exit criteria:
 - Keep WCX useful before it is complete.
 - Avoid making MapRender block core browser progress.
 - Prefer CLI and tests for every feature before UI polish.
+- Full PKG2 directory parsing.
+- PNG export and a broader Canvas pixel decode matrix.
+- Audio and video payload decoding.
+- UI browsing beyond the current Avalonia shell.
