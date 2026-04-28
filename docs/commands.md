@@ -151,7 +151,8 @@ stderr so shell pipelines receive only exported content. Use `--out <path>` to
 write exact export bytes to a file. Future binary exporters should require
 `--out` instead of writing binary data through text stdout.
 
-CLI diagnostics use a stable code when one is available:
+CLI diagnostics use the shared diagnostic model described in
+`docs/diagnostics.md`. Text output uses a stable code when one is available:
 
 ```text
 error [wcx.export.unsupported]: Selected image is not a supported Lua IMG: Text.img. (Text.img)

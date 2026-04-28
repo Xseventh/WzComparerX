@@ -25,6 +25,10 @@ Only after this should the Avalonia UI become feature-heavy.
 - `development-guidelines.md`: Coding, testing, git, and documentation rules.
 - `migration-from-wc.md`: How to reuse WC without inheriting its coupling.
 - `format-notes.md`: Working notes for WZ/MS/PKG behavior and fixture planning.
+- `diagnostics.md`: Stable diagnostic model, codes, severities, sources, and
+  CLI/JSON formatting rules.
+- `canvas-decode-export-plan.md`: Minimum Canvas decode/export scope and
+  fixture strategy.
 - `roadmap.md`: Milestones and next work queue.
 - `commands.md`: Local development commands and known environment quirks.
 - `decision-log.md`: Short index of architectural decisions.

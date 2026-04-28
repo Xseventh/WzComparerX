@@ -80,14 +80,18 @@ Tasks:
 - Add XML dump if parser coverage allows.
 - Add export abstraction in Core. Started for metadata, text IMG, Lua, and
   `--out` file output.
-- Add error diagnostics model. Started with stable diagnostic codes and sources
-  shared by inspect/export formatting.
+- Add error diagnostics model. Implemented initial shared diagnostics factory,
+  stable severity/source/code constants, shared CLI text formatting, and
+  `docs/diagnostics.md`.
+- Define first Canvas decode/export slice. Documented in
+  `docs/canvas-decode-export-plan.md`; implementation still pending.
 
 Exit criteria:
 
 - CLI can inspect and dump at least synthetic/raw nodes.
 - Output is covered by snapshot-like expected files.
 - Parser diagnostics are available through `inspect --debug`.
+- Diagnostics rules are documented and tested.
 
 ## Milestone 4: Basic Avalonia Browser
 

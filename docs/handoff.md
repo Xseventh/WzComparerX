@@ -129,7 +129,8 @@ IMG blocks. Text-format IMG streams starting with `#Property` or
 `export --type text`. Text exports write to stdout by default or exact bytes to
 `--out <path>`; future binary exporters should use `--out`. Diagnostics carry
 stable severities, codes, and sources through `ResourceInspectionDiagnostics`;
-CLI text output prints codes in brackets when present.
+CLI text output prints codes in brackets when present. The diagnostic rules are
+documented in `docs/diagnostics.md`.
 `WzImageInspectionReader` is now the small image-entry dispatcher, and
 `WzImageBinaryInspectionReader` is the binary IMG entry coordinator. Binary IMG
 object/property parsing lives in `WzImageBinaryObjectInspectionReader`, with
@@ -139,6 +140,11 @@ in their own readers. Canvas/RawData/Video/Sound payload metadata lives in
 `WzImagePayloadInspectionReader`, and shared IMG binary read primitives live in
 `WzImageBinaryReaderPrimitives`; the next parser split should target additional
 object-type families only when new behavior needs them.
+
+Canvas decode/export should start from the narrow plan in
+`docs/canvas-decode-export-plan.md`: synthetic fixture first, direct zlib and a
+single verified pixel format first, payload decoder separate from parser
+metadata and Core export.
 
 ## Suggested Next Prompt
 
