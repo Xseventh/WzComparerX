@@ -19,6 +19,8 @@ public class MainWindowViewModelTests
         var root = Assert.Single(viewModel.RootNodes);
         Assert.Equal("basic-tree", root.Name);
         Assert.Equal("directory", root.Kind);
+        Assert.True(root.IsExpanded);
+        Assert.All(root.Children, child => Assert.False(child.IsExpanded));
         Assert.Equal("Loaded synthetic: basic-tree.json", viewModel.StatusMessage);
         Assert.Equal("success: Loaded synthetic: basic-tree.json", viewModel.ActivityLog[0].Title);
         Assert.Equal("info: Loading basic-tree.json", viewModel.ActivityLog[1].Title);

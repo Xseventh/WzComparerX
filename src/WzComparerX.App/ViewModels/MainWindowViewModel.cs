@@ -394,6 +394,7 @@ public sealed class ResourceInspectionNodeViewModel
         string kind,
         string? path,
         string? displayValue,
+        bool isExpanded,
         IEnumerable<ResourceInspectionNodeViewModel> children,
         IEnumerable<ResourceMetadataItemViewModel> debugMetadata,
         IEnumerable<ResourceDiagnosticViewModel> diagnostics)
@@ -402,6 +403,7 @@ public sealed class ResourceInspectionNodeViewModel
         Kind = kind;
         Path = path;
         DisplayValue = displayValue;
+        IsExpanded = isExpanded;
         Children = new ObservableCollection<ResourceInspectionNodeViewModel>(children);
         DebugMetadata = new ObservableCollection<ResourceMetadataItemViewModel>(debugMetadata);
         Diagnostics = new ObservableCollection<ResourceDiagnosticViewModel>(diagnostics);
@@ -419,6 +421,8 @@ public sealed class ResourceInspectionNodeViewModel
         ? $"{Name} [{Kind}]"
         : $"{Name} [{Kind}] : {DisplayValue}";
 
+    public bool IsExpanded { get; set; }
+
     public ObservableCollection<ResourceInspectionNodeViewModel> Children { get; }
 
     public ObservableCollection<ResourceMetadataItemViewModel> DebugMetadata { get; }
@@ -427,12 +431,18 @@ public sealed class ResourceInspectionNodeViewModel
 
     public static ResourceInspectionNodeViewModel FromNode(ResourceInspectionNode node)
     {
+        return FromNode(node, depth: 0);
+    }
+
+    private static ResourceInspectionNodeViewModel FromNode(ResourceInspectionNode node, int depth)
+    {
         return new ResourceInspectionNodeViewModel(
             node.Name,
             node.Kind,
             node.Path,
             node.DisplayValue,
-            node.Children.Select(FromNode),
+            isExpanded: depth == 0 && node.Children.Count > 0,
+            node.Children.Select(child => FromNode(child, depth + 1)),
             (node.DebugMetadata ?? []).Select(ResourceMetadataItemViewModel.FromMetadata),
             (node.Diagnostics ?? []).Select(ResourceDiagnosticViewModel.FromDiagnostic));
     }
