@@ -50,6 +50,9 @@ Current examples:
 - `wcx.payload.audio.unsupported`
 - `wcx.export.lua.multipleBlocks`
 - `wcx.export.unsupported`
+- `wcx.export.canvas.compressionUnsupported`
+- `wcx.export.canvas.formatUnsupported`
+- `wcx.export.canvas.decodeFailed`
 
 Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.

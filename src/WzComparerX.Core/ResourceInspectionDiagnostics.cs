@@ -1,3 +1,5 @@
+using WzComparerX.WzLib;
+
 namespace WzComparerX.Core;
 
 public static class ResourceInspectionDiagnostics
@@ -67,6 +69,38 @@ public static class ResourceInspectionDiagnostics
             message,
             selector,
             ResourceDiagnosticCodes.ExportUnsupported,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportCanvasCompressionUnsupported(
+        WzImageCanvasCompressionKind compressionKind,
+        string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas export does not support compression kind {compressionKind}.",
+            selector,
+            ResourceDiagnosticCodes.ExportCanvasCompressionUnsupported,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportCanvasFormatUnsupported(int format, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas export does not support format {format}.",
+            selector,
+            ResourceDiagnosticCodes.ExportCanvasFormatUnsupported,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportCanvasDecodeFailed(string message, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas export failed to decode payload: {message}",
+            selector,
+            ResourceDiagnosticCodes.ExportCanvasDecodeFailed,
             ResourceDiagnosticSources.Export);
     }
 }

@@ -60,9 +60,12 @@ Use the diagnostics model in `docs/diagnostics.md`.
 
 Expected new diagnostic families:
 
-- Unsupported Canvas compression.
-- Unsupported Canvas format.
-- Canvas payload decode failure.
+- Unsupported Canvas compression:
+  `wcx.export.canvas.compressionUnsupported`.
+- Unsupported Canvas format:
+  `wcx.export.canvas.formatUnsupported`.
+- Canvas payload decode failure:
+  `wcx.export.canvas.decodeFailed`.
 - Canvas export requiring `--out` if binary stdout is not supported.
 
 Add stable `wcx.canvas.*` or `wcx.export.canvas.*` codes before exposing the

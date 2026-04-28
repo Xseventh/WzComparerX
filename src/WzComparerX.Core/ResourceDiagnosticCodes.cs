@@ -8,4 +8,7 @@ public static class ResourceDiagnosticCodes
     public const string AudioPayloadDecodingUnsupported = "wcx.payload.audio.unsupported";
     public const string ExportLuaMultipleBlocks = "wcx.export.lua.multipleBlocks";
     public const string ExportUnsupported = "wcx.export.unsupported";
+    public const string ExportCanvasCompressionUnsupported = "wcx.export.canvas.compressionUnsupported";
+    public const string ExportCanvasFormatUnsupported = "wcx.export.canvas.formatUnsupported";
+    public const string ExportCanvasDecodeFailed = "wcx.export.canvas.decodeFailed";
 }

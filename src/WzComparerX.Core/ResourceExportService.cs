@@ -105,6 +105,17 @@ public sealed class ResourceExportService
             throw Unsupported(ResourceExportKind.Canvas, selector);
         }
 
+        if (canvas.CompressionKind != WzImageCanvasCompressionKind.Zlib)
+        {
+            throw new ResourceExportException(
+                ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(canvas.CompressionKind, selector));
+        }
+
+        if (canvas.Format is not 2 and not 2562)
+        {
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(canvas.Format, selector));
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
         await using var stream = File.OpenRead(path);
         WzImageCanvasBitmap bitmap;
@@ -112,9 +123,9 @@ public sealed class ResourceExportService
         {
             bitmap = new WzImageCanvasPayloadDecoder().Decode(stream, canvas);
         }
-        catch (NotSupportedException)
+        catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or NotSupportedException)
         {
-            throw Unsupported(ResourceExportKind.Canvas, selector);
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(ex.Message, selector));
         }
 
         return new ResourceExportDocument(

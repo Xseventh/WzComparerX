@@ -498,6 +498,73 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportCanvasUnsupportedCompression_ReturnsStructuredDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile(
+            "Canvas.img",
+            CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1, payload: [0x01, 0x02, 0x03]));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Contains(
+                "error [wcx.export.canvas.compressionUnsupported]: Canvas export does not support compression kind ChunkedEncryptedZlib. (Canvas.img)",
+                result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExportCanvasUnsupportedFormat_ReturnsStructuredDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile(
+            "Canvas.img",
+            CreateCanvasImage([0x10, 0x20], width: 1, format: 1));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Contains(
+                "error [wcx.export.canvas.formatUnsupported]: Canvas export does not support format 1. (Canvas.img)",
+                result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExportCanvasDecodeFailure_ReturnsStructuredDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile(
+            "Canvas.img",
+            CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1, payload: [0x00, 0x78, 0x9c, 0x00]));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Contains("error [wcx.export.canvas.decodeFailed]: Canvas export failed to decode payload:", result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task ExportUnsupportedType_ReturnsStructuredDiagnostic()
     {
         const string text = "#Property\nname=hello\n";
@@ -671,9 +738,14 @@ public class CliApplicationTests
         return bytes.ToArray();
     }
 
-    private static byte[] CreateCanvasImage(byte[] pixels, int width = 2, int height = 1)
+    private static byte[] CreateCanvasImage(
+        byte[] pixels,
+        int width = 2,
+        int height = 1,
+        int format = 2,
+        byte[]? payload = null)
     {
-        var payload = CreateDirectZlibPayload(pixels);
+        payload ??= CreateDirectZlibPayload(pixels);
         return CreatePropertyImage(CreateObjectProperty(
             "icon",
             CreateObjectValue(
@@ -682,7 +754,7 @@ public class CliApplicationTests
                 0x00,
                 width,
                 height,
-                2,
+                format,
                 0x00,
                 1,
                 0,
@@ -690,6 +762,11 @@ public class CliApplicationTests
                 (byte)0x00,
                 BitConverter.GetBytes(payload.Length),
                 payload)));
+    }
+
+    private static string TemporaryOutputPath()
+    {
+        return Path.Combine(Path.GetTempPath(), $"wcx-export-{Guid.NewGuid():N}.bin");
     }
 
     private static byte[] CreateDirectZlibPayload(byte[] pixels)
