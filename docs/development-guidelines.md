@@ -118,6 +118,12 @@ Fixture tests should prefer small files in `fixtures/synthetic`. If a real
 client sample is needed, keep it out of git and document it under
 `fixtures/external`.
 
+M4 Avalonia UI behavior belongs in `WzComparerX.App.Tests`, not
+`WzComparerX.Core.Tests`. Use Avalonia Headless tests for window/control
+structure, binding smoke checks, and future screenshot-assisted layout
+verification. Keep Core tests focused on Core services, CLI behavior, and
+parser-facing models.
+
 ## Git Workflow
 
 - Work on feature branches, not `master`.

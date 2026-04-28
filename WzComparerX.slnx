@@ -8,6 +8,7 @@
     <Project Path="src/WzComparerX.WzLib/WzComparerX.WzLib.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj" />
     <Project Path="tests/WzComparerX.Core.Tests/WzComparerX.Core.Tests.csproj" />
     <Project Path="tests/WzComparerX.WzLib.Tests/WzComparerX.WzLib.Tests.csproj" />
   </Folder>

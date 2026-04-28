@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Text;
 using WzComparerX.App.ViewModels;
 
-namespace WzComparerX.Core.Tests;
+namespace WzComparerX.App.Tests;
 
 public class MainWindowViewModelTests
 {

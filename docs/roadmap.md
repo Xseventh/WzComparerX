@@ -141,6 +141,8 @@ Tasks:
 - Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
+- UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless
+  plus migrated ViewModel tests.
 - No direct parsing in view models.
 
 Exit criteria:

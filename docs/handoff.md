@@ -206,6 +206,9 @@ M4 started:
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
 - The UI has a basic activity log for load, inspection, and error events.
+- `WzComparerX.App.Tests` now owns Avalonia UI/ViewModel tests and uses
+  Avalonia Headless for window/control smoke coverage. Core.Tests no longer
+  references the App project.
 - Richer task/progress handling is still pending.
 
 Local GMS smoke status:
