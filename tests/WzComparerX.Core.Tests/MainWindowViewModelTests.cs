@@ -20,6 +20,8 @@ public class MainWindowViewModelTests
         Assert.Equal("basic-tree", root.Name);
         Assert.Equal("directory", root.Kind);
         Assert.Equal("Loaded synthetic: basic-tree.json", viewModel.StatusMessage);
+        Assert.Equal("success: Loaded synthetic: basic-tree.json", viewModel.ActivityLog[0].Title);
+        Assert.Equal("info: Loading basic-tree.json", viewModel.ActivityLog[1].Title);
         Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "format" && item.Value == "synthetic");
 
         var image = root.Children[0].Children[0].Children[0];
@@ -43,6 +45,7 @@ public class MainWindowViewModelTests
         await viewModel.LoadAsync();
 
         Assert.Equal("Unknown string key: invalid", viewModel.StatusMessage);
+        Assert.Equal("error: Unknown string key: invalid", viewModel.ActivityLog[0].Title);
         Assert.NotEmpty(viewModel.RootNodes);
     }
 
@@ -59,6 +62,7 @@ public class MainWindowViewModelTests
         await viewModel.LoadAsync();
 
         Assert.Equal("Depth must be between 0 and 64.", viewModel.StatusMessage);
+        Assert.Equal("error: Depth must be between 0 and 64.", viewModel.ActivityLog[0].Title);
         Assert.NotEmpty(viewModel.RootNodes);
     }
 

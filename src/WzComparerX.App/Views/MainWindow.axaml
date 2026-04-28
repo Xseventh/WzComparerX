@@ -83,7 +83,7 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Column="1" RowDefinitions="Auto,2*,*" RowSpacing="12">
+            <Grid Grid.Column="1" RowDefinitions="Auto,2*,*,*" RowSpacing="12">
                 <Border Classes="panel">
                     <Grid RowDefinitions="Auto,*" RowSpacing="4">
                         <TextBlock Classes="section-title" Text="Document"/>
@@ -134,6 +134,23 @@
                                             <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
                                             <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="3" Classes="panel">
+                    <Grid RowDefinitions="Auto,*" RowSpacing="4">
+                        <TextBlock Classes="section-title" Text="Activity"/>
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsControl ItemsSource="{Binding ActivityLog}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ResourceActivityLogItemViewModel">
+                                        <TextBlock Text="{Binding Title}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,2"/>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

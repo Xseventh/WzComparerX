@@ -64,6 +64,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<ResourceDiagnosticViewModel> SelectedDiagnostics { get; } = [];
 
+    public ObservableCollection<ResourceActivityLogItemViewModel> ActivityLog { get; } = [];
+
     public bool HasSelection => SelectedNode is not null;
 
     public bool HasDiagnostics => SelectedDiagnostics.Count > 0;
@@ -120,6 +122,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsBusy = true;
             StatusMessage = "Loading";
+            AddActivity("info", $"Loading {GetDisplayPathName(path)}");
 
             if (Directory.Exists(path))
             {
@@ -127,6 +130,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 var folderDocument = await folderInspectionService.InspectAsync(path);
                 ApplyDocument(folderDocument);
                 StatusMessage = $"Loaded folder: {Path.GetFileName(Path.TrimEndingDirectorySeparator(folderDocument.SourcePath))}";
+                AddActivity("success", StatusMessage);
                 return;
             }
 
@@ -148,6 +152,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             ApplyDocument(document);
             StatusMessage = $"Loaded {document.Format}: {Path.GetFileName(document.SourcePath)}";
+            AddActivity("success", StatusMessage);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
@@ -156,6 +161,7 @@ public partial class MainWindowViewModel : ViewModelBase
             SelectedNode = null;
             CurrentFormat = string.Empty;
             StatusMessage = ex.Message;
+            AddActivity("error", StatusMessage);
         }
         finally
         {
@@ -221,6 +227,23 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentFormat = document.Format;
     }
 
+    private void AddActivity(string kind, string message)
+    {
+        ActivityLog.Insert(0, new ResourceActivityLogItemViewModel(kind, message));
+        const int maxActivityLogItems = 100;
+        while (ActivityLog.Count > maxActivityLogItems)
+        {
+            ActivityLog.RemoveAt(ActivityLog.Count - 1);
+        }
+    }
+
+    private static string GetDisplayPathName(string path)
+    {
+        var normalizedPath = Path.TrimEndingDirectorySeparator(path);
+        var name = Path.GetFileName(normalizedPath);
+        return string.IsNullOrWhiteSpace(name) ? normalizedPath : name;
+    }
+
     private void SetDocumentMetadata(ResourceInspectionDocument document)
     {
         DocumentMetadata.Clear();
@@ -278,6 +301,7 @@ public partial class MainWindowViewModel : ViewModelBase
         if (!TryParseStringKey(KeyText.Trim(), out var stringKey))
         {
             StatusMessage = $"Unknown string key: {KeyText}";
+            AddActivity("error", StatusMessage);
             return false;
         }
 
@@ -286,6 +310,7 @@ public partial class MainWindowViewModel : ViewModelBase
             depth > WzImageInspectionReader.MaxPropertyInspectionDepth)
         {
             StatusMessage = $"Depth must be between 0 and {WzImageInspectionReader.MaxPropertyInspectionDepth}.";
+            AddActivity("error", StatusMessage);
             return false;
         }
 
@@ -421,6 +446,11 @@ public sealed record ResourceMetadataItemViewModel(string Name, string Value)
             metadata.Name,
             Convert.ToString(metadata.Value, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty);
     }
+}
+
+public sealed record ResourceActivityLogItemViewModel(string Kind, string Message)
+{
+    public string Title => $"{Kind}: {Message}";
 }
 
 public sealed record ResourceDiagnosticViewModel(

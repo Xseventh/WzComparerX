@@ -205,7 +205,8 @@ M4 started:
   inspection action as the `Inspect Image` button.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
-- Richer task/log handling is still pending.
+- The UI has a basic activity log for load, inspection, and error events.
+- Richer task/progress handling is still pending.
 
 Local GMS smoke status:
 

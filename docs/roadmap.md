@@ -139,7 +139,8 @@ Tasks:
   and double-click activation opens package/image nodes through ViewModel
   commands.
 - Property panel. Started with selected-node metadata and diagnostics.
-- Log/task panel.
+- Log/task panel. Started with a deterministic activity log for UI load,
+  inspection, and error events.
 - No direct parsing in view models.
 
 Exit criteria:
