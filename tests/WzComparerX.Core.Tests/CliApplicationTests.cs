@@ -415,8 +415,8 @@ public class CliApplicationTests
     [Fact]
     public async Task ExportTextImage_ReturnsOriginalTextImgStream()
     {
-        const string text = "#Property\nname=hello\ncount=2\n";
-        var path = WriteTemporaryPkg1ImageFile("Text.img", CreateTextImage(text));
+        var path = MaterializeHexFixture("text-img.pkg1.hex", ".wz");
+        var expectedOutput = await ReadExpectedFixtureAsync("export-text-img.stdout.txt");
 
         try
         {
@@ -424,7 +424,7 @@ public class CliApplicationTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Empty, result.Error);
-            Assert.Equal(text, result.Output);
+            Assert.Equal(expectedOutput, result.Output);
         }
         finally
         {
@@ -435,8 +435,8 @@ public class CliApplicationTests
     [Fact]
     public async Task ExportLuaImage_ReturnsFullScript()
     {
-        const string script = "return 42\nprint(\"ok\")\n";
-        var path = WriteTemporaryPkg1ImageFile("Script.lua", CreateLuaImage(script));
+        var path = MaterializeHexFixture("lua-img.pkg1.hex", ".wz");
+        var expectedOutput = await ReadExpectedFixtureAsync("export-lua-img.stdout.txt");
 
         try
         {
@@ -444,7 +444,7 @@ public class CliApplicationTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Empty, result.Error);
-            Assert.Equal(script, result.Output);
+            Assert.Equal(expectedOutput, result.Output);
         }
         finally
         {
