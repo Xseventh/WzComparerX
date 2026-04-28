@@ -1,0 +1,116 @@
+using System.IO.Compression;
+using WzComparerX.WzLib;
+
+namespace WzComparerX.WzLib.Tests;
+
+public class WzImageCanvasPayloadDecoderTests
+{
+    [Fact]
+    public void Decode_ReturnsFormat2ZlibPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff, 0x40, 0x50, 0x60, 0xff];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream([0xaa, 0xbb, .. payload, 0xcc]);
+        stream.Position = stream.Length;
+        var canvas = new WzImageCanvasInspection(
+            Width: 2,
+            Height: 1,
+            Format: 2,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 2,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(2, bitmap.Width);
+        Assert.Equal(1, bitmap.Height);
+        Assert.Equal(2, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+        Assert.Equal(stream.Length, stream.Position);
+    }
+
+    [Fact]
+    public void Decode_RejectsUnsupportedCompression()
+    {
+        using var stream = new MemoryStream([0x00, 0x01, 0x02]);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 2,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: 3,
+            WzImageCanvasCompressionKind.ChunkedEncryptedZlib,
+            UncompressedDataLength: 4);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var ex = Assert.Throws<NotSupportedException>(() => decoder.Decode(stream, canvas));
+
+        Assert.Contains("ChunkedEncryptedZlib", ex.Message);
+    }
+
+    [Fact]
+    public void Decode_RejectsUnsupportedFormat()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 1,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: 2);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var ex = Assert.Throws<NotSupportedException>(() => decoder.Decode(stream, canvas));
+
+        Assert.Contains("format: 1", ex.Message);
+    }
+
+    [Fact]
+    public void Decode_RejectsUnexpectedUncompressedLength()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 2,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: 3);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        Assert.Throws<InvalidDataException>(() => decoder.Decode(stream, canvas));
+    }
+
+    private static byte[] CreateDirectZlibPayload(byte[] pixels)
+    {
+        using var output = new MemoryStream();
+        output.WriteByte(0x00);
+        using (var zlib = new ZLibStream(output, CompressionMode.Compress, leaveOpen: true))
+        {
+            zlib.Write(pixels);
+        }
+
+        return output.ToArray();
+    }
+}

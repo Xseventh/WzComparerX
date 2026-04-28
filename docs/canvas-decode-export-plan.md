@@ -76,3 +76,6 @@ conditions through CLI output.
 4. Add Core export type for Canvas with byte-oriented output and diagnostics.
 5. Add CLI golden tests for `export --type canvas --out`.
 6. Run real-client smoke tests only after synthetic coverage is deterministic.
+
+Status: step 1 and the first step 3 tests are started for direct zlib Canvas
+payloads with format `2`. Core export integration is still pending.
