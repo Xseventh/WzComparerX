@@ -99,21 +99,21 @@ public sealed class ResourceExportService
         CancellationToken cancellationToken)
     {
         var inspection = await ReadImageInspectionAsync(path, selector, options, cancellationToken);
-        var canvas = FindCanvas(inspection);
+        var canvas = FindCanvas(inspection, selector);
         if (canvas is null)
         {
             throw Unsupported(ResourceExportKind.Canvas, selector);
         }
 
-        if (canvas.CompressionKind != WzImageCanvasCompressionKind.Zlib)
+        if (canvas.Value.CompressionKind != WzImageCanvasCompressionKind.Zlib)
         {
             throw new ResourceExportException(
-                ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(canvas.CompressionKind, selector));
+                ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(canvas.Value.CompressionKind, canvas.Path));
         }
 
-        if (canvas.Format is not 2 and not 2562)
+        if (canvas.Value.Format is not 2 and not 2562)
         {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(canvas.Format, selector));
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(canvas.Value.Format, canvas.Path));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -121,11 +121,11 @@ public sealed class ResourceExportService
         WzImageCanvasBitmap bitmap;
         try
         {
-            bitmap = new WzImageCanvasPayloadDecoder().Decode(stream, canvas);
+            bitmap = new WzImageCanvasPayloadDecoder().Decode(stream, canvas.Value);
         }
         catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or NotSupportedException)
         {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(ex.Message, selector));
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(ex.Message, canvas.Path));
         }
 
         return new ResourceExportDocument(
@@ -157,17 +157,19 @@ public sealed class ResourceExportService
         }
     }
 
-    private static WzImageCanvasInspection? FindCanvas(WzImageInspection inspection)
+    private static CanvasExportTarget? FindCanvas(WzImageInspection inspection, string? selector)
     {
         if (inspection.ObjectValue is WzImageCanvasInspection canvas)
         {
-            return canvas;
+            return new CanvasExportTarget(canvas, selector);
         }
 
         return inspection.Properties?
             .SelectMany(Flatten)
-            .Select(property => property.Value)
-            .OfType<WzImageCanvasInspection>()
+            .Select(property => property.Value is WzImageCanvasInspection value
+                ? new CanvasExportTarget(value, property.Path ?? selector)
+                : null)
+            .OfType<CanvasExportTarget>()
             .FirstOrDefault();
     }
 
@@ -209,4 +211,6 @@ public sealed class ResourceExportService
     {
         return new ResourceExportException(ResourceInspectionDiagnostics.ExportUnsupported(kind, selector));
     }
+
+    private sealed record CanvasExportTarget(WzImageCanvasInspection Value, string? Path);
 }

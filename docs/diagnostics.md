@@ -20,6 +20,10 @@ Diagnostics use `ResourceInspectionDiagnostic`:
 - `Code`: optional stable machine-readable code.
 - `Source`: optional subsystem that produced the diagnostic.
 
+Use the smallest stable resource path that identifies the affected value. For
+exports, a Canvas payload diagnostic should point at `icon` or `body/icon` when
+that property path is known, not only at the parent IMG selector.
+
 Use the named constants in Core:
 
 - `ResourceDiagnosticSeverities.Info`

@@ -533,7 +533,7 @@ public class CliApplicationTests
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
             Assert.Contains(
-                "error [wcx.export.canvas.compressionUnsupported]: Canvas export does not support compression kind ChunkedEncryptedZlib. (Canvas.img)",
+                "error [wcx.export.canvas.compressionUnsupported]: Canvas export does not support compression kind ChunkedEncryptedZlib. (icon)",
                 result.Error);
         }
         finally
@@ -556,7 +556,7 @@ public class CliApplicationTests
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
             Assert.Contains(
-                "error [wcx.export.canvas.formatUnsupported]: Canvas export does not support format 1. (Canvas.img)",
+                "error [wcx.export.canvas.formatUnsupported]: Canvas export does not support format 1. (icon)",
                 result.Error);
         }
         finally
@@ -579,6 +579,7 @@ public class CliApplicationTests
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
             Assert.Contains("error [wcx.export.canvas.decodeFailed]: Canvas export failed to decode payload:", result.Error);
+            Assert.Contains("(icon)", result.Error);
         }
         finally
         {
