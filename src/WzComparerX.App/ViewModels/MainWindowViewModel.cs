@@ -10,6 +10,7 @@ namespace WzComparerX.App.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ResourceInspectionService inspectionService;
+    private readonly ResourceFolderInspectionService folderInspectionService;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
@@ -27,6 +28,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
     private bool isBusy;
 
     [ObservableProperty]
@@ -44,9 +46,12 @@ public partial class MainWindowViewModel : ViewModelBase
     {
     }
 
-    internal MainWindowViewModel(ResourceInspectionService inspectionService)
+    internal MainWindowViewModel(
+        ResourceInspectionService inspectionService,
+        ResourceFolderInspectionService? folderInspectionService = null)
     {
         this.inspectionService = inspectionService;
+        this.folderInspectionService = folderInspectionService ?? new ResourceFolderInspectionService();
     }
 
     public ObservableCollection<ResourceInspectionNodeViewModel> RootNodes { get; } = [];
@@ -74,6 +79,17 @@ public partial class MainWindowViewModel : ViewModelBase
         await LoadAsync();
     }
 
+    [RelayCommand(CanExecute = nameof(CanOpenSelectedPackage))]
+    public async Task OpenSelectedPackageAsync()
+    {
+        if (SelectedNode?.Path is null)
+        {
+            return;
+        }
+
+        await OpenPathAsync(SelectedNode.Path);
+    }
+
     [RelayCommand(CanExecute = nameof(CanLoad))]
     public async Task LoadAsync()
     {
@@ -87,6 +103,16 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsBusy = true;
             StatusMessage = "Loading";
+
+            if (Directory.Exists(path))
+            {
+                SelectorText = string.Empty;
+                var folderDocument = await folderInspectionService.InspectAsync(path);
+                ApplyDocument(folderDocument);
+                StatusMessage = $"Loaded folder: {Path.GetFileName(Path.TrimEndingDirectorySeparator(folderDocument.SourcePath))}";
+                return;
+            }
+
             if (!TryCreateInspectionOptions(out var options))
             {
                 return;
@@ -103,11 +129,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 selector,
                 options);
 
-            RootNodes.Clear();
-            RootNodes.Add(ResourceInspectionNodeViewModel.FromNode(document.Root));
-            SetDocumentMetadata(document);
-            SelectedNode = RootNodes[0];
-            CurrentFormat = document.Format;
+            ApplyDocument(document);
             StatusMessage = $"Loaded {document.Format}: {Path.GetFileName(document.SourcePath)}";
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -150,12 +172,30 @@ public partial class MainWindowViewModel : ViewModelBase
             !string.Equals(CurrentFormat, "synthetic", StringComparison.OrdinalIgnoreCase);
     }
 
+    private bool CanOpenSelectedPackage()
+    {
+        return !IsBusy &&
+            SelectedNode?.Kind == "package" &&
+            !string.IsNullOrWhiteSpace(SelectedNode.Path) &&
+            File.Exists(SelectedNode.Path);
+    }
+
     partial void OnSelectedNodeChanged(ResourceInspectionNodeViewModel? value)
     {
         OnPropertyChanged(nameof(HasSelection));
         SetSelectedMetadata(value);
         SetSelectedDiagnostics(value);
         InspectSelectedImageCommand.NotifyCanExecuteChanged();
+        OpenSelectedPackageCommand.NotifyCanExecuteChanged();
+    }
+
+    private void ApplyDocument(ResourceInspectionDocument document)
+    {
+        RootNodes.Clear();
+        RootNodes.Add(ResourceInspectionNodeViewModel.FromNode(document.Root));
+        SetDocumentMetadata(document);
+        SelectedNode = RootNodes[0];
+        CurrentFormat = document.Format;
     }
 
     private void SetDocumentMetadata(ResourceInspectionDocument document)

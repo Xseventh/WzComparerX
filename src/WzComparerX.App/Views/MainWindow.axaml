@@ -27,7 +27,7 @@
     </Window.Styles>
 
     <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Margin="16" RowSpacing="10">
-        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" ColumnSpacing="8">
             <TextBlock Text="Path" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1"
                      Text="{Binding PathText}"
@@ -36,11 +36,14 @@
                     Click="BrowsePathButton_OnClick"
                     Content="Browse"/>
             <Button Grid.Column="3"
+                    Click="BrowseFolderButton_OnClick"
+                    Content="Folder"/>
+            <Button Grid.Column="4"
                     Command="{Binding LoadCommand}"
                     Content="Load"/>
         </Grid>
 
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,2*,Auto,120,Auto,80,Auto" ColumnSpacing="8">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,2*,Auto,120,Auto,80,Auto,Auto" ColumnSpacing="8">
             <TextBlock Text="IMG" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1"
                      Text="{Binding SelectorText}"
@@ -50,6 +53,9 @@
             <TextBlock Grid.Column="4" Text="Depth" VerticalAlignment="Center"/>
             <TextBox Grid.Column="5" Text="{Binding DepthText}"/>
             <Button Grid.Column="6"
+                    Command="{Binding OpenSelectedPackageCommand}"
+                    Content="Open Package"/>
+            <Button Grid.Column="7"
                     Command="{Binding InspectSelectedImageCommand}"
                     Content="Inspect Image"/>
         </Grid>

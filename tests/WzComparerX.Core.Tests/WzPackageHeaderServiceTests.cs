@@ -117,6 +117,36 @@ public class WzPackageHeaderServiceTests
     }
 
     [Fact]
+    public async Task InspectFolder_ProjectsPackagesAsInspectionTree()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-folder-inspection-");
+        var path = Path.Combine(directory.FullName, "Base.wz");
+        File.WriteAllBytes(path, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+        var service = new ResourceFolderInspectionService();
+
+        try
+        {
+            var document = await service.InspectAsync(directory.FullName);
+
+            Assert.Equal("folder", document.Format);
+            Assert.Equal("folder", document.Root.Kind);
+            Assert.Equal("1 packages", document.Root.DisplayValue);
+            Assert.Contains(document.DebugMetadata ?? [], item => item.Name == "packageCount" && (int)item.Value! == 1);
+
+            var package = Assert.Single(document.Root.Children);
+            Assert.Equal("Base.wz", package.Name);
+            Assert.Equal("package", package.Kind);
+            Assert.Equal(path, package.Path);
+            Assert.Equal("pkg1", package.DisplayValue);
+            Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "valid" && (bool)item.Value!);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebug_FormatsDirectoryDiagnostics()
     {
         var path = WriteTemporaryPkg1DirectoryFile();

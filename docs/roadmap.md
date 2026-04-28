@@ -130,8 +130,9 @@ Goal: UI can browse the same workspace model as CLI.
 
 Tasks:
 
-- Open file/folder command. Started with a native file picker for WZ packages
-  and synthetic fixtures; folder-oriented workflows are still pending.
+- Open file/folder command. Started with native file and folder pickers. Folder
+  inspection lists discovered WZ packages, and selected packages can be opened
+  from the tree.
 - Node tree view. Started with a path-based load command bound to Core
   inspection; selected image nodes can be loaded through the same inspect path.
 - Property panel. Started with selected-node metadata and diagnostics.

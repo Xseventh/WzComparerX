@@ -41,4 +41,24 @@ public partial class MainWindow : Window
             await viewModel.OpenPathAsync(path);
         }
     }
+
+    private async void BrowseFolderButton_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Open resource folder",
+            AllowMultiple = false
+        });
+
+        var path = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            await viewModel.OpenPathAsync(path);
+        }
+    }
 }
