@@ -3,18 +3,118 @@
         xmlns:vm="using:WzComparerX.App.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1100" d:DesignHeight="720"
         x:Class="WzComparerX.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="WzComparerX.App">
+        Title="WzComparerX">
 
     <Design.DataContext>
-        <!-- This only sets the DataContext for the IDE designer,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    <Window.Styles>
+        <Style Selector="TextBlock.section-title">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+        </Style>
+        <Style Selector="Border.panel">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12"/>
+        </Style>
+    </Window.Styles>
 
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*" Margin="16" RowSpacing="12">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <TextBlock Text="Path" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding PathText}"
+                     PlaceholderText="WZ file, folder, or synthetic fixture"/>
+            <Button Grid.Column="2"
+                    Command="{Binding LoadCommand}"
+                    Content="Load"/>
+        </Grid>
+
+        <Grid Grid.Row="1" ColumnDefinitions="2*,3*" ColumnSpacing="12">
+            <Border Classes="panel">
+                <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+                    <TextBlock Classes="section-title" Text="Resources"/>
+                    <TextBlock Grid.Row="1"
+                               Text="{Binding StatusMessage}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TreeView Grid.Row="2"
+                              ItemsSource="{Binding RootNodes}"
+                              SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+                        <TreeView.DataTemplates>
+                            <TreeDataTemplate DataType="vm:ResourceInspectionNodeViewModel"
+                                              ItemsSource="{Binding Children}">
+                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                            </TreeDataTemplate>
+                        </TreeView.DataTemplates>
+                    </TreeView>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="1" RowDefinitions="Auto,2*,*" RowSpacing="12">
+                <Border Classes="panel">
+                    <Grid RowDefinitions="Auto,*" RowSpacing="4">
+                        <TextBlock Classes="section-title" Text="Document"/>
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding DocumentMetadata}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="vm:ResourceMetadataItemViewModel">
+                                    <Grid ColumnDefinitions="120,*" Margin="0,2">
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Value}"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1" Classes="panel">
+                    <Grid RowDefinitions="Auto,*" RowSpacing="4">
+                        <TextBlock Classes="section-title" Text="Selection"/>
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsControl ItemsSource="{Binding SelectedMetadata}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ResourceMetadataItemViewModel">
+                                        <Grid ColumnDefinitions="140,*" Margin="0,2">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Value}"
+                                                       TextWrapping="Wrap"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="2" Classes="panel">
+                    <Grid RowDefinitions="Auto,*" RowSpacing="4">
+                        <TextBlock Classes="section-title" Text="Diagnostics"/>
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsControl ItemsSource="{Binding SelectedDiagnostics}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ResourceDiagnosticViewModel">
+                                        <StackPanel Margin="0,2">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Message}" TextWrapping="Wrap"/>
+                                            <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
 </Window>

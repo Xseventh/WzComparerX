@@ -188,6 +188,16 @@ M3 closeout:
 - XML dump, PNG export, broader Canvas decode, audio/video decode, and full PKG2
   directory parsing are later work.
 
+M4 started:
+
+- The Avalonia shell now has a path-based resource loader.
+- The main window view model calls `ResourceInspectionService` and projects Core
+  inspection nodes into a UI tree.
+- The UI shows document metadata, selected-node metadata, and selected
+  diagnostics.
+- Native file/folder picker integration and richer task/log handling are still
+  pending.
+
 Local GMS smoke status:
 
 - Base, Base_000, UI_000, Sound_000, and WZ2Lua directory-only smokes are

@@ -124,13 +124,16 @@ Closeout notes:
 
 ## Milestone 4: Basic Avalonia Browser
 
+Status: in progress.
+
 Goal: UI can browse the same workspace model as CLI.
 
 Tasks:
 
 - Open file/folder command.
-- Node tree view.
-- Property panel.
+- Node tree view. Started with a path-based load command bound to Core
+  inspection.
+- Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel.
 - No direct parsing in view models.
 
