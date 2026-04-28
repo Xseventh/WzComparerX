@@ -72,6 +72,10 @@ Current parser unsupported-payload diagnostics are `info` because inspection
 metadata is still valid. Unsupported export requests are `error` because the
 requested export cannot be produced.
 
+Diagnostic messages should be stable enough for golden CLI output. Avoid
+including raw exception text in diagnostic messages; add a new structured field
+or debug surface before exposing volatile implementation details.
+
 ## Sources
 
 - `parser`: WZ/IMG inspection, payload metadata, or decode limitations.

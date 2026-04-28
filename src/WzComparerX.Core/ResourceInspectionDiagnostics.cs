@@ -94,11 +94,11 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Export);
     }
 
-    public static ResourceInspectionDiagnostic ExportCanvasDecodeFailed(string message, string? selector)
+    public static ResourceInspectionDiagnostic ExportCanvasDecodeFailed(string? selector)
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            $"Canvas export failed to decode payload: {message}",
+            "Canvas export failed to decode payload.",
             selector,
             ResourceDiagnosticCodes.ExportCanvasDecodeFailed,
             ResourceDiagnosticSources.Export);

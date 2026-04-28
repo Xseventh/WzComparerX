@@ -125,7 +125,7 @@ public sealed class ResourceExportService
         }
         catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or NotSupportedException)
         {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(ex.Message, canvas.Path));
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(canvas.Path));
         }
 
         return new ResourceExportDocument(

@@ -1,0 +1,1 @@
+error [wcx.export.canvas.decodeFailed]: Canvas export failed to decode payload. (icon)

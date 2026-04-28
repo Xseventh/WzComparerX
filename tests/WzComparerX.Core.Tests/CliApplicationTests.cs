@@ -589,6 +589,7 @@ public class CliApplicationTests
         var path = WriteTemporaryPkg1ImageFile(
             "Canvas.img",
             CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1, payload: [0x00, 0x78, 0x9c, 0x00]));
+        var expectedError = await ReadExpectedFixtureAsync("export-canvas-decode-failed.stderr.txt");
 
         try
         {
@@ -596,8 +597,7 @@ public class CliApplicationTests
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains("error [wcx.export.canvas.decodeFailed]: Canvas export failed to decode payload:", result.Error);
-            Assert.Contains("(icon)", result.Error);
+            Assert.Equal(expectedError, result.Error);
         }
         finally
         {
