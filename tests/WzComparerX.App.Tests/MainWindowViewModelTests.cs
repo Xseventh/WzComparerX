@@ -141,6 +141,44 @@ public class MainWindowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task ActivateSelectedNodeAsync_InspectsImageNode()
+    {
+        var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none",
+            DepthText = "1"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+
+            var package = Assert.Single(viewModel.RootNodes);
+            Assert.Equal("package", package.Kind);
+            var image = Assert.Single(package.Children);
+            Assert.Equal("Canvas.img", image.Name);
+            Assert.Equal("image", image.Kind);
+
+            viewModel.SelectedNode = image;
+            Assert.True(viewModel.ActivateSelectedNodeCommand.CanExecute(null));
+            await viewModel.ActivateSelectedNodeAsync();
+
+            var inspectedImage = Assert.Single(viewModel.RootNodes);
+            Assert.Equal("Canvas.img", viewModel.SelectorText);
+            Assert.Equal("image", inspectedImage.Kind);
+            Assert.Equal("Canvas.img", inspectedImage.Name);
+            Assert.Equal("Property", inspectedImage.DisplayValue);
+            Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
+            Assert.Equal("Loaded pkg1: " + Path.GetFileName(path), viewModel.StatusMessage);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [Theory]
     [InlineData("Base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
     [InlineData("base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
@@ -173,6 +211,22 @@ public class MainWindowViewModelTests
             "fixtures",
             "synthetic",
             name);
+    }
+
+    private static string MaterializeHexFixture(string name, string extension)
+    {
+        var hex = new StringBuilder();
+        foreach (var ch in File.ReadAllText(FixturePath(name)))
+        {
+            if (Uri.IsHexDigit(ch))
+            {
+                hex.Append(ch);
+            }
+        }
+
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-app-fixture-{Guid.NewGuid():N}{extension}");
+        File.WriteAllBytes(path, Convert.FromHexString(hex.ToString()));
+        return path;
     }
 
     private static byte[] CreatePkg1()
