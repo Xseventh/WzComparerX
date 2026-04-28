@@ -113,6 +113,12 @@ public static class CliApplication
             return 2;
         }
 
+        if (json && string.Equals(command, "export", StringComparison.OrdinalIgnoreCase))
+        {
+            error.WriteLine("--json is not supported for export because export writes resource content directly.");
+            return 2;
+        }
+
         if (!File.Exists(path) && !Directory.Exists(path))
         {
             error.WriteLine($"File or directory not found: {path}");

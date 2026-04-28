@@ -1,0 +1,1 @@
+--json is not supported for export because export writes resource content directly.

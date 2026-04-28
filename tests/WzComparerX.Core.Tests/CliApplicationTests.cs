@@ -400,6 +400,19 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportJsonFlag_ReturnsUsageError()
+    {
+        var fixture = FixturePath("basic-tree.json");
+        var expectedError = await ReadExpectedFixtureAsync("export-json-unsupported.stderr.txt");
+
+        var result = await RunCliAsync("export", "--json", "--type", "metadata", fixture);
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Equal(string.Empty, result.Output);
+        Assert.Equal(expectedError, result.Error);
+    }
+
+    [Fact]
     public async Task ExportTextImage_ReturnsOriginalTextImgStream()
     {
         var path = MaterializeHexFixture("text-img.pkg1.hex", ".wz");

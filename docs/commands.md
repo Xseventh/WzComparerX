@@ -168,7 +168,9 @@ dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --ou
 By default, text exports write their payload to stdout and keep diagnostics on
 stderr so shell pipelines receive only exported content. Use `--out <path>` to
 write exact export bytes to a file. Future binary exporters should require
-`--out` instead of writing binary data through text stdout.
+`--out` instead of writing binary data through text stdout. `export` does not
+accept `--json`; exported content defines its own format, and metadata export is
+already JSON.
 
 CLI diagnostics use the shared diagnostic model described in
 `docs/diagnostics.md`. Text output uses a stable code when one is available:
