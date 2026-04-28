@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using WzComparerX.WzLib;
 using WzComparerX.Core;
 
 namespace WzComparerX.App.ViewModels;
@@ -14,7 +16,17 @@ public partial class MainWindowViewModel : ViewModelBase
     private string pathText = "fixtures/synthetic/basic-tree.json";
 
     [ObservableProperty]
+    private string selectorText = string.Empty;
+
+    [ObservableProperty]
+    private string keyText = "auto";
+
+    [ObservableProperty]
+    private string depthText = "2";
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
     private bool isBusy;
 
     [ObservableProperty]
@@ -22,6 +34,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private ResourceInspectionNodeViewModel? selectedNode;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    private string currentFormat = string.Empty;
 
     public MainWindowViewModel()
         : this(new ResourceInspectionService())
@@ -58,18 +74,22 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsBusy = true;
             StatusMessage = "Loading";
+            if (!TryCreateInspectionOptions(out var options))
+            {
+                return;
+            }
+
+            var selector = NormalizeOptional(SelectorText);
             var document = await inspectionService.InspectAsync(
                 path,
-                selector: null,
-                new ResourceInspectionOptions(
-                    StringKey: null,
-                    MaxPropertyDepth: 2,
-                    IncludeDebugMetadata: true));
+                selector,
+                options);
 
             RootNodes.Clear();
             RootNodes.Add(ResourceInspectionNodeViewModel.FromNode(document.Root));
             SetDocumentMetadata(document);
             SelectedNode = RootNodes[0];
+            CurrentFormat = document.Format;
             StatusMessage = $"Loaded {document.Format}: {Path.GetFileName(document.SourcePath)}";
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
@@ -77,6 +97,7 @@ public partial class MainWindowViewModel : ViewModelBase
             RootNodes.Clear();
             DocumentMetadata.Clear();
             SelectedNode = null;
+            CurrentFormat = string.Empty;
             StatusMessage = ex.Message;
         }
         finally
@@ -85,9 +106,28 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanInspectSelectedImage))]
+    public async Task InspectSelectedImageAsync()
+    {
+        if (SelectedNode is null)
+        {
+            return;
+        }
+
+        SelectorText = SelectedNode.Path ?? SelectedNode.Name;
+        await LoadAsync();
+    }
+
     private bool CanLoad()
     {
         return !IsBusy && !string.IsNullOrWhiteSpace(PathText);
+    }
+
+    private bool CanInspectSelectedImage()
+    {
+        return !IsBusy &&
+            SelectedNode?.Kind == "image" &&
+            !string.Equals(CurrentFormat, "synthetic", StringComparison.OrdinalIgnoreCase);
     }
 
     partial void OnSelectedNodeChanged(ResourceInspectionNodeViewModel? value)
@@ -95,6 +135,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSelection));
         SetSelectedMetadata(value);
         SetSelectedDiagnostics(value);
+        InspectSelectedImageCommand.NotifyCanExecuteChanged();
     }
 
     private void SetDocumentMetadata(ResourceInspectionDocument document)
@@ -146,6 +187,65 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             SelectedMetadata.Add(new ResourceMetadataItemViewModel(name, value));
         }
+    }
+
+    private bool TryCreateInspectionOptions(out ResourceInspectionOptions options)
+    {
+        options = new ResourceInspectionOptions(IncludeDebugMetadata: true);
+        if (!TryParseStringKey(KeyText.Trim(), out var stringKey))
+        {
+            StatusMessage = $"Unknown string key: {KeyText}";
+            return false;
+        }
+
+        if (!int.TryParse(DepthText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var depth) ||
+            depth < 0 ||
+            depth > WzImageInspectionReader.MaxPropertyInspectionDepth)
+        {
+            StatusMessage = $"Depth must be between 0 and {WzImageInspectionReader.MaxPropertyInspectionDepth}.";
+            return false;
+        }
+
+        options = new ResourceInspectionOptions(stringKey, depth, IncludeDebugMetadata: true);
+        return true;
+    }
+
+    private static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)
+    {
+        if (string.IsNullOrWhiteSpace(value) ||
+            string.Equals(value, "auto", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = null;
+            return true;
+        }
+
+        if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(value, "noop", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = WzStringEncryptionKind.None;
+            return true;
+        }
+
+        if (string.Equals(value, "kms", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = WzStringEncryptionKind.Kms;
+            return true;
+        }
+
+        if (string.Equals(value, "gms", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = WzStringEncryptionKind.Gms;
+            return true;
+        }
+
+        kind = WzStringEncryptionKind.None;
+        return false;
+    }
+
+    private static string? NormalizeOptional(string value)
+    {
+        var trimmed = value.Trim();
+        return trimmed.Length == 0 ? null : trimmed;
     }
 }
 

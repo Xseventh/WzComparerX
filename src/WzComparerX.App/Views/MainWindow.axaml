@@ -26,7 +26,7 @@
         </Style>
     </Window.Styles>
 
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="*" Margin="16" RowSpacing="12">
+    <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="*" Margin="16" RowSpacing="10">
         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
             <TextBlock Text="Path" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1"
@@ -37,7 +37,21 @@
                     Content="Load"/>
         </Grid>
 
-        <Grid Grid.Row="1" ColumnDefinitions="2*,3*" ColumnSpacing="12">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,2*,Auto,120,Auto,80,Auto" ColumnSpacing="8">
+            <TextBlock Text="IMG" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="1"
+                     Text="{Binding SelectorText}"
+                     PlaceholderText="Optional image selector"/>
+            <TextBlock Grid.Column="2" Text="Key" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="3" Text="{Binding KeyText}"/>
+            <TextBlock Grid.Column="4" Text="Depth" VerticalAlignment="Center"/>
+            <TextBox Grid.Column="5" Text="{Binding DepthText}"/>
+            <Button Grid.Column="6"
+                    Command="{Binding InspectSelectedImageCommand}"
+                    Content="Inspect Image"/>
+        </Grid>
+
+        <Grid Grid.Row="2" ColumnDefinitions="2*,3*" ColumnSpacing="12">
             <Border Classes="panel">
                 <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
                     <TextBlock Classes="section-title" Text="Resources"/>

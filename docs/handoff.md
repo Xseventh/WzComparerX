@@ -193,6 +193,8 @@ M4 started:
 - The Avalonia shell now has a path-based resource loader.
 - The main window view model calls `ResourceInspectionService` and projects Core
   inspection nodes into a UI tree.
+- The UI has an IMG selector field plus an `Inspect Image` action for selected
+  image nodes. String key and depth inputs mirror the current inspect workflow.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
 - Native file/folder picker integration and richer task/log handling are still

@@ -132,7 +132,7 @@ Tasks:
 
 - Open file/folder command.
 - Node tree view. Started with a path-based load command bound to Core
-  inspection.
+  inspection; selected image nodes can be loaded through the same inspect path.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel.
 - No direct parsing in view models.

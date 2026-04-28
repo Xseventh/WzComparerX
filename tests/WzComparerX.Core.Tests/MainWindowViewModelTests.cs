@@ -28,6 +28,38 @@ public class MainWindowViewModelTests
         Assert.Empty(viewModel.SelectedDiagnostics);
     }
 
+    [Fact]
+    public async Task LoadAsync_ReportsInvalidKeyWithoutClearingExistingTree()
+    {
+        var viewModel = new MainWindowViewModel
+        {
+            PathText = FixturePath("basic-tree.json")
+        };
+        await viewModel.LoadAsync();
+
+        viewModel.KeyText = "invalid";
+        await viewModel.LoadAsync();
+
+        Assert.Equal("Unknown string key: invalid", viewModel.StatusMessage);
+        Assert.NotEmpty(viewModel.RootNodes);
+    }
+
+    [Fact]
+    public async Task LoadAsync_ReportsInvalidDepthWithoutClearingExistingTree()
+    {
+        var viewModel = new MainWindowViewModel
+        {
+            PathText = FixturePath("basic-tree.json")
+        };
+        await viewModel.LoadAsync();
+
+        viewModel.DepthText = "65";
+        await viewModel.LoadAsync();
+
+        Assert.Equal("Depth must be between 0 and 64.", viewModel.StatusMessage);
+        Assert.NotEmpty(viewModel.RootNodes);
+    }
+
     private static string FixturePath(string name)
     {
         return Path.Combine(
