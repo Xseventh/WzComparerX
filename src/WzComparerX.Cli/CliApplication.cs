@@ -18,7 +18,7 @@ public static class CliApplication
         var debug = false;
         var exportKind = ResourceExportKind.Metadata;
         WzStringEncryptionKind? stringKey = WzStringEncryptionKind.None;
-        var imagePropertyDepth = 1;
+        var imagePropertyDepth = WzImageInspectionReader.FullPropertyInspectionDepth;
         string? path = null;
         string? selector = null;
         string? exportOutputPath = null;

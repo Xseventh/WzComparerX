@@ -138,6 +138,33 @@ public class WzImageInspectionReaderTests
     }
 
     [Fact]
+    public void Read_DefaultDepthExpandsNestedProperty()
+    {
+        var bytes = CreatePropertyImage(
+            CreateObjectProperty(
+                "child",
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateImageString("foo"),
+                    0x03,
+                    42)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
+        Assert.NotNull(property.Children);
+        var child = Assert.Single(property.Children);
+        Assert.Equal("foo", child.Name);
+        Assert.Equal(42, child.Value);
+    }
+
+    [Fact]
     public void Constructor_RejectsDepthAboveLimit()
     {
         Assert.Throws<ArgumentOutOfRangeException>(

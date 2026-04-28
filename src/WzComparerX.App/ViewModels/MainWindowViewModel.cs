@@ -28,9 +28,6 @@ public partial class MainWindowViewModel : ViewModelBase
     private string keyText = "auto";
 
     [ObservableProperty]
-    private string depthText = "2";
-
-    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(OpenPackageCommand))]
@@ -371,7 +368,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool TryCreateInspectionOptions(out ResourceInspectionOptions options)
     {
         options = new ResourceInspectionOptions(IncludeDebugMetadata: true);
-        if (!ResourceInspectionOptionParser.TryParse(KeyText, DepthText, out options, out var errorMessage))
+        if (!ResourceInspectionOptionParser.TryParse(KeyText, out options, out var errorMessage))
         {
             StatusMessage = errorMessage;
             AddActivity("error", StatusMessage);

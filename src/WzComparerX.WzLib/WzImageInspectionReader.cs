@@ -3,11 +3,14 @@ namespace WzComparerX.WzLib;
 public sealed class WzImageInspectionReader
 {
     public const int MaxPropertyInspectionDepth = 64;
+    public const int FullPropertyInspectionDepth = MaxPropertyInspectionDepth;
 
     private readonly WzStringDecryptor stringDecryptor;
     private readonly int maxPropertyDepth;
 
-    public WzImageInspectionReader(WzStringDecryptor? stringDecryptor = null, int maxPropertyDepth = 1)
+    public WzImageInspectionReader(
+        WzStringDecryptor? stringDecryptor = null,
+        int maxPropertyDepth = FullPropertyInspectionDepth)
     {
         if (maxPropertyDepth is < 0 or > MaxPropertyInspectionDepth)
         {

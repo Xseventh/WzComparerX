@@ -20,6 +20,16 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+1f13770 Document WCX project progress in Chinese
+335835a Eager load split package trees
+1949d1b Match WC split package lookup roots
+39a4b4e Bound recursive split package expansion
+2aeab66 Generalize split package linking
+b0b332e Link split packages in resource inspection
+be4a713 Add Avalonia package return navigation
+cc9b602 Support manual image inspection in Avalonia
+19d009f Split Avalonia resource view models
+ecfd7b2 Harden Avalonia UI state tests
 d6607fe Test Avalonia image node activation
 c47b3c1 Add Avalonia tree click smoke test
 7975530 Add Avalonia tree selection smoke test
@@ -38,12 +48,6 @@ abbb766 Align Avalonia open entry with WC
 1ef8fab Normalize Avalonia image selectors
 cae2482 Add Avalonia image inspection workflow
 0bccdaa Add basic Avalonia resource browser
-f1806d1 Close out milestone 3
-6eaf391 Add Canvas export value selector
-dfa9cc5 Define M3 Canvas export boundary
-fa5aeb9 Remove ambiguous string key alias
-6b08714 Reject JSON flag for export
-b042af9 Close out milestone 2
 ```
 
 ## What Has Been Done
@@ -129,8 +133,9 @@ checksums, hash offsets, calculated offsets, selected string key, WZ/hash
 version, selected IMG entry metadata, object type, object value metadata,
 property type/kind metadata, and Canvas/RawData/Video/Sound payload offsets and
 lengths. `--key auto` selects among no-op/KMS/GMS directory string decoding.
-`--depth 0` prints only the top-level IMG object type, while deeper values
-expand bounded property/object metadata.
+Selected IMG payloads are lazily loaded as complete single-IMG inspections by
+default, matching WC. `--depth` remains available as a CLI diagnostics limiter;
+`--depth 0` prints only the top-level IMG object type.
 
 The old temporary parser/CLI terminology has been retired from active design,
 command documentation, file names, and active tests. The supported observation
@@ -194,8 +199,9 @@ M4 started:
 - The main window view model calls `ResourceInspectionService` and projects Core
   inspection nodes into a UI tree.
 - The UI has an IMG selector field plus an `Inspect Image` action for selected
-  image nodes or a manually entered IMG selector. String key and depth inputs
-  mirror the current inspect workflow.
+  image nodes or a manually entered IMG selector. String key input mirrors the
+  current inspect workflow. IMG inspection is lazy and full per selected IMG,
+  matching WC's `TryExtract()` behavior.
 - The path row has one `Browse` entry with native file and folder picker menu
   choices. The `Load` action automatically handles file paths and folder paths.
   Folder paths scan `.wz` headers into a folder inspection tree; selecting a

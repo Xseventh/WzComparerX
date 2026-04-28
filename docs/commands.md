@@ -93,7 +93,7 @@ To inspect resources through the stable Core inspection model:
 ```bash
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect fixtures/synthetic/basic-tree.json
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto path/to/Base.wz
-dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto --depth 2 path/to/Base_000.wz StandardPDD.img
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto path/to/Base_000.wz StandardPDD.img
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect --json fixtures/synthetic/basic-tree.json
 ```
 
@@ -104,9 +104,11 @@ string keys and select the most plausible decoded directory names. Use
 specific PKG1 string key mode.
 
 For IMG inspection, the selector can be an image name, image path, or entry
-index. `--depth 0` prints only the top-level object type, while larger values
-expand nested property/object metadata up to the accepted `0` through `64`
-range.
+index. By default, a selected IMG is lazily loaded and inspected as a complete
+single IMG, matching WC's model. `--depth` is a CLI diagnostics limiter:
+`--depth 0` prints only the top-level object type, while larger values expand
+nested property/object metadata up to the accepted `0` through `64` range.
+
 For directory inspection, split-package directory trees are loaded eagerly in
 the WC style; `--depth` does not limit directory/package expansion.
 

@@ -52,23 +52,6 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_ReportsInvalidDepthWithoutClearingExistingTree()
-    {
-        var viewModel = new MainWindowViewModel
-        {
-            PathText = FixturePath("basic-tree.json")
-        };
-        await viewModel.LoadAsync();
-
-        viewModel.DepthText = "65";
-        await viewModel.LoadAsync();
-
-        Assert.Equal("Depth must be between 0 and 64.", viewModel.StatusMessage);
-        Assert.Equal("error: Depth must be between 0 and 64.", viewModel.ActivityLog[0].Title);
-        Assert.NotEmpty(viewModel.RootNodes);
-    }
-
-    [Fact]
     public async Task OpenPathAsync_ClearsImageSelectorAndLoadsPath()
     {
         var viewModel = new MainWindowViewModel
@@ -147,8 +130,7 @@ public class MainWindowViewModelTests
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
         {
-            KeyText = "none",
-            DepthText = "1"
+            KeyText = "none"
         };
 
         try
@@ -185,8 +167,7 @@ public class MainWindowViewModelTests
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
         {
-            KeyText = "none",
-            DepthText = "1"
+            KeyText = "none"
         };
 
         try
@@ -219,8 +200,7 @@ public class MainWindowViewModelTests
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
         {
-            KeyText = "none",
-            DepthText = "1"
+            KeyText = "none"
         };
 
         try
@@ -257,15 +237,6 @@ public class MainWindowViewModelTests
     {
         Assert.True(ResourceInspectionOptionParser.TryParseStringKey(value, out var actual));
         Assert.Equal(expected, actual);
-    }
-
-    [Theory]
-    [InlineData("-1")]
-    [InlineData("65")]
-    [InlineData("abc")]
-    public void ResourceInspectionOptionParser_RejectsUnsupportedDepth(string value)
-    {
-        Assert.False(ResourceInspectionOptionParser.TryParseDepth(value, out _));
     }
 
     [Theory]

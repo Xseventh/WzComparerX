@@ -1,4 +1,3 @@
-using System.Globalization;
 using WzComparerX.Core;
 using WzComparerX.WzLib;
 
@@ -8,7 +7,6 @@ public static class ResourceInspectionOptionParser
 {
     public static bool TryParse(
         string? keyText,
-        string? depthText,
         out ResourceInspectionOptions options,
         out string errorMessage)
     {
@@ -21,13 +19,10 @@ public static class ResourceInspectionOptionParser
             return false;
         }
 
-        if (!TryParseDepth(depthText, out var depth))
-        {
-            errorMessage = $"Depth must be between 0 and {WzImageInspectionReader.MaxPropertyInspectionDepth}.";
-            return false;
-        }
-
-        options = new ResourceInspectionOptions(stringKey, depth, IncludeDebugMetadata: true);
+        options = new ResourceInspectionOptions(
+            stringKey,
+            WzImageInspectionReader.FullPropertyInspectionDepth,
+            IncludeDebugMetadata: true);
         return true;
     }
 
@@ -64,10 +59,4 @@ public static class ResourceInspectionOptionParser
         return false;
     }
 
-    public static bool TryParseDepth(string? value, out int depth)
-    {
-        return int.TryParse(value?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out depth) &&
-            depth >= 0 &&
-            depth <= WzImageInspectionReader.MaxPropertyInspectionDepth;
-    }
 }

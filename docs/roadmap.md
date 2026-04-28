@@ -143,7 +143,9 @@ Tasks:
   expand eagerly into linked package nodes when the package workspace layout is
   present.
 - IMG selector workflow. Started with manual selector inspection through the
-  same `Inspect Image` action used for selected image nodes.
+  same `Inspect Image` action used for selected image nodes. UI inspection now
+  follows WC's lazy/full IMG model: only the selected IMG is loaded, and it is
+  inspected as a complete IMG tree.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.

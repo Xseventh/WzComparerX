@@ -271,8 +271,7 @@ public class MainWindowHeadlessTests
         var packagePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
         {
-            KeyText = "none",
-            DepthText = "1"
+            KeyText = "none"
         };
 
         try
@@ -312,8 +311,7 @@ public class MainWindowHeadlessTests
         var packagePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
         {
-            KeyText = "none",
-            DepthText = "1"
+            KeyText = "none"
         };
 
         try
