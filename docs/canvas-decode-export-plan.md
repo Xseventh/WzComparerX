@@ -66,7 +66,8 @@ Expected new diagnostic families:
   `wcx.export.canvas.formatUnsupported`.
 - Canvas payload decode failure:
   `wcx.export.canvas.decodeFailed`.
-- Canvas export requiring `--out` if binary stdout is not supported.
+- Canvas export requiring `--out` if binary stdout is not supported:
+  `wcx.export.binary.outRequired`.
 
 Add stable `wcx.canvas.*` or `wcx.export.canvas.*` codes before exposing the
 conditions through CLI output.

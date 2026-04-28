@@ -489,7 +489,9 @@ public class CliApplicationTests
 
             Assert.Equal(2, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains("Binary export requires --out <path>.", result.Error);
+            Assert.Contains(
+                "error [wcx.export.binary.outRequired]: Binary export requires --out <path>.",
+                result.Error);
         }
         finally
         {

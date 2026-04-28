@@ -103,4 +103,13 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticCodes.ExportCanvasDecodeFailed,
             ResourceDiagnosticSources.Export);
     }
+
+    public static ResourceInspectionDiagnostic ExportBinaryOutRequired()
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            "Binary export requires --out <path>.",
+            Code: ResourceDiagnosticCodes.ExportBinaryOutRequired,
+            Source: ResourceDiagnosticSources.Export);
+    }
 }

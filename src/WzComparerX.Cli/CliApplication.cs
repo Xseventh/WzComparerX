@@ -184,7 +184,7 @@ public static class CliApplication
 
                 if (!document.IsText)
                 {
-                    error.WriteLine("Binary export requires --out <path>.");
+                    WriteDiagnostics([ResourceInspectionDiagnostics.ExportBinaryOutRequired()], error);
                     return 2;
                 }
 
