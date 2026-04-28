@@ -1,0 +1,41 @@
+source: <wz>
+format: pkg1
+debug:
+  selector: Canvas.img
+  stringKey: none
+  wzVersion: 777
+  hashVersion: 59192
+Canvas.img [image] : Property
+  debug:
+    selector: Canvas.img
+    entryIndex: 0
+    entryNodeType: 0x04
+    entryName: Canvas.img
+    entryPath: Canvas.img
+    entryDataSize: 63
+    entryChecksum: 0
+    entryHashOffsetPosition: 31
+    entryHashOffset: 1755135661
+    entryOffset: 39
+    objectType: Property
+    propertyCount: 1
+  icon [canvas] : 2x1, format=2, scale=0, pages=1, compression=Zlib, dataLength=17, uncompressed=8, dataOffset=85
+    debug:
+      index: 0
+      type: 0x09
+      kind: canvas
+      valueType: canvas
+      width: 2
+      height: 1
+      format: 2
+      scale: 0
+      actualScale: 1
+      pages: 1
+      actualPages: 1
+      unknown1: 0
+      dataOffset: 85
+      dataLength: 17
+      compressionKind: Zlib
+      uncompressedDataLength: 8
+    diagnostics:
+      info [wcx.payload.canvas.pixelsUnsupported]: Canvas pixel decoding is not implemented. (icon)

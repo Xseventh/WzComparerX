@@ -19,6 +19,10 @@ fixtures/
   files out of git.
 - `expected/`: Expected JSON/XML/text outputs for regression tests.
 
+Text `.hex` fixtures under `synthetic/` are byte-for-byte binary samples encoded
+as hexadecimal so they stay reviewable in git. Tests materialize them into
+temporary files before invoking the CLI.
+
 ## Naming
 
 Use behavior-oriented names:

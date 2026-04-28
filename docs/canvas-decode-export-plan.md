@@ -40,10 +40,12 @@ Non-goals for the first loop:
 
 ## Fixture Strategy
 
-Before implementing real-client Canvas export, add committed synthetic fixture
+Before expanding real-client Canvas export, keep committed synthetic fixture
 coverage:
 
-- A tiny generated PKG1 IMG containing one Canvas object.
+- A tiny generated PKG1 IMG containing one Canvas object. The first direct-zlib
+  sample is stored as reviewable hex in
+  `fixtures/synthetic/canvas-zlib.pkg1.hex`.
 - Payload bytes small enough to review in tests.
 - Known decoded dimensions and pixel values.
 - CLI golden tests for:
@@ -81,6 +83,7 @@ conditions through CLI output.
 5. Add CLI golden tests for `export --type canvas --out`.
 6. Run real-client smoke tests only after synthetic coverage is deterministic.
 
-Status: step 1, the first step 3 tests, and the first raw-byte Core/CLI export
-slice are started for direct zlib Canvas payloads with format `2` / `2562`.
-PNG export and broader Canvas format coverage are still pending.
+Status: steps 1 through 5 are started for direct zlib Canvas payloads with
+format `2` / `2562`, including a committed hex fixture, an `inspect --debug`
+golden output, and raw-byte CLI export coverage. PNG export and broader Canvas
+format coverage are still pending.

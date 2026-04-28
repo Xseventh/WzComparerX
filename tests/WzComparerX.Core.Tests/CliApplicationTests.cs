@@ -345,6 +345,26 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugCanvasZlibFixture_MatchesGoldenOutput()
+    {
+        var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var expected = await File.ReadAllTextAsync(ExpectedFixturePath("inspect-canvas-zlib-debug.txt"));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", "--depth", "2", path, "Canvas.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(expected.ReplaceLineEndings(), NormalizePath(result.Output, path, "<wz>"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task PreviewCommands_AreNotAccepted()
     {
         var fixture = FixturePath("basic-tree.json");
@@ -458,7 +478,7 @@ public class CliApplicationTests
     public async Task ExportCanvasWithOut_WritesRawPixelsToFile()
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff, 0x40, 0x50, 0x60, 0xff];
-        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage(pixels));
+        var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-canvas-{Guid.NewGuid():N}.bin");
 
         try
@@ -640,6 +660,39 @@ public class CliApplicationTests
         }
 
         throw new FileNotFoundException($"Could not locate fixture '{fileName}'.");
+    }
+
+    private static string ExpectedFixturePath(string fileName)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, "fixtures", "expected", fileName);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException($"Could not locate expected fixture '{fileName}'.");
+    }
+
+    private static string MaterializeHexFixture(string fileName, string extension)
+    {
+        var hex = new StringBuilder();
+        foreach (var ch in File.ReadAllText(FixturePath(fileName)))
+        {
+            if (Uri.IsHexDigit(ch))
+            {
+                hex.Append(ch);
+            }
+        }
+
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-fixture-{Guid.NewGuid():N}{extension}");
+        File.WriteAllBytes(path, Convert.FromHexString(hex.ToString()));
+        return path;
     }
 
     private static string WriteTemporaryPkg1DirectoryFile()
