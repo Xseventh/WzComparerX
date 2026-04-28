@@ -308,7 +308,12 @@ public sealed class ResourceInspectionService
         }
 
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var entryDirectory in ResolveSplitPackageDirectories(sourceDirectory, workspaceDirectory, parts))
+        var allowWorkspaceRelativeDirectory = CanResolveWorkspaceRelativeSplitPackageDirectory(sourcePath, parts);
+        foreach (var entryDirectory in ResolveSplitPackageDirectories(
+            sourceDirectory,
+            workspaceDirectory,
+            parts,
+            allowWorkspaceRelativeDirectory))
         {
             var packageStem = parts[^1];
             foreach (var candidate in EnumerateSplitPackageFiles(entryDirectory, packageStem))
@@ -324,7 +329,8 @@ public sealed class ResourceInspectionService
     private static IEnumerable<string> ResolveSplitPackageDirectories(
         string sourceDirectory,
         string? workspaceDirectory,
-        string[] parts)
+        string[] parts,
+        bool allowWorkspaceRelativeDirectory)
     {
         var relativePath = Path.Combine(parts);
         var currentPackageRelativeDirectory = Path.Combine(sourceDirectory, relativePath);
@@ -334,7 +340,7 @@ public sealed class ResourceInspectionService
             yield break;
         }
 
-        if (!string.IsNullOrWhiteSpace(workspaceDirectory))
+        if (allowWorkspaceRelativeDirectory && !string.IsNullOrWhiteSpace(workspaceDirectory))
         {
             var workspaceRelativeDirectory = Path.Combine(workspaceDirectory, relativePath);
             if (Directory.Exists(workspaceRelativeDirectory) &&
@@ -344,6 +350,18 @@ public sealed class ResourceInspectionService
                 yield return workspaceRelativeDirectory;
             }
         }
+    }
+
+    private static bool CanResolveWorkspaceRelativeSplitPackageDirectory(string sourcePath, string[] parts)
+    {
+        if (parts.Length != 1 ||
+            !string.Equals(Path.GetFileName(sourcePath), "Base.wz", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var sourceDirectory = Path.GetDirectoryName(sourcePath);
+        return string.Equals(Path.GetFileName(sourceDirectory), "Base", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<string> EnumerateSplitPackageFiles(string entryDirectory, string packageStem)

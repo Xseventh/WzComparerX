@@ -241,6 +241,37 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDirectory_DoesNotUseWorkspaceFallbackForNonBasePackages()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-non-base-workspace-fallback-");
+        var packageDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map"));
+        var workspaceSiblingDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Back"));
+        var packagePath = Path.Combine(packageDirectory.FullName, "Map.wz");
+        var workspaceSiblingPackagePath = Path.Combine(workspaceSiblingDirectory.FullName, "Back.wz");
+        await File.WriteAllBytesAsync(packagePath, CreatePkg1DirectoryPackage(CreateDirectoryStub("Back")));
+        await File.WriteAllBytesAsync(workspaceSiblingPackagePath, CreatePkg1DirectoryPackage(CreateImageDirectory("Back.img")));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                packagePath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 1,
+                    IncludeDebugMetadata: true));
+
+            var back = Assert.Single(inspection.Root.Children, child => child.Name == "Back");
+            Assert.Empty(back.Children);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugImage_IncludesEntryPropertyAndPayloadMetadata()
     {
         var imageBytes = CreatePropertyImage(CreateObjectProperty(

@@ -229,7 +229,9 @@ M4 started:
   GMS-style layouts such as `Base/Base.wz`, sibling packages like
   `Effect/Effect.wz` and `Effect/Effect_000.wz` are grafted under the `Effect`
   directory node. Same-package subtree links such as `UI/UI.wz` to
-  `UI/_Canvas/_Canvas.wz` are also resolved. Directory `--depth` bounds
+  `UI/_Canvas/_Canvas.wz` are also resolved. Broader workspace-relative lookup
+  is limited to the `Base/Base.wz` index shape; linked packages resolve nested
+  stubs relative to their own package directory. Directory `--depth` bounds
   recursive package expansion; boundary packages are shallow nodes, which keeps
   large trees such as `Map/Map.wz` usable while still showing the next package
   hop.

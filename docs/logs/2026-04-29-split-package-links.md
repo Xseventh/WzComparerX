@@ -8,8 +8,9 @@ Added workspace-level split-package linking for GMS-style package indices.
 
 - Core `inspect` now detects empty PKG1 directory stubs at any depth when they
   have no parsed children.
-- Link resolution checks both paths relative to the current package directory
-  and paths relative to the broader client data workspace.
+- Link resolution first checks paths relative to the current package directory.
+  Broader client data workspace lookup is limited to the `Base/Base.wz` package
+  index shape, matching WC's folder loading behavior.
 - This covers root index cases such as `Base/Base.wz` -> `Effect/Effect.wz`
   and same-package subtree cases such as `UI/UI.wz` -> `UI/_Canvas/_Canvas.wz`.
 - Directory `--depth` now bounds recursive split-package expansion. Linked
@@ -18,6 +19,8 @@ Added workspace-level split-package linking for GMS-style package indices.
 - Same-name child directories no longer resolve against the current package
   directory as workspace siblings, avoiding accidental expansion of current
   package shards through entries such as `Map.wz` -> `Map`.
+- Non-Base packages no longer fall back to workspace sibling directories when a
+  current-package relative directory is absent.
 - Linked packages are grafted under the stub directory as package nodes, so the
   Avalonia tree can expand `Base.wz` categories without App-specific path
   guessing.
