@@ -121,16 +121,18 @@ The old temporary parser/CLI terminology has been retired from active design
 and command documentation. Historical logs may still mention migration-era
 steps, but the supported surface is now `inspect` and `inspect --debug`.
 
-Canvas pixel decoding and RawData/Video/Sound payload decoding are not
-implemented yet. Lua image entries report script length and a short UTF-8
-snippet; `export --type lua` writes the full decoded script for supported Lua
-IMG blocks. Text-format IMG streams starting with `#Property` or
-`Root <Property>` inspect as bounded `Property` trees and can be exported with
-`export --type text`. Text exports write to stdout by default or exact bytes to
-`--out <path>`; future binary exporters should use `--out`. Diagnostics carry
-stable severities, codes, and sources through `ResourceInspectionDiagnostics`;
-CLI text output prints codes in brackets when present. The diagnostic rules are
-documented in `docs/diagnostics.md`.
+Canvas pixel decoding has the first narrow direct-zlib raw-byte slice for
+format `2` / `2562`; PNG export and broader Canvas format coverage are still
+pending. RawData/Video/Sound payload decoding is not implemented yet. Lua image
+entries report script length and a short UTF-8 snippet; `export --type lua`
+writes the full decoded script for supported Lua IMG blocks. Text-format IMG
+streams starting with `#Property` or `Root <Property>` inspect as bounded
+`Property` trees and can be exported with `export --type text`. Text exports
+write to stdout by default or exact bytes to `--out <path>`; Canvas export is
+binary-only and requires `--out`. Diagnostics carry stable severities, codes,
+sources, and resource paths through `ResourceInspectionDiagnostics`; CLI text
+output prints codes in brackets when present and avoids volatile raw exception
+text. The diagnostic rules are documented in `docs/diagnostics.md`.
 `WzImageInspectionReader` is now the small image-entry dispatcher, and
 `WzImageBinaryInspectionReader` is the binary IMG entry coordinator. Binary IMG
 object/property parsing lives in `WzImageBinaryObjectInspectionReader`, with
@@ -141,12 +143,14 @@ in their own readers. Canvas/RawData/Video/Sound payload metadata lives in
 `WzImageBinaryReaderPrimitives`; the next parser split should target additional
 object-type families only when new behavior needs them.
 
-Canvas decode/export should start from the narrow plan in
+Canvas decode/export follows the narrow plan in
 `docs/canvas-decode-export-plan.md`: synthetic fixture first, direct zlib and a
 single verified pixel format first, payload decoder separate from parser
 metadata and Core export. The first raw-byte `export --type canvas --out` slice
-now exists for direct zlib Canvas payloads with format `2` / `2562`; PNG export
-and broader format coverage remain pending.
+exists for direct zlib Canvas payloads with format `2` / `2562`; PNG export and
+broader format coverage remain pending. Committed synthetic PKG1 hex fixtures
+now cover Canvas, WC text-format IMG, and Lua IMG export paths, with expected
+text/JSON/stdout/stderr golden outputs under `fixtures/expected`.
 
 ## Suggested Next Prompt
 

@@ -125,11 +125,12 @@ types, object value metadata, property type/kind data, and Canvas/RawData/Video/
 Sound payload offsets and lengths.
 
 Canvas metadata includes payload compression kind and expected uncompressed byte
-length when the texture format is known. Pixel conversion/export is still a
-later step. Lua image entries (`*.lua`) report script length and a short UTF-8
-snippet. WC text-format IMG streams are also recognized when their payload
-starts with `#Property` or `Root <Property>` and are inspected as bounded
-`Property` trees.
+length when the texture format is known. The first narrow direct-zlib Canvas raw
+pixel export slice exists for format `2` / `2562`; PNG export and broader
+texture formats are still later steps. Lua image entries (`*.lua`) report script
+length and a short UTF-8 snippet. WC text-format IMG streams are also recognized
+when their payload starts with `#Property` or `Root <Property>` and are
+inspected as bounded `Property` trees.
 
 To export data through the Core export abstraction:
 
@@ -149,6 +150,20 @@ concatenated in stream order without inserting extra separators. `export --type
 canvas` currently writes raw decoded Canvas pixel bytes for the first supported
 Canvas value in the selected IMG; it is not PNG export yet and currently only
 supports the first narrow direct-zlib Canvas format slice.
+
+Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
+
+```bash
+xxd -r -p fixtures/synthetic/text-img.pkg1.hex /tmp/wcx-text-img.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type text --key none /tmp/wcx-text-img.wz Text.img
+
+xxd -r -p fixtures/synthetic/lua-img.pkg1.hex /tmp/wcx-lua-img.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key none /tmp/wcx-lua-img.wz Script.lua
+
+xxd -r -p fixtures/synthetic/canvas-zlib.pkg1.hex /tmp/wcx-canvas-zlib.wz
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --debug --json --key none --depth 2 /tmp/wcx-canvas-zlib.wz Canvas.img
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out /tmp/wcx-canvas.raw --key none /tmp/wcx-canvas-zlib.wz Canvas.img
+```
 
 By default, text exports write their payload to stdout and keep diagnostics on
 stderr so shell pipelines receive only exported content. Use `--out <path>` to

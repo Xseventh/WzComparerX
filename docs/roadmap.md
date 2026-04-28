@@ -76,16 +76,17 @@ Tasks:
 - Add `inspect`.
 - Add `inspect --debug` and structured parser diagnostics.
 - Add WZ package header CLI output.
-- Add JSON dump. In progress for `list` and `header`.
+- Add JSON dump. Implemented for `list`, `header`, `headers`, `inspect`, and
+  metadata export.
 - Add XML dump if parser coverage allows.
 - Add export abstraction in Core. Started for metadata, text IMG, Lua, and
-  `--out` file output.
+  direct-zlib Canvas raw bytes, with `--out` file output for exact bytes.
 - Add error diagnostics model. Implemented initial shared diagnostics factory,
   stable severity/source/code constants, shared CLI text formatting, and
   `docs/diagnostics.md`.
 - Define first Canvas decode/export slice. Documented in
-  `docs/canvas-decode-export-plan.md`; initial WzLib direct-zlib decoder and
-  raw-byte CLI export are started.
+  `docs/canvas-decode-export-plan.md`; WzLib direct-zlib decoder and raw-byte
+  CLI export are started and covered by committed synthetic fixtures.
 
 Exit criteria:
 
