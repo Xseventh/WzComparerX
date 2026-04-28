@@ -79,7 +79,12 @@ public partial class MainWindowViewModel : ViewModelBase
                 return;
             }
 
-            var selector = NormalizeOptional(SelectorText);
+            var selector = ResourceImageSelector.Normalize(SelectorText, Path.GetFileName(path));
+            if (!string.Equals(selector, NormalizeOptional(SelectorText), StringComparison.Ordinal))
+            {
+                SelectorText = selector ?? string.Empty;
+            }
+
             var document = await inspectionService.InspectAsync(
                 path,
                 selector,
@@ -114,7 +119,9 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        SelectorText = SelectedNode.Path ?? SelectedNode.Name;
+        SelectorText = ResourceImageSelector.Normalize(
+            SelectedNode.Path ?? SelectedNode.Name,
+            Path.GetFileName(PathText.Trim())) ?? string.Empty;
         await LoadAsync();
     }
 
@@ -246,6 +253,36 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         var trimmed = value.Trim();
         return trimmed.Length == 0 ? null : trimmed;
+    }
+}
+
+public static class ResourceImageSelector
+{
+    public static string? Normalize(string? selector, params string?[] rootPrefixes)
+    {
+        var trimmed = selector?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            return null;
+        }
+
+        foreach (var prefix in rootPrefixes)
+        {
+            var normalizedPrefix = prefix?.Trim().Trim('/');
+            if (string.IsNullOrEmpty(normalizedPrefix))
+            {
+                continue;
+            }
+
+            var rootedPrefix = normalizedPrefix + "/";
+            if (trimmed.StartsWith(rootedPrefix, StringComparison.OrdinalIgnoreCase) &&
+                trimmed.Length > rootedPrefix.Length)
+            {
+                return trimmed[rootedPrefix.Length..];
+            }
+        }
+
+        return trimmed;
     }
 }
 

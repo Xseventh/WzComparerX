@@ -60,6 +60,26 @@ public class MainWindowViewModelTests
         Assert.NotEmpty(viewModel.RootNodes);
     }
 
+    [Theory]
+    [InlineData("Base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
+    [InlineData("base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
+    [InlineData("String.wz/Eqp.img", "Base.wz", "String.wz/Eqp.img")]
+    [InlineData("StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
+    [InlineData("  StandardPDD.img  ", "Base_000.wz", "StandardPDD.img")]
+    public void ImageSelector_NormalizesOnlyPackageRootPrefix(
+        string selector,
+        string packageRoot,
+        string expected)
+    {
+        Assert.Equal(expected, ResourceImageSelector.Normalize(selector, packageRoot));
+    }
+
+    [Fact]
+    public void ImageSelector_TreatsBlankSelectorAsDirectoryInspection()
+    {
+        Assert.Null(ResourceImageSelector.Normalize("  ", "Base_000.wz"));
+    }
+
     private static string FixturePath(string name)
     {
         return Path.Combine(
