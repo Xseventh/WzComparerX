@@ -212,7 +212,7 @@ public class MainWindowHeadlessTests
                 Assert.Equal("folder", folderRoot.Kind);
                 Assert.Equal("package", package.Kind);
                 AssertStatusText(window, $"Loaded folder: {directory.Name}");
-                AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: true);
+                AssertButtonEnabled(window, "OpenPackageButton", expected: true);
                 AssertButtonEnabled(window, "InspectImageButton", expected: false);
                 AssertPngCanBeSaved(frame);
             }
@@ -239,7 +239,7 @@ public class MainWindowHeadlessTests
         {
             await viewModel.OpenPathAsync(directory.FullName);
             viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
-            await viewModel.OpenSelectedPackageAsync();
+            await viewModel.OpenPackageAsync();
             var window = CreateWindow(viewModel);
 
             try
@@ -250,7 +250,7 @@ public class MainWindowHeadlessTests
                 Assert.Equal(packagePath, pathTextBox?.Text);
                 AssertStatusText(window, "Loaded pkg1: Base.wz");
                 Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
-                AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: false);
+                AssertButtonEnabled(window, "OpenPackageButton", expected: false);
                 AssertButtonEnabled(window, "InspectImageButton", expected: false);
                 AssertPngCanBeSaved(frame);
             }
@@ -291,7 +291,7 @@ public class MainWindowHeadlessTests
                 AssertStatusText(window, $"Loaded pkg1: {Path.GetFileName(packagePath)}");
                 Assert.Equal("image", Assert.Single(viewModel.RootNodes).Kind);
                 Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
-                AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: false);
+                AssertButtonEnabled(window, "OpenPackageButton", expected: true);
                 AssertButtonEnabled(window, "InspectImageButton", expected: false);
                 AssertPngCanBeSaved(frame);
             }
@@ -392,7 +392,7 @@ public class MainWindowHeadlessTests
         AssertControlInsideViewport(window, "BrowseButton");
         AssertControlInsideViewport(window, "LoadButton");
         AssertControlInsideViewport(window, "SelectorTextBox");
-        AssertControlInsideViewport(window, "OpenSelectedPackageButton");
+        AssertControlInsideViewport(window, "OpenPackageButton");
         AssertControlInsideViewport(window, "InspectImageButton");
         AssertControlInsideViewport(window, "ResourcesTree");
         AssertControlInsideViewport(window, "DetailsTabControl");

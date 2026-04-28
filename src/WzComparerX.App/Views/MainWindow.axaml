@@ -61,8 +61,8 @@
             <TextBlock Grid.Column="4" Text="Depth" VerticalAlignment="Center"/>
             <TextBox Grid.Column="5" Text="{Binding DepthText}"/>
             <Button Grid.Column="6"
-                    x:Name="OpenSelectedPackageButton"
-                    Command="{Binding OpenSelectedPackageCommand}"
+                    x:Name="OpenPackageButton"
+                    Command="{Binding OpenPackageCommand}"
                     Content="Open Package"/>
             <Button Grid.Column="7"
                     x:Name="InspectImageButton"

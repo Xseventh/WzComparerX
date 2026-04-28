@@ -84,7 +84,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task OpenSelectedPackageAsync_LoadsPackageFromFolderInspection()
+    public async Task OpenPackageAsync_LoadsPackageFromFolderInspection()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-app-folder-");
         var packagePath = Path.Combine(directory.FullName, "Base.wz");
@@ -101,8 +101,8 @@ public class MainWindowViewModelTests
             Assert.Equal("package", package.Kind);
 
             viewModel.SelectedNode = package;
-            Assert.True(viewModel.OpenSelectedPackageCommand.CanExecute(null));
-            await viewModel.OpenSelectedPackageAsync();
+            Assert.True(viewModel.OpenPackageCommand.CanExecute(null));
+            await viewModel.OpenPackageAsync();
 
             Assert.Equal(packagePath, viewModel.PathText);
             Assert.Equal(string.Empty, viewModel.SelectorText);
@@ -172,6 +172,40 @@ public class MainWindowViewModelTests
             Assert.Equal("Property", inspectedImage.DisplayValue);
             Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
             Assert.Equal("Loaded pkg1: " + Path.GetFileName(path), viewModel.StatusMessage);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task OpenPackageAsync_ReturnsFromImageInspectionToPackage()
+    {
+        var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none",
+            DepthText = "1"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            await viewModel.InspectImageAsync();
+
+            Assert.Equal("image", Assert.Single(viewModel.RootNodes).Kind);
+            Assert.Equal("Canvas.img", viewModel.SelectorText);
+            Assert.True(viewModel.OpenPackageCommand.CanExecute(null));
+
+            await viewModel.OpenPackageAsync();
+
+            var package = Assert.Single(viewModel.RootNodes);
+            Assert.Equal("package", package.Kind);
+            Assert.Equal(string.Empty, viewModel.SelectorText);
+            Assert.DoesNotContain(viewModel.DocumentMetadata, item => item.Name == "selector");
+            Assert.False(viewModel.OpenPackageCommand.CanExecute(null));
         }
         finally
         {

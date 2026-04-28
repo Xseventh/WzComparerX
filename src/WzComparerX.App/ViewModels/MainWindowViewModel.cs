@@ -13,12 +13,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenPackageCommand))]
     [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string pathText = "fixtures/synthetic/basic-tree.json";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(OpenPackageCommand))]
     [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string selectorText = string.Empty;
@@ -32,7 +33,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
-    [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenPackageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private bool isBusy;
 
@@ -87,23 +88,28 @@ public partial class MainWindowViewModel : ViewModelBase
         await LoadAsync();
     }
 
-    [RelayCommand(CanExecute = nameof(CanOpenSelectedPackage))]
-    public async Task OpenSelectedPackageAsync()
+    [RelayCommand(CanExecute = nameof(CanOpenPackage))]
+    public async Task OpenPackageAsync()
     {
-        if (SelectedNode?.Path is null)
+        if (CanOpenSelectedPackageNode() && SelectedNode?.Path is not null)
         {
+            await OpenPathAsync(SelectedNode.Path);
             return;
         }
 
-        await OpenPathAsync(SelectedNode.Path);
+        if (CanOpenCurrentPackage())
+        {
+            SelectorText = string.Empty;
+            await LoadAsync();
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanActivateSelectedNode))]
     public async Task ActivateSelectedNodeAsync()
     {
-        if (CanOpenSelectedPackage())
+        if (CanOpenSelectedPackageNode())
         {
-            await OpenSelectedPackageAsync();
+            await OpenPackageAsync();
             return;
         }
 
@@ -245,7 +251,12 @@ public partial class MainWindowViewModel : ViewModelBase
             string.Equals(RootNodes[0].Name, selector, StringComparison.Ordinal);
     }
 
-    private bool CanOpenSelectedPackage()
+    private bool CanOpenPackage()
+    {
+        return CanOpenSelectedPackageNode() || CanOpenCurrentPackage();
+    }
+
+    private bool CanOpenSelectedPackageNode()
     {
         return !IsBusy &&
             SelectedNode?.Kind == "package" &&
@@ -254,9 +265,20 @@ public partial class MainWindowViewModel : ViewModelBase
             !PathsEqual(SelectedNode.Path, PathText);
     }
 
+    private bool CanOpenCurrentPackage()
+    {
+        return !IsBusy &&
+            RootNodes.Count == 1 &&
+            RootNodes[0].Kind == "image" &&
+            !string.IsNullOrWhiteSpace(SelectorText) &&
+            !string.IsNullOrWhiteSpace(PathText) &&
+            !Directory.Exists(PathText.Trim()) &&
+            !string.Equals(Path.GetExtension(PathText.Trim()), ".json", StringComparison.OrdinalIgnoreCase);
+    }
+
     private bool CanActivateSelectedNode()
     {
-        return CanOpenSelectedPackage() || CanInspectSelectedImageNode();
+        return CanOpenSelectedPackageNode() || CanInspectSelectedImageNode();
     }
 
     partial void OnSelectedNodeChanged(ResourceInspectionNodeViewModel? value)
@@ -265,7 +287,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SetSelectedMetadata(value);
         SetSelectedDiagnostics(value);
         InspectImageCommand.NotifyCanExecuteChanged();
-        OpenSelectedPackageCommand.NotifyCanExecuteChanged();
+        OpenPackageCommand.NotifyCanExecuteChanged();
         ActivateSelectedNodeCommand.NotifyCanExecuteChanged();
     }
 

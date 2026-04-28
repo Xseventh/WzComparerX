@@ -199,8 +199,10 @@ M4 started:
 - The path row has one `Browse` entry with native file and folder picker menu
   choices. The `Load` action automatically handles file paths and folder paths.
   Folder paths scan `.wz` headers into a folder inspection tree; selecting a
-  package node enables `Open Package`. Opening a new file or package clears the
-  previous IMG selector before loading.
+  package node enables `Open Package`. When the current view is an IMG
+  inspection, `Open Package` clears the IMG selector and returns to the current
+  package directory. Opening a new file or package clears the previous IMG
+  selector before loading.
 - Double-clicking activatable resource nodes routes through the ViewModel:
   package nodes open their package, and image nodes run the same image
   inspection action as the `Inspect Image` button.
