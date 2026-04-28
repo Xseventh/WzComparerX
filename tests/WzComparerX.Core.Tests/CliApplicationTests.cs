@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using System.Text.Json;
 using WzComparerX.Cli;
 using WzComparerX.WzLib;
 
@@ -286,6 +287,63 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugImage_DepthLimitJsonKeepsMiniPropertyMetadataCompact()
+    {
+        var imageBytes = CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString("kind"),
+                0x03,
+                42,
+                16,
+                8,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(3),
+                0x00,
+                0x78,
+                0x9c)));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--json", "--key", "none", "--depth", "1", path, "Canvas.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            using var json = JsonDocument.Parse(NormalizePath(result.Output, path, "<wz>"));
+            var root = json.RootElement.GetProperty("Root");
+            var icon = Assert.Single(root.GetProperty("Children").EnumerateArray());
+
+            Assert.Equal("Canvas.img", root.GetProperty("Name").GetString());
+            Assert.Equal("image", root.GetProperty("Kind").GetString());
+            Assert.Equal("Property", root.GetProperty("DisplayValue").GetString());
+            Assert.Equal("icon", icon.GetProperty("Name").GetString());
+            Assert.Equal("canvas", icon.GetProperty("Kind").GetString());
+            Assert.Empty(icon.GetProperty("Children").EnumerateArray());
+            Assert.Equal(1, GetMetadataInt32(icon, "childCount"));
+            Assert.Equal(3, GetMetadataInt32(icon, "dataLength"));
+            Assert.Equal("Zlib", GetMetadataString(icon, "compressionKind"));
+            var diagnostic = Assert.Single(icon.GetProperty("Diagnostics").EnumerateArray());
+            Assert.Equal("wcx.payload.canvas.pixelsUnsupported", diagnostic.GetProperty("Code").GetString());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task PreviewCommands_AreNotAccepted()
     {
         var fixture = FixturePath("basic-tree.json");
@@ -429,6 +487,29 @@ public class CliApplicationTests
             .Replace(Path.GetFullPath(path), replacement, StringComparison.Ordinal)
             .Replace(Path.GetFileName(path), replacement, StringComparison.Ordinal)
             .ReplaceLineEndings();
+    }
+
+    private static int GetMetadataInt32(JsonElement node, string name)
+    {
+        return GetMetadataValue(node, name).GetInt32();
+    }
+
+    private static string? GetMetadataString(JsonElement node, string name)
+    {
+        return GetMetadataValue(node, name).GetString();
+    }
+
+    private static JsonElement GetMetadataValue(JsonElement node, string name)
+    {
+        foreach (var metadata in node.GetProperty("DebugMetadata").EnumerateArray())
+        {
+            if (metadata.GetProperty("Name").GetString() == name)
+            {
+                return metadata.GetProperty("Value");
+            }
+        }
+
+        throw new InvalidOperationException($"Metadata value not found: {name}.");
     }
 
     private static string FixturePath(string fileName)
