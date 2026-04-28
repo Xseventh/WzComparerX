@@ -248,10 +248,8 @@ public static class CliApplication
         }
 
         if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "noop", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "bms", StringComparison.OrdinalIgnoreCase))
+            string.Equals(value, "noop", StringComparison.OrdinalIgnoreCase))
         {
-            // WC historically names this no-op key BMS; keep that as an alias only.
             kind = WzStringEncryptionKind.None;
             return true;
         }

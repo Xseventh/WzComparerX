@@ -19,8 +19,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key gms path/to
 
 - Defaulted `inspect` to no-op because the local MapleStoryNA client
   `Data/Base/Base.wz` decodes correctly with that key.
-- `--key bms` remains accepted as a compatibility alias for WC's historical
-  no-op key name.
+- The no-op key is selected explicitly with `--key none` or `--key noop`.
 - Updated synthetic byte tests to use encoded string bytes instead of plaintext.
 
 ## Local Smoke

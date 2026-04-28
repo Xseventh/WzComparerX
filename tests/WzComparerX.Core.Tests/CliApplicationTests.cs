@@ -164,6 +164,27 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectNoopKey_SelectsNoOpDirectoryStringMode()
+    {
+        var path = WriteTemporaryPkg1DirectoryFile();
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "noop", path);
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("stringKey: none", output);
+            Assert.Contains("abc [directory]", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectNormalDirectory_OmitsDebugDiagnostics()
     {
         var path = WriteTemporaryPkg1DirectoryFile();

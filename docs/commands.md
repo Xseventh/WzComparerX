@@ -100,9 +100,8 @@ dotnet run --project src/WzComparerX.Cli --no-build -- inspect --json fixtures/s
 `inspect` is intended as the shared model surface for future UI, export, search,
 and automation workflows. Use `--key auto` to try no-op, KMS, and GMS PKG1
 string keys and select the most plausible decoded directory names. Use
-`--key kms` or `--key gms` for files that need those legacy PKG1 string keys.
-`--key bms` remains accepted as a compatibility alias for WC's historical
-no-op key name.
+`--key none`, `--key noop`, `--key kms`, or `--key gms` when a file needs a
+specific PKG1 string key mode.
 
 For IMG inspection, the selector can be an image name, image path, or entry
 index. `--depth 0` prints only the top-level object type, while larger values
