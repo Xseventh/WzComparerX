@@ -98,6 +98,14 @@ version `264` with hash version `54037`. Its top-level directory offsets resolve
 to byte positions `360` through `375`, a compact sequence of empty child
 directory tables immediately after the top-level directory table.
 
+For GMS-style split-package layouts, those empty top-level directory entries are
+package index stubs rather than complete nested directories. WCX now resolves
+matching sibling package directories in Core inspection. For example,
+`Data/Base/Base.wz` entry `Effect` can expand to linked package nodes from
+`Data/Effect/Effect.wz` and `Data/Effect/Effect_*.wz`. The App consumes the
+resulting inspection tree directly; it does not implement separate path
+guessing.
+
 `Data/Base/Base_000.wz` contains image entries such as `smap.img`,
 `StandardPDD.img`, and `zmap.img`. Their calculated offsets point to IMG
 payloads whose top-level object type currently reads as `Property`.

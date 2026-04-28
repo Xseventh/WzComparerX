@@ -224,6 +224,11 @@ M4 started:
   and keeps primary controls inside default and compact viewports. Headless
   coverage now also asserts invalid path, folder open, package open, and image
   inspection visible states. Core.Tests no longer references the App project.
+- Core inspection now performs conservative split-package linking for empty
+  top-level PKG1 directory stubs. For GMS-style layouts such as `Base/Base.wz`,
+  sibling packages like `Effect/Effect.wz` and `Effect/Effect_000.wz` are
+  grafted under the `Effect` directory node so the UI tree can expand through
+  the workspace package index.
 - Richer task/progress handling is still pending.
 
 Local GMS smoke status:

@@ -117,6 +117,47 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDirectory_LinksSiblingSplitPackagesForEmptyTopLevelDirectories()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-split-package-");
+        var baseDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Base"));
+        var effectDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Effect"));
+        var basePath = Path.Combine(baseDirectory.FullName, "Base.wz");
+        var effectPath = Path.Combine(effectDirectory.FullName, "Effect.wz");
+        var effectShardPath = Path.Combine(effectDirectory.FullName, "Effect_000.wz");
+        await File.WriteAllBytesAsync(basePath, CreatePkg1DirectoryPackage(CreateDirectoryStub("Effect")));
+        await File.WriteAllBytesAsync(effectPath, CreatePkg1DirectoryPackage(CreateDirectoryStub("_Canvas")));
+        await File.WriteAllBytesAsync(effectShardPath, CreatePkg1DirectoryPackage(CreateImageDirectory("BasicEff.img")));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                basePath,
+                selector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            var effect = Assert.Single(inspection.Root.Children, child => child.Name == "Effect");
+            Assert.Equal("directory", effect.Kind);
+            Assert.Equal(2, effect.Children.Count);
+
+            var primaryPackage = Assert.Single(effect.Children, child => child.Name == "Effect.wz");
+            Assert.Equal("package", primaryPackage.Kind);
+            Assert.Equal(effectPath, primaryPackage.Path);
+            Assert.Contains(primaryPackage.Children, child => child.Name == "_Canvas");
+
+            var shardPackage = Assert.Single(effect.Children, child => child.Name == "Effect_000.wz");
+            Assert.Equal("package", shardPackage.Kind);
+            Assert.Equal(effectShardPath, shardPackage.Path);
+            Assert.Contains(shardPackage.Children, child => child.Name == "BasicEff.img" && child.Kind == "image");
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugImage_IncludesEntryPropertyAndPayloadMetadata()
     {
         var imageBytes = CreatePropertyImage(CreateObjectProperty(
@@ -306,6 +347,34 @@ public class ResourceDocumentServiceTests
             desiredOffset: checked((uint)imageOffset));
         bytes.AddRange(BitConverter.GetBytes(hashOffset));
         return bytes.ToArray();
+    }
+
+    private static byte[] CreateDirectoryStub(string name)
+    {
+        var bytes = new List<byte> { 0x01, 0x03 };
+        AddWzString(bytes, name);
+        bytes.Add(0x00);
+        bytes.Add(0x00);
+        bytes.AddRange(BitConverter.GetBytes(0u));
+        bytes.Add(0x00);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateImageDirectory(string name)
+    {
+        var bytes = new List<byte> { 0x01, 0x04 };
+        AddWzString(bytes, name);
+        bytes.Add(0x01);
+        bytes.Add(0x00);
+        bytes.AddRange(BitConverter.GetBytes(0u));
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreatePkg1DirectoryPackage(byte[] directoryData)
+    {
+        byte[] encryptedVersion = [0x7b, 0x00];
+        var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
+        return [.. header, .. encryptedVersion, .. directoryData];
     }
 
     private static uint CreateHashOffset(uint hashOffsetPosition, uint desiredOffset)
