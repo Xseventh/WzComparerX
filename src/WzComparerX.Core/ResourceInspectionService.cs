@@ -343,30 +343,10 @@ public sealed class ResourceInspectionService
     {
         var diagnostic = value switch
         {
-            WzImageCanvasInspection => new ResourceInspectionDiagnostic(
-                "info",
-                "Canvas pixel decoding is not implemented.",
-                path,
-                ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported,
-                "parser"),
-            WzImageRawDataInspection => new ResourceInspectionDiagnostic(
-                "info",
-                "RawData payload decoding is not implemented.",
-                path,
-                ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported,
-                "parser"),
-            WzImageVideoInspection => new ResourceInspectionDiagnostic(
-                "info",
-                "Video payload decoding is not implemented.",
-                path,
-                ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported,
-                "parser"),
-            WzImageSoundInspection => new ResourceInspectionDiagnostic(
-                "info",
-                "Audio payload decoding is not implemented.",
-                path,
-                ResourceDiagnosticCodes.AudioPayloadDecodingUnsupported,
-                "parser"),
+            WzImageCanvasInspection => ResourceInspectionDiagnostics.CanvasPixelDecodingUnsupported(path),
+            WzImageRawDataInspection => ResourceInspectionDiagnostics.RawDataPayloadDecodingUnsupported(path),
+            WzImageVideoInspection => ResourceInspectionDiagnostics.VideoPayloadDecodingUnsupported(path),
+            WzImageSoundInspection => ResourceInspectionDiagnostics.AudioPayloadDecodingUnsupported(path),
             _ => null
         };
 

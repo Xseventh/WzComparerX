@@ -220,12 +220,7 @@ public class ResourceDocumentServiceTests
     [Fact]
     public void DiagnosticFormatter_ReturnsStableCliText()
     {
-        var diagnostic = new ResourceInspectionDiagnostic(
-            "error",
-            "Selected image is not a supported Lua IMG: Text.img.",
-            "Text.img",
-            ResourceDiagnosticCodes.ExportUnsupported,
-            "export");
+        var diagnostic = ResourceInspectionDiagnostics.ExportUnsupported(ResourceExportKind.Lua, "Text.img");
 
         var output = ResourceInspectionDiagnosticFormatter.Format(diagnostic);
 
@@ -242,6 +237,30 @@ public class ResourceDocumentServiceTests
         var output = ResourceInspectionDiagnosticFormatter.Format(diagnostic);
 
         Assert.Equal("info: Nothing to report.", output);
+    }
+
+    [Fact]
+    public void DiagnosticsFactory_ReturnsStablePayloadDiagnostic()
+    {
+        var diagnostic = ResourceInspectionDiagnostics.CanvasPixelDecodingUnsupported("icon");
+
+        Assert.Equal("info", diagnostic.Severity);
+        Assert.Equal("Canvas pixel decoding is not implemented.", diagnostic.Message);
+        Assert.Equal("icon", diagnostic.Path);
+        Assert.Equal(ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported, diagnostic.Code);
+        Assert.Equal("parser", diagnostic.Source);
+    }
+
+    [Fact]
+    public void DiagnosticsFactory_ReturnsStableExportDiagnostic()
+    {
+        var diagnostic = ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(2, "Script.lua");
+
+        Assert.Equal("info", diagnostic.Severity);
+        Assert.Equal("Exported 2 Lua blocks in stream order.", diagnostic.Message);
+        Assert.Equal("Script.lua", diagnostic.Path);
+        Assert.Equal(ResourceDiagnosticCodes.ExportLuaMultipleBlocks, diagnostic.Code);
+        Assert.Equal("export", diagnostic.Source);
     }
 
     private static string FixturePath(string fileName)

@@ -80,12 +80,7 @@ public sealed class ResourceExportService
         var diagnostics = scripts.Length > 1
             ? new[]
             {
-                new ResourceInspectionDiagnostic(
-                    "info",
-                    $"Exported {scripts.Length} Lua blocks in stream order.",
-                    selector,
-                    ResourceDiagnosticCodes.ExportLuaMultipleBlocks,
-                    "export")
+                ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(scripts.Length, selector)
             }
             : null;
         return new ResourceExportDocument(
@@ -140,18 +135,6 @@ public sealed class ResourceExportService
 
     private static ResourceExportException Unsupported(ResourceExportKind kind, string? selector)
     {
-        var message = kind switch
-        {
-            ResourceExportKind.Text => $"Selected image is not a supported text IMG: {selector}.",
-            ResourceExportKind.Lua => $"Selected image is not a supported Lua IMG: {selector}.",
-            _ => $"Unsupported export type: {kind}."
-        };
-
-        return new ResourceExportException(new ResourceInspectionDiagnostic(
-            "error",
-            message,
-            selector,
-            ResourceDiagnosticCodes.ExportUnsupported,
-            "export"));
+        return new ResourceExportException(ResourceInspectionDiagnostics.ExportUnsupported(kind, selector));
     }
 }
