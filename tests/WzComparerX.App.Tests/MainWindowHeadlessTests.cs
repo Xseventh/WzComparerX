@@ -92,6 +92,36 @@ public class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task MainWindow_TreeSelectionUpdatesSelectionPanelInHeadless()
+    {
+        var viewModel = new MainWindowViewModel
+        {
+            PathText = FixturePath("basic-tree.json")
+        };
+        await viewModel.LoadAsync();
+        var window = CreateWindow(viewModel);
+
+        try
+        {
+            var tree = window.FindControl<TreeView>("ResourcesTree");
+            Assert.NotNull(tree);
+            var child = viewModel.RootNodes[0].Children[0];
+
+            tree.SelectedItem = child;
+            using var frame = CaptureFrame(window);
+
+            Assert.Same(child, viewModel.SelectedNode);
+            Assert.Contains(viewModel.SelectedMetadata, item => item.Name == "name" && item.Value == "Character.wz");
+            Assert.Contains(viewModel.SelectedMetadata, item => item.Name == "kind" && item.Value == "directory");
+            AssertPngCanBeSaved(frame);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public async Task MainWindow_KeepsPrimaryControlsInsideInitialViewport()
     {
         var viewModel = new MainWindowViewModel
