@@ -148,7 +148,9 @@ supported Lua IMG blocks. If a Lua image contains multiple blocks, they are
 concatenated in stream order without inserting extra separators. `export --type
 canvas` currently writes raw decoded Canvas pixel bytes for the first supported
 Canvas value in the selected IMG; it is not PNG export yet and currently only
-supports the first narrow direct-zlib Canvas format slice.
+supports the first narrow direct-zlib Canvas format slice. The first-Canvas
+selection behavior is temporary; see `docs/canvas-export-selector-plan.md` for
+the explicit value selector that should replace it before M3 closes.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 

@@ -20,6 +20,9 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+fa5aeb9 Remove ambiguous string key alias
+6b08714 Reject JSON flag for export
+b042af9 Close out milestone 2
 6383edf Remove retired diagnostic terminology remnants
 5071c93 Sync M3 fixture documentation
 a6206ab Add text and Lua export fixtures
@@ -157,10 +160,28 @@ Canvas decode/export follows the narrow plan in
 `docs/canvas-decode-export-plan.md`: synthetic fixture first, direct zlib and a
 single verified pixel format first, payload decoder separate from parser
 metadata and Core export. The first raw-byte `export --type canvas --out` slice
-exists for direct zlib Canvas payloads with format `2` / `2562`; PNG export and
-broader format coverage remain pending. Committed synthetic PKG1 hex fixtures
-now cover Canvas, WC text-format IMG, and Lua IMG export paths, with expected
-text/JSON/stdout/stderr golden outputs under `fixtures/expected`.
+exists for direct zlib Canvas payloads with format `2` / `2562`. PNG export is
+not required for M3; it remains later user-facing image export work. M3 should
+not close while Canvas export still relies on implicit first-Canvas selection;
+the explicit value selector design is in `docs/canvas-export-selector-plan.md`.
+Committed synthetic PKG1 hex fixtures now cover Canvas, WC text-format IMG, and
+Lua IMG export paths, with expected text/JSON/stdout/stderr golden outputs
+under `fixtures/expected`.
+
+Recent CLI boundary cleanup:
+
+- `export --json` now returns a usage error because export writes resource
+  content directly; metadata export is already JSON.
+- The current string-key CLI surface is `auto|none|noop|kms|gms`. The no-op mode
+  should not be presented as a service-region key.
+
+Local GMS smoke status:
+
+- Base, Base_000, UI_000, Sound_000, and WZ2Lua directory-only smokes are
+  recorded in the M2 closeout log.
+- Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
+  still needs direct real-sample smoke verification when a suitable local
+  client entry is found.
 
 ## Suggested Next Prompt
 

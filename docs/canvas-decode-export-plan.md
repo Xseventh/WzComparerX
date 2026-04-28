@@ -85,5 +85,9 @@ conditions through CLI output.
 
 Status: steps 1 through 5 are started for direct zlib Canvas payloads with
 format `2` / `2562`, including a committed hex fixture, `inspect --debug`
-text/JSON golden outputs, and raw-byte CLI export coverage. PNG export and
-broader Canvas format coverage are still pending.
+text/JSON golden outputs, and raw-byte CLI export coverage. This raw-byte path
+is sufficient for M3 only as a parser/export slice. PNG export and broader
+Canvas format coverage are later user-facing image export work. Before M3
+closes, Canvas export should stop relying on implicit first-Canvas selection and
+support the explicit value selector described in
+`docs/canvas-export-selector-plan.md`.

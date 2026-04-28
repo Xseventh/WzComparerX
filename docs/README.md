@@ -29,6 +29,7 @@ Only after this should the Avalonia UI become feature-heavy.
   CLI/JSON formatting rules.
 - `canvas-decode-export-plan.md`: Minimum Canvas decode/export scope and
   fixture strategy.
+- `canvas-export-selector-plan.md`: Explicit Canvas value selector design.
 - `roadmap.md`: Milestones and next work queue.
 - `commands.md`: Local development commands and known environment quirks.
 - `decision-log.md`: Short index of architectural decisions.
