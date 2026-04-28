@@ -154,7 +154,7 @@ public class ResourceDocumentServiceTests
             var canvasPackage = Assert.Single(canvas.Children, child => child.Name == "_Canvas.wz");
             Assert.Equal("package", canvasPackage.Kind);
             Assert.Equal(canvasPackagePath, canvasPackage.Path);
-            Assert.Empty(canvasPackage.Children);
+            Assert.Contains(canvasPackage.Children, child => child.Name == "Canvas.img" && child.Kind == "image");
 
             var shardPackage = Assert.Single(effect.Children, child => child.Name == "Effect_000.wz");
             Assert.Equal("package", shardPackage.Kind);
@@ -196,6 +196,38 @@ public class ResourceDocumentServiceTests
             Assert.Equal("package", linkedPackage.Kind);
             Assert.Equal(canvasPackagePath, linkedPackage.Path);
             Assert.Contains(linkedPackage.Children, child => child.Name == "Texture.img" && child.Kind == "image");
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDirectory_LinksSplitPackagesWhenPropertyDepthIsZero()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-split-package-depth-zero-");
+        var baseDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Base"));
+        var effectDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Effect"));
+        var basePath = Path.Combine(baseDirectory.FullName, "Base.wz");
+        var effectPath = Path.Combine(effectDirectory.FullName, "Effect.wz");
+        await File.WriteAllBytesAsync(basePath, CreatePkg1DirectoryPackage(CreateDirectoryStub("Effect")));
+        await File.WriteAllBytesAsync(effectPath, CreatePkg1DirectoryPackage(CreateImageDirectory("BasicEff.img")));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                basePath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 0,
+                    IncludeDebugMetadata: true));
+
+            var effect = Assert.Single(inspection.Root.Children, child => child.Name == "Effect");
+            var linkedPackage = Assert.Single(effect.Children, child => child.Name == "Effect.wz");
+            Assert.Contains(linkedPackage.Children, child => child.Name == "BasicEff.img" && child.Kind == "image");
         }
         finally
         {

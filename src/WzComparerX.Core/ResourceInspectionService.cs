@@ -70,7 +70,6 @@ public sealed class ResourceInspectionService
             options,
             includeSplitPackageLinks: true,
             cancellationToken,
-            remainingSplitPackageLinkDepth: Math.Max(0, options.MaxPropertyDepth),
             splitPackageAncestors: CreateSplitPackageAncestors(inspection.Header.SourcePath));
         return new ResourceInspectionDocument(
             inspection.Header.SourcePath,
@@ -122,7 +121,6 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         bool includeSplitPackageLinks,
         CancellationToken cancellationToken,
-        int remainingSplitPackageLinkDepth = 0,
         IReadOnlySet<string>? splitPackageAncestors = null,
         string? rootPath = null)
     {
@@ -153,14 +151,13 @@ public sealed class ResourceInspectionService
                 options.IncludeDebugMetadata ? BuildDirectoryEntryMetadata(entry) : null);
         }
 
-        if (includeSplitPackageLinks && remainingSplitPackageLinkDepth > 0)
+        if (includeSplitPackageLinks)
         {
             await AddSplitPackageLinksAsync(
                 builder,
                 inspection,
                 options,
                 cancellationToken,
-                remainingSplitPackageLinkDepth,
                 splitPackageAncestors);
         }
 
@@ -242,7 +239,6 @@ public sealed class ResourceInspectionService
         WzDirectoryInspection inspection,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken,
-        int remainingSplitPackageLinkDepth,
         IReadOnlySet<string>? splitPackageAncestors)
     {
         foreach (var entry in inspection.Entries)
@@ -266,7 +262,6 @@ public sealed class ResourceInspectionService
                     packagePath,
                     options,
                     cancellationToken,
-                    remainingSplitPackageLinkDepth,
                     splitPackageAncestors);
                 if (linkedNode is not null)
                 {
@@ -382,7 +377,6 @@ public sealed class ResourceInspectionService
         string path,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken,
-        int remainingSplitPackageLinkDepth,
         IReadOnlySet<string>? splitPackageAncestors)
     {
         var fullPath = GetFullPathOrOriginal(path);
@@ -393,11 +387,6 @@ public sealed class ResourceInspectionService
 
         try
         {
-            if (remainingSplitPackageLinkDepth <= 1)
-            {
-                return await TryBuildShallowLinkedPackageNodeAsync(path, cancellationToken);
-            }
-
             var inspection = await WzImageInspectionLoader.ReadDirectoryAsync(path, options.StringKey, cancellationToken);
             if (!inspection.Header.IsValid)
             {
@@ -409,7 +398,6 @@ public sealed class ResourceInspectionService
                 options,
                 includeSplitPackageLinks: true,
                 cancellationToken,
-                remainingSplitPackageLinkDepth: remainingSplitPackageLinkDepth - 1,
                 splitPackageAncestors: AddSplitPackageAncestor(splitPackageAncestors, fullPath),
                 rootPath: path);
         }
@@ -417,29 +405,6 @@ public sealed class ResourceInspectionService
         {
             return null;
         }
-    }
-
-    private static async Task<ResourceInspectionNode?> TryBuildShallowLinkedPackageNodeAsync(
-        string path,
-        CancellationToken cancellationToken)
-    {
-        var header = await new WzPackageHeaderReader().ReadAsync(path, cancellationToken);
-        if (!header.IsValid)
-        {
-            return null;
-        }
-
-        var name = Path.GetFileName(path);
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            name = path;
-        }
-
-        return new ResourceInspectionNode(
-            name,
-            "package",
-            path,
-            header.Format.ToString().ToLowerInvariant());
     }
 
     private static HashSet<string> CreateSplitPackageAncestors(string sourcePath)

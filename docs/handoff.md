@@ -231,10 +231,9 @@ M4 started:
   directory node. Same-package subtree links such as `UI/UI.wz` to
   `UI/_Canvas/_Canvas.wz` are also resolved. Broader workspace-relative lookup
   is limited to the `Base/Base.wz` index shape; linked packages resolve nested
-  stubs relative to their own package directory. Directory `--depth` bounds
-  recursive package expansion; boundary packages are shallow nodes, which keeps
-  large trees such as `Map/Map.wz` usable while still showing the next package
-  hop.
+  stubs relative to their own package directory. Split-package directory trees
+  now load eagerly in the WC style; `--depth` only controls IMG/property
+  inspection.
 - Richer task/progress handling is still pending.
 
 Local GMS smoke status:

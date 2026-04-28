@@ -107,10 +107,9 @@ from `Data/Effect/Effect.wz` and `Data/Effect/Effect_*.wz`, while
 its numbered shards. The broader data workspace lookup is limited to the
 `Base/Base.wz` package index shape; linked packages resolve nested stubs
 relative to their own package directory, matching WC's folder loading behavior.
-Directory `--depth` bounds recursive split-package expansion; packages at the
-boundary are kept as shallow package nodes so large client trees remain
-responsive. The App consumes the resulting inspection tree directly; it does
-not implement separate path guessing.
+Split-package directory trees are loaded eagerly in the WC style, while IMG
+payloads remain selector-driven. The App consumes the resulting inspection tree
+directly; it does not implement separate path guessing.
 
 `Data/Base/Base_000.wz` contains image entries such as `smap.img`,
 `StandardPDD.img`, and `zmap.img`. Their calculated offsets point to IMG

@@ -13,9 +13,9 @@ Added workspace-level split-package linking for GMS-style package indices.
   index shape, matching WC's folder loading behavior.
 - This covers root index cases such as `Base/Base.wz` -> `Effect/Effect.wz`
   and same-package subtree cases such as `UI/UI.wz` -> `UI/_Canvas/_Canvas.wz`.
-- Directory `--depth` now bounds recursive split-package expansion. Linked
-  packages at the boundary are represented as shallow package nodes instead of
-  eagerly reading large package bodies.
+- Split-package directory trees now load eagerly in the WC style. `--depth`
+  remains an IMG/property inspection setting and no longer limits package
+  expansion.
 - Same-name child directories no longer resolve against the current package
   directory as workspace siblings, avoiding accidental expansion of current
   package shards through entries such as `Map.wz` -> `Map`.
@@ -32,9 +32,8 @@ Added workspace-level split-package linking for GMS-style package indices.
   `Effect.wz` and `Effect_000.wz` package nodes.
 - Smoke-tested local GMS `UI/UI.wz`; `_Canvas` now expands into `_Canvas.wz`
   and `_Canvas_*.wz` package nodes.
-- Smoke-tested local GMS `Map/Map.wz`; `--depth 1` links `Back`, `Map`, `Obj`,
-  `Tile`, `WorldMap`, and `_Canvas` to shallow package nodes, while `--depth 2`
-  expands one package body level deeper.
+- Smoke-tested local GMS `Map/Map.wz`; linked packages expand eagerly through
+  the available split-package directory tree.
 
 ## Verification
 

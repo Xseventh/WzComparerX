@@ -107,10 +107,8 @@ For IMG inspection, the selector can be an image name, image path, or entry
 index. `--depth 0` prints only the top-level object type, while larger values
 expand nested property/object metadata up to the accepted `0` through `64`
 range.
-
-For directory inspection, `--depth` also controls split-package link expansion.
-At the depth boundary, linked packages are shown as shallow package nodes so
-large client package trees remain navigable without eagerly reading every shard.
+For directory inspection, split-package directory trees are loaded eagerly in
+the WC style; `--depth` does not limit directory/package expansion.
 
 For development diagnostics, add `--debug`:
 
