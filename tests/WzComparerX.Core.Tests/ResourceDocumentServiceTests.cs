@@ -232,7 +232,11 @@ public class ResourceDocumentServiceTests
     [Fact]
     public void DiagnosticFormatter_OmitsEmptyCodeAndPath()
     {
-        var diagnostic = new ResourceInspectionDiagnostic("info", "Nothing to report.", Code: " ", Path: "");
+        var diagnostic = new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Info,
+            "Nothing to report.",
+            Code: " ",
+            Path: "");
 
         var output = ResourceInspectionDiagnosticFormatter.Format(diagnostic);
 
@@ -244,11 +248,11 @@ public class ResourceDocumentServiceTests
     {
         var diagnostic = ResourceInspectionDiagnostics.CanvasPixelDecodingUnsupported("icon");
 
-        Assert.Equal("info", diagnostic.Severity);
+        Assert.Equal(ResourceDiagnosticSeverities.Info, diagnostic.Severity);
         Assert.Equal("Canvas pixel decoding is not implemented.", diagnostic.Message);
         Assert.Equal("icon", diagnostic.Path);
         Assert.Equal(ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported, diagnostic.Code);
-        Assert.Equal("parser", diagnostic.Source);
+        Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
     }
 
     [Fact]
@@ -256,11 +260,11 @@ public class ResourceDocumentServiceTests
     {
         var diagnostic = ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(2, "Script.lua");
 
-        Assert.Equal("info", diagnostic.Severity);
+        Assert.Equal(ResourceDiagnosticSeverities.Info, diagnostic.Severity);
         Assert.Equal("Exported 2 Lua blocks in stream order.", diagnostic.Message);
         Assert.Equal("Script.lua", diagnostic.Path);
         Assert.Equal(ResourceDiagnosticCodes.ExportLuaMultipleBlocks, diagnostic.Code);
-        Assert.Equal("export", diagnostic.Source);
+        Assert.Equal(ResourceDiagnosticSources.Export, diagnostic.Source);
     }
 
     private static string FixturePath(string fileName)

@@ -128,8 +128,8 @@ IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
 `export --type text`. Text exports write to stdout by default or exact bytes to
 `--out <path>`; future binary exporters should use `--out`. Diagnostics carry
-stable codes and sources, and CLI text output prints codes in brackets when
-present.
+stable severities, codes, and sources through `ResourceInspectionDiagnostics`;
+CLI text output prints codes in brackets when present.
 `WzImageInspectionReader` is now the small image-entry dispatcher, and
 `WzImageBinaryInspectionReader` is the binary IMG entry coordinator. Binary IMG
 object/property parsing lives in `WzImageBinaryObjectInspectionReader`, with

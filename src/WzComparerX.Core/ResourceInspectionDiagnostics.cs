@@ -2,59 +2,54 @@ namespace WzComparerX.Core;
 
 public static class ResourceInspectionDiagnostics
 {
-    private const string InfoSeverity = "info";
-    private const string ErrorSeverity = "error";
-    private const string ParserSource = "parser";
-    private const string ExportSource = "export";
-
     public static ResourceInspectionDiagnostic CanvasPixelDecodingUnsupported(string? path)
     {
         return new ResourceInspectionDiagnostic(
-            InfoSeverity,
+            ResourceDiagnosticSeverities.Info,
             "Canvas pixel decoding is not implemented.",
             path,
             ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported,
-            ParserSource);
+            ResourceDiagnosticSources.Parser);
     }
 
     public static ResourceInspectionDiagnostic RawDataPayloadDecodingUnsupported(string? path)
     {
         return new ResourceInspectionDiagnostic(
-            InfoSeverity,
+            ResourceDiagnosticSeverities.Info,
             "RawData payload decoding is not implemented.",
             path,
             ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported,
-            ParserSource);
+            ResourceDiagnosticSources.Parser);
     }
 
     public static ResourceInspectionDiagnostic VideoPayloadDecodingUnsupported(string? path)
     {
         return new ResourceInspectionDiagnostic(
-            InfoSeverity,
+            ResourceDiagnosticSeverities.Info,
             "Video payload decoding is not implemented.",
             path,
             ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported,
-            ParserSource);
+            ResourceDiagnosticSources.Parser);
     }
 
     public static ResourceInspectionDiagnostic AudioPayloadDecodingUnsupported(string? path)
     {
         return new ResourceInspectionDiagnostic(
-            InfoSeverity,
+            ResourceDiagnosticSeverities.Info,
             "Audio payload decoding is not implemented.",
             path,
             ResourceDiagnosticCodes.AudioPayloadDecodingUnsupported,
-            ParserSource);
+            ResourceDiagnosticSources.Parser);
     }
 
     public static ResourceInspectionDiagnostic ExportLuaMultipleBlocks(int blockCount, string? selector)
     {
         return new ResourceInspectionDiagnostic(
-            InfoSeverity,
+            ResourceDiagnosticSeverities.Info,
             $"Exported {blockCount} Lua blocks in stream order.",
             selector,
             ResourceDiagnosticCodes.ExportLuaMultipleBlocks,
-            ExportSource);
+            ResourceDiagnosticSources.Export);
     }
 
     public static ResourceInspectionDiagnostic ExportUnsupported(ResourceExportKind kind, string? selector)
@@ -67,10 +62,10 @@ public static class ResourceInspectionDiagnostics
         };
 
         return new ResourceInspectionDiagnostic(
-            ErrorSeverity,
+            ResourceDiagnosticSeverities.Error,
             message,
             selector,
             ResourceDiagnosticCodes.ExportUnsupported,
-            ExportSource);
+            ResourceDiagnosticSources.Export);
     }
 }
