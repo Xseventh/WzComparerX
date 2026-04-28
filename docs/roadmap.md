@@ -72,6 +72,8 @@ Closeout notes:
 
 ## Milestone 3: Export And Inspect
 
+Status: done.
+
 Goal: make CLI useful for automation.
 
 Tasks:
@@ -81,15 +83,16 @@ Tasks:
 - Add WZ package header CLI output.
 - Add JSON dump. Implemented for `list`, `header`, `headers`, `inspect`, and
   metadata export.
-- Add XML dump if parser coverage allows.
-- Add export abstraction in Core. Started for metadata, text IMG, Lua, and
+- Add XML dump if parser coverage allows. Deferred; JSON and metadata export
+  cover the M3 automation requirement.
+- Add export abstraction in Core. Implemented for metadata, text IMG, Lua, and
   direct-zlib Canvas raw bytes, with `--out` file output for exact bytes.
 - Add error diagnostics model. Implemented initial shared diagnostics factory,
   stable severity/source/code constants, shared CLI text formatting, and
   `docs/diagnostics.md`.
 - Define first Canvas decode/export slice. Documented in
   `docs/canvas-decode-export-plan.md`; WzLib direct-zlib decoder and raw-byte
-  CLI export are started and covered by committed synthetic fixtures.
+  CLI export are covered by committed synthetic fixtures.
 - Continue export surface decisions for stdout vs `--out`, text vs binary
   content, and partial/unsupported payload diagnostics.
 - Define and implement explicit Canvas value selection for export. Implemented
@@ -107,6 +110,17 @@ Exit criteria:
   value explicitly and that behavior has CLI golden coverage.
 - PNG export is not required for M3. It remains a later user-facing image export
   milestone after raw Canvas bytes, value selection, and diagnostics are stable.
+
+Closeout notes:
+
+- M3 establishes `inspect`, `inspect --debug`, and `export` as the headless
+  automation surfaces.
+- Export currently covers metadata JSON, WC text-format IMG, Lua IMG, and the
+  first raw Canvas byte slice.
+- Diagnostics have stable severities, sources, codes, CLI text formatting, and
+  docs.
+- M4 should now build UI browsing on top of Core inspection/export models
+  instead of adding parser behavior directly to the app layer.
 
 ## Milestone 4: Basic Avalonia Browser
 
@@ -161,3 +175,4 @@ Exit criteria:
 - PNG export and a broader Canvas pixel decode matrix.
 - Audio and video payload decoding.
 - UI browsing beyond the current Avalonia shell.
+- XML dump, if a concrete downstream workflow needs it.

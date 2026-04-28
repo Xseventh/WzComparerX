@@ -20,6 +20,8 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+6eaf391 Add Canvas export value selector
+dfa9cc5 Define M3 Canvas export boundary
 fa5aeb9 Remove ambiguous string key alias
 6b08714 Reject JSON flag for export
 b042af9 Close out milestone 2
@@ -112,12 +114,12 @@ a0858cb Bootstrap WCX modernization project
 
 ## Current State
 
-Milestone 1 and Milestone 2 are complete. The current mainline is Milestone 3
-export/diagnostics hardening, with Milestone 4 UI browsing queued behind stable
-Core models. M2 delivered real WZ package header detection, PKG1 directory
-inspection, recursive directory entries, string-key handling, IMG object and
-property metadata, Lua/text IMG inspection, and payload metadata for Canvas,
-RawData, Video, and Sound values.
+Milestones 1, 2, and 3 are complete. The current mainline is Milestone 4 Basic
+Avalonia Browser. M4 should reuse Core inspection/export models and must not add
+parser behavior directly in app view models. M2 delivered real WZ package header
+detection, PKG1 directory inspection, recursive directory entries, string-key
+handling, IMG object and property metadata, Lua/text IMG inspection, and payload
+metadata for Canvas, RawData, Video, and Sound values.
 
 `inspect` now projects synthetic fixtures, WZ directories, and WZ IMG payloads
 into a generic inspection tree so future UI/export/search work does not depend
@@ -135,8 +137,8 @@ command documentation, file names, and active tests. The supported observation
 surface is now `inspect` and `inspect --debug`.
 
 Canvas pixel decoding has the first narrow direct-zlib raw-byte slice for
-format `2` / `2562`; PNG export and broader Canvas format coverage are still
-pending. RawData/Video/Sound payload decoding is not implemented yet. Lua image
+format `2` / `2562`; PNG export and broader Canvas format coverage remain
+later work. RawData/Video/Sound payload decoding is not implemented yet. Lua image
 entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG
 streams starting with `#Property` or `Root <Property>` inspect as bounded
@@ -175,6 +177,17 @@ Recent CLI boundary cleanup:
 - The current string-key CLI surface is `auto|none|noop|kms|gms`. The no-op mode
   should not be presented as a service-region key.
 
+M3 closeout:
+
+- `inspect`, `inspect --debug`, and `export` are the headless automation
+  surfaces.
+- Export covers metadata JSON, WC text-format IMG, Lua IMG, and raw direct-zlib
+  Canvas bytes.
+- Diagnostics have stable severities, sources, codes, CLI text formatting, and
+  docs.
+- XML dump, PNG export, broader Canvas decode, audio/video decode, and full PKG2
+  directory parsing are later work.
+
 Local GMS smoke status:
 
 - Base, Base_000, UI_000, Sound_000, and WZ2Lua directory-only smokes are
@@ -190,10 +203,10 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Continue Milestone 3 by starting the
-export abstraction or by expanding diagnostics into a stable warning/error
-model shared by CLI and future UI. Add fixture-backed tests, run build/test,
-update docs/logs, and commit the work on the current branch.
+docs/development-guidelines.md first. Continue Milestone 4: Basic Avalonia
+Browser. Reuse Core inspection/export models, keep parsing out of view models,
+add focused UI/view-model tests where practical, run build/test, update
+docs/logs, and commit the work on the current branch.
 ```
 
 ## Caution
