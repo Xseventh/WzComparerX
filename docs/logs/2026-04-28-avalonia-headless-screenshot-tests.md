@@ -21,6 +21,10 @@ app manually.
 - Closed headless windows after each test to keep the test session isolated.
 - Added an opt-in `WCX_HEADLESS_SCREENSHOT_DIR` artifact path for writing the
   captured PNG outside the repository during manual visual checks.
+- Moved Activity out of the details tabs into a persistent lower-right panel so
+  load/error logs are visible without selecting a tab.
+- Added a headless interaction smoke test that switches the details tab and
+  captures a rendered frame after the control state changes.
 
 ## Findings
 
@@ -31,6 +35,8 @@ app manually.
   compact `900x640` headless viewport.
 - Manual artifact generation produced
   `/private/tmp/wcx-headless-screens/main-window-synthetic-1100x720.png`.
+- The updated artifact confirms that Activity entries are visible in the
+  lower-right panel.
 
 ## Verification
 

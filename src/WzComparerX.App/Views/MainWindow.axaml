@@ -89,7 +89,7 @@
                 </Grid>
             </Border>
 
-            <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="12">
+            <Grid Grid.Column="1" RowDefinitions="Auto,*,150" RowSpacing="12">
                 <Border Classes="panel">
                     <Grid RowDefinitions="Auto,*" RowSpacing="4">
                         <TextBlock Classes="section-title" Text="Document"/>
@@ -141,20 +141,25 @@
                                 </ItemsControl>
                             </ScrollViewer>
                         </TabItem>
-                        <TabItem Header="Activity">
-                            <ScrollViewer>
-                                <ItemsControl ItemsSource="{Binding ActivityLog}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="vm:ResourceActivityLogItemViewModel">
-                                            <TextBlock Text="{Binding Title}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       Margin="0,2"/>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </ScrollViewer>
-                        </TabItem>
                     </TabControl>
+                </Border>
+
+                <Border Grid.Row="2" x:Name="ActivityLogPanel" Classes="panel">
+                    <Grid RowDefinitions="Auto,*" RowSpacing="4">
+                        <TextBlock Classes="section-title" Text="Activity"/>
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsControl x:Name="ActivityLogList"
+                                          ItemsSource="{Binding ActivityLog}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="vm:ResourceActivityLogItemViewModel">
+                                        <TextBlock Text="{Binding Title}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Margin="0,2"/>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
                 </Border>
             </Grid>
         </Grid>

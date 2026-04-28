@@ -29,7 +29,8 @@ public class MainWindowHeadlessTests
             Assert.NotNull(FindControl<TreeView>(window));
             Assert.NotNull(FindTab(window, "Selection"));
             Assert.NotNull(FindTab(window, "Diagnostics"));
-            Assert.NotNull(FindTab(window, "Activity"));
+            Assert.NotNull(window.FindControl<Control>("ActivityLogPanel"));
+            Assert.NotNull(window.FindControl<ItemsControl>("ActivityLogList"));
         }
         finally
         {
@@ -54,6 +55,35 @@ public class MainWindowHeadlessTests
             AssertPngCanBeSaved(frame);
             SaveScreenshotArtifact(frame, "main-window-synthetic-1100x720.png");
             AssertRenderedContentIsNotBlank(frame);
+            AssertActivityLogIsVisible(window);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_CanSwitchDetailsTabsInHeadless()
+    {
+        var viewModel = new MainWindowViewModel
+        {
+            PathText = FixturePath("basic-tree.json")
+        };
+        await viewModel.LoadAsync();
+        var window = CreateWindow(viewModel);
+
+        try
+        {
+            var tabControl = window.FindControl<TabControl>("DetailsTabControl");
+            Assert.NotNull(tabControl);
+            Assert.Equal(0, tabControl.SelectedIndex);
+
+            tabControl.SelectedIndex = 1;
+            using var frame = CaptureFrame(window);
+
+            Assert.Equal(1, tabControl.SelectedIndex);
+            AssertPngCanBeSaved(frame);
         }
         finally
         {
@@ -117,6 +147,15 @@ public class MainWindowHeadlessTests
         AssertControlInsideViewport(window, "InspectSelectedImageButton");
         AssertControlInsideViewport(window, "ResourcesTree");
         AssertControlInsideViewport(window, "DetailsTabControl");
+        AssertControlInsideViewport(window, "ActivityLogPanel");
+    }
+
+    private static void AssertActivityLogIsVisible(MainWindow window)
+    {
+        var activityLogList = window.FindControl<ItemsControl>("ActivityLogList");
+        Assert.NotNull(activityLogList);
+        Assert.True(activityLogList.Bounds.Width > 0);
+        Assert.True(activityLogList.Bounds.Height > 0);
     }
 
     private static MainWindow CreateWindow(
