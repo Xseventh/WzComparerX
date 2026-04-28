@@ -139,6 +139,8 @@ Tasks:
   and double-click activation opens package/image nodes through ViewModel
   commands. Redundant activation of the already-open package or already-selected
   IMG is suppressed at the command-state layer.
+- IMG selector workflow. Started with manual selector inspection through the
+  same `Inspect Image` action used for selected image nodes.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.

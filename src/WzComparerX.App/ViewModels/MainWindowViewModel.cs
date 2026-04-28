@@ -14,12 +14,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
-    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string pathText = "fixtures/synthetic/basic-tree.json";
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string selectorText = string.Empty;
 
@@ -31,7 +31,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
-    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private bool isBusy;
@@ -43,7 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private ResourceInspectionNodeViewModel? selectedNode;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string currentFormat = string.Empty;
 
@@ -107,9 +107,9 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        if (CanInspectSelectedImage())
+        if (CanInspectSelectedImageNode())
         {
-            await InspectSelectedImageAsync();
+            await InspectImageAsync();
         }
     }
 
@@ -173,17 +173,21 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanInspectSelectedImage))]
-    public async Task InspectSelectedImageAsync()
+    [RelayCommand(CanExecute = nameof(CanInspectImage))]
+    public async Task InspectImageAsync()
     {
-        if (SelectedNode is null)
+        if (!CanInspectImage())
         {
             return;
         }
 
-        SelectorText = ResourceImageSelector.Normalize(
-            SelectedNode.Path ?? SelectedNode.Name,
-            Path.GetFileName(PathText.Trim())) ?? string.Empty;
+        if (CanInspectSelectedImageNode())
+        {
+            SelectorText = ResourceImageSelector.Normalize(
+                SelectedNode?.Path ?? SelectedNode?.Name,
+                Path.GetFileName(PathText.Trim())) ?? string.Empty;
+        }
+
         await LoadAsync();
     }
 
@@ -192,7 +196,12 @@ public partial class MainWindowViewModel : ViewModelBase
         return !IsBusy && !string.IsNullOrWhiteSpace(PathText);
     }
 
-    private bool CanInspectSelectedImage()
+    private bool CanInspectImage()
+    {
+        return CanInspectSelectedImageNode() || CanInspectManualSelector();
+    }
+
+    private bool CanInspectSelectedImageNode()
     {
         if (IsBusy ||
             SelectedNode?.Kind != "image" ||
@@ -211,6 +220,31 @@ public partial class MainWindowViewModel : ViewModelBase
             !string.Equals(selectedSelector, currentSelector, StringComparison.Ordinal);
     }
 
+    private bool CanInspectManualSelector()
+    {
+        if (IsBusy ||
+            string.IsNullOrWhiteSpace(PathText) ||
+            Directory.Exists(PathText.Trim()) ||
+            string.Equals(CurrentFormat, "synthetic", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var selector = ResourceImageSelector.Normalize(
+            SelectorText,
+            Path.GetFileName(PathText.Trim()));
+        return !string.IsNullOrWhiteSpace(selector) &&
+            !IsCurrentImageSelector(selector) &&
+            !string.Equals(Path.GetExtension(PathText.Trim()), ".json", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsCurrentImageSelector(string selector)
+    {
+        return RootNodes.Count == 1 &&
+            RootNodes[0].Kind == "image" &&
+            string.Equals(RootNodes[0].Name, selector, StringComparison.Ordinal);
+    }
+
     private bool CanOpenSelectedPackage()
     {
         return !IsBusy &&
@@ -222,7 +256,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private bool CanActivateSelectedNode()
     {
-        return CanOpenSelectedPackage() || CanInspectSelectedImage();
+        return CanOpenSelectedPackage() || CanInspectSelectedImageNode();
     }
 
     partial void OnSelectedNodeChanged(ResourceInspectionNodeViewModel? value)
@@ -230,7 +264,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSelection));
         SetSelectedMetadata(value);
         SetSelectedDiagnostics(value);
-        InspectSelectedImageCommand.NotifyCanExecuteChanged();
+        InspectImageCommand.NotifyCanExecuteChanged();
         OpenSelectedPackageCommand.NotifyCanExecuteChanged();
         ActivateSelectedNodeCommand.NotifyCanExecuteChanged();
     }

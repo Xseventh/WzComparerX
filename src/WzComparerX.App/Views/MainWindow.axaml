@@ -65,8 +65,8 @@
                     Command="{Binding OpenSelectedPackageCommand}"
                     Content="Open Package"/>
             <Button Grid.Column="7"
-                    x:Name="InspectSelectedImageButton"
-                    Command="{Binding InspectSelectedImageCommand}"
+                    x:Name="InspectImageButton"
+                    Command="{Binding InspectImageCommand}"
                     Content="Inspect Image"/>
         </Grid>
 

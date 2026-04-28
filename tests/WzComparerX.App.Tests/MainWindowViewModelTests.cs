@@ -179,6 +179,37 @@ public class MainWindowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task InspectImageAsync_LoadsManualSelector()
+    {
+        var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none",
+            DepthText = "1"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+
+            viewModel.SelectorText = "Canvas.img";
+            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
+            await viewModel.InspectImageAsync();
+
+            var inspectedImage = Assert.Single(viewModel.RootNodes);
+            Assert.Equal("image", inspectedImage.Kind);
+            Assert.Equal("Canvas.img", inspectedImage.Name);
+            Assert.Equal("Property", inspectedImage.DisplayValue);
+            Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
+            Assert.False(viewModel.InspectImageCommand.CanExecute(null));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [Theory]
     [InlineData("auto", null)]
     [InlineData("", null)]

@@ -213,7 +213,7 @@ public class MainWindowHeadlessTests
                 Assert.Equal("package", package.Kind);
                 AssertStatusText(window, $"Loaded folder: {directory.Name}");
                 AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: true);
-                AssertButtonEnabled(window, "InspectSelectedImageButton", expected: false);
+                AssertButtonEnabled(window, "InspectImageButton", expected: false);
                 AssertPngCanBeSaved(frame);
             }
             finally
@@ -251,7 +251,7 @@ public class MainWindowHeadlessTests
                 AssertStatusText(window, "Loaded pkg1: Base.wz");
                 Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
                 AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: false);
-                AssertButtonEnabled(window, "InspectSelectedImageButton", expected: false);
+                AssertButtonEnabled(window, "InspectImageButton", expected: false);
                 AssertPngCanBeSaved(frame);
             }
             finally
@@ -279,7 +279,7 @@ public class MainWindowHeadlessTests
         {
             await viewModel.OpenPathAsync(packagePath);
             viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
-            await viewModel.InspectSelectedImageAsync();
+            await viewModel.InspectImageAsync();
             var window = CreateWindow(viewModel);
 
             try
@@ -292,7 +292,41 @@ public class MainWindowHeadlessTests
                 Assert.Equal("image", Assert.Single(viewModel.RootNodes).Kind);
                 Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
                 AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: false);
-                AssertButtonEnabled(window, "InspectSelectedImageButton", expected: false);
+                AssertButtonEnabled(window, "InspectImageButton", expected: false);
+                AssertPngCanBeSaved(frame);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            File.Delete(packagePath);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_EnablesImageInspectForManualSelectorInHeadless()
+    {
+        var packagePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none",
+            DepthText = "1"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(packagePath);
+            viewModel.SelectorText = "Canvas.img";
+            var window = CreateWindow(viewModel);
+
+            try
+            {
+                using var frame = CaptureFrame(window);
+
+                AssertButtonEnabled(window, "InspectImageButton", expected: true);
                 AssertPngCanBeSaved(frame);
             }
             finally
@@ -359,7 +393,7 @@ public class MainWindowHeadlessTests
         AssertControlInsideViewport(window, "LoadButton");
         AssertControlInsideViewport(window, "SelectorTextBox");
         AssertControlInsideViewport(window, "OpenSelectedPackageButton");
-        AssertControlInsideViewport(window, "InspectSelectedImageButton");
+        AssertControlInsideViewport(window, "InspectImageButton");
         AssertControlInsideViewport(window, "ResourcesTree");
         AssertControlInsideViewport(window, "DetailsTabControl");
         AssertControlInsideViewport(window, "ActivityLogPanel");

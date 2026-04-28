@@ -194,7 +194,8 @@ M4 started:
 - The main window view model calls `ResourceInspectionService` and projects Core
   inspection nodes into a UI tree.
 - The UI has an IMG selector field plus an `Inspect Image` action for selected
-  image nodes. String key and depth inputs mirror the current inspect workflow.
+  image nodes or a manually entered IMG selector. String key and depth inputs
+  mirror the current inspect workflow.
 - The path row has one `Browse` entry with native file and folder picker menu
   choices. The `Load` action automatically handles file paths and folder paths.
   Folder paths scan `.wz` headers into a folder inspection tree; selecting a
@@ -207,7 +208,8 @@ M4 started:
   diagnostics.
 - The UI has a basic activity log for load, inspection, and error events.
 - UI command state now avoids redundant re-opening of the current package and
-  redundant re-inspection of the currently selected IMG entry.
+  redundant re-inspection of the currently selected or manually entered IMG
+  entry.
 - App key/depth text parsing is isolated from `MainWindowViewModel`, keeping the
   view model focused on orchestration and visible state.
 - App projection helpers are now split out of `MainWindowViewModel`: selector
