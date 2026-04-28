@@ -29,6 +29,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
     [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
     [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private bool isBusy;
 
     [ObservableProperty]
@@ -39,6 +40,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string currentFormat = string.Empty;
 
     public MainWindowViewModel()
@@ -88,6 +90,21 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         await OpenPathAsync(SelectedNode.Path);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanActivateSelectedNode))]
+    public async Task ActivateSelectedNodeAsync()
+    {
+        if (CanOpenSelectedPackage())
+        {
+            await OpenSelectedPackageAsync();
+            return;
+        }
+
+        if (CanInspectSelectedImage())
+        {
+            await InspectSelectedImageAsync();
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanLoad))]
@@ -180,6 +197,11 @@ public partial class MainWindowViewModel : ViewModelBase
             File.Exists(SelectedNode.Path);
     }
 
+    private bool CanActivateSelectedNode()
+    {
+        return CanOpenSelectedPackage() || CanInspectSelectedImage();
+    }
+
     partial void OnSelectedNodeChanged(ResourceInspectionNodeViewModel? value)
     {
         OnPropertyChanged(nameof(HasSelection));
@@ -187,6 +209,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SetSelectedDiagnostics(value);
         InspectSelectedImageCommand.NotifyCanExecuteChanged();
         OpenSelectedPackageCommand.NotifyCanExecuteChanged();
+        ActivateSelectedNodeCommand.NotifyCanExecuteChanged();
     }
 
     private void ApplyDocument(ResourceInspectionDocument document)

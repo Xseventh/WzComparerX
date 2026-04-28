@@ -109,6 +109,32 @@ public class MainWindowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task ActivateSelectedNodeAsync_OpensPackageNode()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-app-activate-");
+        var packagePath = Path.Combine(directory.FullName, "Base.wz");
+        File.WriteAllBytes(packagePath, CreatePkg1());
+        var viewModel = new MainWindowViewModel();
+
+        try
+        {
+            await viewModel.OpenPathAsync(directory.FullName);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+
+            Assert.True(viewModel.ActivateSelectedNodeCommand.CanExecute(null));
+            await viewModel.ActivateSelectedNodeAsync();
+
+            Assert.Equal(packagePath, viewModel.PathText);
+            Assert.Equal("Loaded pkg1: Base.wz", viewModel.StatusMessage);
+            Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
     [Theory]
     [InlineData("Base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
     [InlineData("base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]

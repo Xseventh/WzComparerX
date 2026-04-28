@@ -200,6 +200,9 @@ M4 started:
   Folder paths scan `.wz` headers into a folder inspection tree; selecting a
   package node enables `Open Package`. Opening a new file or package clears the
   previous IMG selector before loading.
+- Double-clicking activatable resource nodes routes through the ViewModel:
+  package nodes open their package, and image nodes run the same image
+  inspection action as the `Inspect Image` button.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
 - Richer task/log handling is still pending.

@@ -135,7 +135,9 @@ Tasks:
   handles file paths or folder paths. Folder inspection lists discovered WZ
   packages, and selected packages can be opened from the tree.
 - Node tree view. Started with a path-based load command bound to Core
-  inspection; selected image nodes can be loaded through the same inspect path.
+  inspection; selected image nodes can be loaded through the same inspect path,
+  and double-click activation opens package/image nodes through ViewModel
+  commands.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel.
 - No direct parsing in view models.

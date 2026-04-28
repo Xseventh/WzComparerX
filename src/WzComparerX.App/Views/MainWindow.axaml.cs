@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using WzComparerX.App.ViewModels;
@@ -59,6 +60,15 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel viewModel)
         {
             await viewModel.OpenPathAsync(path);
+        }
+    }
+
+    private async void ResourcesTree_OnDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel &&
+            viewModel.ActivateSelectedNodeCommand.CanExecute(null))
+        {
+            await viewModel.ActivateSelectedNodeAsync();
         }
     }
 }
