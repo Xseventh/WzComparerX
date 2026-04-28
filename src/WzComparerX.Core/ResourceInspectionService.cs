@@ -264,56 +264,80 @@ public sealed class ResourceInspectionService
     private static bool CanResolveSplitPackageLink(InspectionNodeBuilder builder, WzDirectoryEntryInspection entry)
     {
         if (entry.Kind != WzDirectoryEntryKind.Directory ||
-            entry.Depth != 0 ||
             entry.DataSize != 0 ||
             string.IsNullOrWhiteSpace(entry.Path) ||
-            entry.Path.Contains('/', StringComparison.Ordinal) ||
             builder.HasChildren(entry.Path.Split('/', StringSplitOptions.RemoveEmptyEntries)))
         {
             return false;
         }
 
-        return entry.Path.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
+        return entry.Path.Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .All(part => part.IndexOfAny(Path.GetInvalidFileNameChars()) < 0);
     }
 
     private static IEnumerable<string> ResolveSplitPackagePaths(string sourcePath, string entryPath)
     {
         var sourceDirectory = Path.GetDirectoryName(sourcePath);
         var workspaceDirectory = sourceDirectory is null ? null : Directory.GetParent(sourceDirectory)?.FullName;
-        if (string.IsNullOrWhiteSpace(workspaceDirectory))
+        if (string.IsNullOrWhiteSpace(sourceDirectory))
         {
             yield break;
         }
 
-        var entryDirectory = Path.Combine(workspaceDirectory, entryPath);
-        if (!Directory.Exists(entryDirectory))
+        var parts = entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
         {
             yield break;
         }
 
-        var primaryPackagePath = Path.Combine(entryDirectory, entryPath + ".wz");
-        foreach (var candidate in EnumerateExistingPackagePaths(primaryPackagePath))
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var entryDirectory in ResolveSplitPackageDirectories(sourceDirectory, workspaceDirectory, parts))
         {
-            if (!PathsEqual(candidate, sourcePath))
+            var packageStem = parts[^1];
+            foreach (var candidate in EnumerateSplitPackageFiles(entryDirectory, packageStem))
             {
-                yield return candidate;
-            }
-        }
-
-        foreach (var candidate in Directory.EnumerateFiles(entryDirectory, entryPath + "_*.wz").OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
-        {
-            if (!PathsEqual(candidate, sourcePath))
-            {
-                yield return candidate;
+                if (!PathsEqual(candidate, sourcePath) && seen.Add(Path.GetFullPath(candidate)))
+                {
+                    yield return candidate;
+                }
             }
         }
     }
 
-    private static IEnumerable<string> EnumerateExistingPackagePaths(string path)
+    private static IEnumerable<string> ResolveSplitPackageDirectories(
+        string sourceDirectory,
+        string? workspaceDirectory,
+        string[] parts)
     {
-        if (File.Exists(path))
+        var relativePath = Path.Combine(parts);
+        var currentPackageRelativeDirectory = Path.Combine(sourceDirectory, relativePath);
+        if (Directory.Exists(currentPackageRelativeDirectory))
         {
-            yield return path;
+            yield return currentPackageRelativeDirectory;
+        }
+
+        if (!string.IsNullOrWhiteSpace(workspaceDirectory))
+        {
+            var workspaceRelativeDirectory = Path.Combine(workspaceDirectory, relativePath);
+            if (Directory.Exists(workspaceRelativeDirectory) &&
+                !PathsEqual(workspaceRelativeDirectory, currentPackageRelativeDirectory))
+            {
+                yield return workspaceRelativeDirectory;
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateSplitPackageFiles(string entryDirectory, string packageStem)
+    {
+        var primaryPackagePath = Path.Combine(entryDirectory, packageStem + ".wz");
+        if (File.Exists(primaryPackagePath))
+        {
+            yield return primaryPackagePath;
+        }
+
+        foreach (var candidate in Directory.EnumerateFiles(entryDirectory, packageStem + "_*.wz").OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+        {
+            yield return candidate;
         }
     }
 

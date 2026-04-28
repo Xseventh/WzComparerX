@@ -139,9 +139,8 @@ Tasks:
   inspection; selected image nodes can be loaded through the same inspect path,
   and double-click activation opens package/image nodes through ViewModel
   commands. Redundant activation of the already-open package or already-selected
-  IMG is suppressed at the command-state layer. Empty top-level split-package
-  stubs now expand into linked sibling package nodes when the package workspace
-  layout is present.
+  IMG is suppressed at the command-state layer. Empty split-package stubs now
+  expand into linked package nodes when the package workspace layout is present.
 - IMG selector workflow. Started with manual selector inspection through the
   same `Inspect Image` action used for selected image nodes.
 - Property panel. Started with selected-node metadata and diagnostics.

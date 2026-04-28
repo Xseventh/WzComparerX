@@ -158,6 +158,39 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDirectory_LinksNestedSplitPackagesRelativeToCurrentPackage()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-nested-split-package-");
+        var packageDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "UI"));
+        var canvasDirectory = Directory.CreateDirectory(Path.Combine(packageDirectory.FullName, "Resources", "_Canvas"));
+        var packagePath = Path.Combine(packageDirectory.FullName, "UI.wz");
+        var canvasPackagePath = Path.Combine(canvasDirectory.FullName, "_Canvas.wz");
+        await File.WriteAllBytesAsync(packagePath, CreatePkg1DirectoryPackage(CreateNestedDirectoryStub("Resources", "_Canvas")));
+        await File.WriteAllBytesAsync(canvasPackagePath, CreatePkg1DirectoryPackage(CreateImageDirectory("Texture.img")));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                packagePath,
+                selector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            var resources = Assert.Single(inspection.Root.Children, child => child.Name == "Resources");
+            var canvas = Assert.Single(resources.Children, child => child.Name == "_Canvas");
+            var linkedPackage = Assert.Single(canvas.Children, child => child.Name == "_Canvas.wz");
+
+            Assert.Equal("package", linkedPackage.Kind);
+            Assert.Equal(canvasPackagePath, linkedPackage.Path);
+            Assert.Contains(linkedPackage.Children, child => child.Name == "Texture.img" && child.Kind == "image");
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugImage_IncludesEntryPropertyAndPayloadMetadata()
     {
         var imageBytes = CreatePropertyImage(CreateObjectProperty(
@@ -353,6 +386,23 @@ public class ResourceDocumentServiceTests
     {
         var bytes = new List<byte> { 0x01, 0x03 };
         AddWzString(bytes, name);
+        bytes.Add(0x00);
+        bytes.Add(0x00);
+        bytes.AddRange(BitConverter.GetBytes(0u));
+        bytes.Add(0x00);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateNestedDirectoryStub(string parentName, string childName)
+    {
+        var bytes = new List<byte> { 0x01, 0x03 };
+        AddWzString(bytes, parentName);
+        bytes.Add(0x00);
+        bytes.Add(0x00);
+        bytes.AddRange(BitConverter.GetBytes(0u));
+        bytes.Add(0x01);
+        bytes.Add(0x03);
+        AddWzString(bytes, childName);
         bytes.Add(0x00);
         bytes.Add(0x00);
         bytes.AddRange(BitConverter.GetBytes(0u));

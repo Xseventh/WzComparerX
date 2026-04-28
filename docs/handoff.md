@@ -225,10 +225,11 @@ M4 started:
   coverage now also asserts invalid path, folder open, package open, and image
   inspection visible states. Core.Tests no longer references the App project.
 - Core inspection now performs conservative split-package linking for empty
-  top-level PKG1 directory stubs. For GMS-style layouts such as `Base/Base.wz`,
-  sibling packages like `Effect/Effect.wz` and `Effect/Effect_000.wz` are
-  grafted under the `Effect` directory node so the UI tree can expand through
-  the workspace package index.
+  PKG1 directory stubs at any depth when the stub has no parsed children. For
+  GMS-style layouts such as `Base/Base.wz`, sibling packages like
+  `Effect/Effect.wz` and `Effect/Effect_000.wz` are grafted under the `Effect`
+  directory node. Same-package subtree links such as `UI/UI.wz` to
+  `UI/_Canvas/_Canvas.wz` are also resolved.
 - Richer task/progress handling is still pending.
 
 Local GMS smoke status:
