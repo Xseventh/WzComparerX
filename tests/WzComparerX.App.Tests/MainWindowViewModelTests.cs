@@ -1,6 +1,6 @@
-using System.Buffers.Binary;
-using System.Text;
+using WzComparerX.App.Services;
 using WzComparerX.App.ViewModels;
+using WzComparerX.WzLib;
 
 namespace WzComparerX.App.Tests;
 
@@ -88,7 +88,7 @@ public class MainWindowViewModelTests
     {
         var directory = Directory.CreateTempSubdirectory("wcx-app-folder-");
         var packagePath = Path.Combine(directory.FullName, "Base.wz");
-        File.WriteAllBytes(packagePath, CreatePkg1());
+        File.WriteAllBytes(packagePath, AppTestFixtures.CreatePkg1());
         var viewModel = new MainWindowViewModel();
 
         try
@@ -120,7 +120,7 @@ public class MainWindowViewModelTests
     {
         var directory = Directory.CreateTempSubdirectory("wcx-app-activate-");
         var packagePath = Path.Combine(directory.FullName, "Base.wz");
-        File.WriteAllBytes(packagePath, CreatePkg1());
+        File.WriteAllBytes(packagePath, AppTestFixtures.CreatePkg1());
         var viewModel = new MainWindowViewModel();
 
         try
@@ -144,7 +144,7 @@ public class MainWindowViewModelTests
     [Fact]
     public async Task ActivateSelectedNodeAsync_InspectsImageNode()
     {
-        var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
         {
             KeyText = "none",
@@ -180,6 +180,30 @@ public class MainWindowViewModelTests
     }
 
     [Theory]
+    [InlineData("auto", null)]
+    [InlineData("", null)]
+    [InlineData("none", WzStringEncryptionKind.None)]
+    [InlineData("noop", WzStringEncryptionKind.None)]
+    [InlineData("kms", WzStringEncryptionKind.Kms)]
+    [InlineData("gms", WzStringEncryptionKind.Gms)]
+    public void ResourceInspectionOptionParser_ParsesSupportedStringKeys(
+        string value,
+        WzStringEncryptionKind? expected)
+    {
+        Assert.True(ResourceInspectionOptionParser.TryParseStringKey(value, out var actual));
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory]
+    [InlineData("-1")]
+    [InlineData("65")]
+    [InlineData("abc")]
+    public void ResourceInspectionOptionParser_RejectsUnsupportedDepth(string value)
+    {
+        Assert.False(ResourceInspectionOptionParser.TryParseDepth(value, out _));
+    }
+
+    [Theory]
     [InlineData("Base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
     [InlineData("base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
     [InlineData("String.wz/Eqp.img", "Base.wz", "String.wz/Eqp.img")]
@@ -201,52 +225,6 @@ public class MainWindowViewModelTests
 
     private static string FixturePath(string name)
     {
-        return Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "..",
-            "..",
-            "fixtures",
-            "synthetic",
-            name);
-    }
-
-    private static string MaterializeHexFixture(string name, string extension)
-    {
-        var hex = new StringBuilder();
-        foreach (var ch in File.ReadAllText(FixturePath(name)))
-        {
-            if (Uri.IsHexDigit(ch))
-            {
-                hex.Append(ch);
-            }
-        }
-
-        var path = Path.Combine(Path.GetTempPath(), $"wcx-app-fixture-{Guid.NewGuid():N}{extension}");
-        File.WriteAllBytes(path, Convert.FromHexString(hex.ToString()));
-        return path;
-    }
-
-    private static byte[] CreatePkg1()
-    {
-        byte[] encryptedVersion = [0x7b, 0x00];
-        byte[] directoryData = [0x00];
-        var header = CreateHeader("PKG1", "Copyright", dataSize: encryptedVersion.Length + directoryData.Length);
-        return [.. header, .. encryptedVersion, .. directoryData];
-    }
-
-    private static byte[] CreateHeader(string signature, string copyright, long dataSize)
-    {
-        var copyrightBytes = Encoding.ASCII.GetBytes(copyright);
-        var headerSize = 4 + sizeof(long) + sizeof(int) + copyrightBytes.Length;
-        var bytes = new byte[headerSize];
-
-        Encoding.ASCII.GetBytes(signature, bytes);
-        BinaryPrimitives.WriteInt64LittleEndian(bytes.AsSpan(4, sizeof(long)), dataSize);
-        BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(12, sizeof(int)), headerSize);
-        copyrightBytes.CopyTo(bytes.AsSpan(16));
-        return bytes;
+        return AppTestFixtures.FixturePath(name);
     }
 }

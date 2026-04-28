@@ -75,6 +75,7 @@
                 <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
                     <TextBlock Classes="section-title" Text="Resources"/>
                     <TextBlock Grid.Row="1"
+                               x:Name="StatusTextBlock"
                                Text="{Binding StatusMessage}"
                                TextTrimming="CharacterEllipsis"/>
                     <TreeView Grid.Row="2"

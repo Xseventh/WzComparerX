@@ -137,13 +137,15 @@ Tasks:
 - Node tree view. Started with a path-based load command bound to Core
   inspection; selected image nodes can be loaded through the same inspect path,
   and double-click activation opens package/image nodes through ViewModel
-  commands.
+  commands. Redundant activation of the already-open package or already-selected
+  IMG is suppressed at the command-state layer.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless
   plus migrated ViewModel tests; Skia-backed headless screenshot smoke coverage
-  now checks rendered content and primary-control viewport bounds.
+  now checks rendered content, primary-control viewport bounds, and visible
+  invalid path/folder/package/image inspection states.
 - No direct parsing in view models.
 
 Exit criteria:

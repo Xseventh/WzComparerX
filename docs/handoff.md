@@ -20,30 +20,30 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+d6607fe Test Avalonia image node activation
+c47b3c1 Add Avalonia tree click smoke test
+7975530 Add Avalonia tree selection smoke test
+2e64dc7 Expand Avalonia resource root by default
+24f6525 Show Avalonia activity log panel
+aa7ccaa Save optional Avalonia headless screenshots
+d7301c6 Add Avalonia headless screenshot tests
+68fccec Add Avalonia headless app tests
+2299e11 Make Avalonia activity log visible
+f6337a2 Add Avalonia activity log panel
+6ee6782 Add Avalonia resource node activation
+c1ef46a Add folder choice to Avalonia browse menu
+abbb766 Align Avalonia open entry with WC
+5e201c0 Add Avalonia folder package browser
+29e560c Add Avalonia resource file picker
+1ef8fab Normalize Avalonia image selectors
+cae2482 Add Avalonia image inspection workflow
+0bccdaa Add basic Avalonia resource browser
+f1806d1 Close out milestone 3
 6eaf391 Add Canvas export value selector
 dfa9cc5 Define M3 Canvas export boundary
 fa5aeb9 Remove ambiguous string key alias
 6b08714 Reject JSON flag for export
 b042af9 Close out milestone 2
-6383edf Remove retired diagnostic terminology remnants
-5071c93 Sync M3 fixture documentation
-a6206ab Add text and Lua export fixtures
-099c0d4 Stabilize Canvas decode diagnostic
-fb91636 Add Canvas inspect JSON golden
-a42af46 Rename parser diagnostic models to inspection
-d6fc84b Add inspect debug diagnostics
-84a5f88 Add resource inspect abstraction
-41e1ad0 Fix PKG1 string reference offset base
-2cb2722 Align PKG1 directory offset validation with WC
-5d32743 Clarify no-op PKG1 string key naming
-3601367 Decode PKG1 directory entry names
-6f18aef Add WZ header scan command
-3285065 Add JSON output for CLI workflows
-bbfe559 Add CLI WZ header command
-11b974c Add WZ package header detection
-79e5568 Add headless resource browser
-53598d9 Add WCX development governance docs
-a0858cb Bootstrap WCX modernization project
 ```
 
 ## What Has Been Done
@@ -206,11 +206,16 @@ M4 started:
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
 - The UI has a basic activity log for load, inspection, and error events.
+- UI command state now avoids redundant re-opening of the current package and
+  redundant re-inspection of the currently selected IMG entry.
+- App key/depth text parsing is isolated from `MainWindowViewModel`, keeping the
+  view model focused on orchestration and visible state.
 - `WzComparerX.App.Tests` now owns Avalonia UI/ViewModel tests and uses
   Avalonia Headless for window/control smoke coverage. Skia-backed headless
   screenshot smoke tests verify that the main window renders nonblank content
-  and keeps primary controls inside default and compact viewports. Core.Tests no
-  longer references the App project.
+  and keeps primary controls inside default and compact viewports. Headless
+  coverage now also asserts invalid path, folder open, package open, and image
+  inspection visible states. Core.Tests no longer references the App project.
 - Richer task/progress handling is still pending.
 
 Local GMS smoke status:

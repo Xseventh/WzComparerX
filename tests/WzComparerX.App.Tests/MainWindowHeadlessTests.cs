@@ -6,6 +6,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using WzComparerX.App.ViewModels;
 using WzComparerX.App.Views;
@@ -160,6 +161,152 @@ public class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task MainWindow_ShowsInvalidPathFailureStateInHeadless()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"wcx-missing-{Guid.NewGuid():N}.wz");
+        var viewModel = new MainWindowViewModel
+        {
+            PathText = missingPath
+        };
+        await viewModel.LoadAsync();
+        var window = CreateWindow(viewModel);
+
+        try
+        {
+            using var frame = CaptureFrame(window);
+            AssertPngCanBeSaved(frame);
+
+            Assert.Empty(viewModel.RootNodes);
+            Assert.Empty(viewModel.DocumentMetadata);
+            Assert.Equal("error", viewModel.ActivityLog[0].Kind);
+            AssertStatusText(window, viewModel.StatusMessage);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_ShowsFolderOpenStateInHeadless()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-app-headless-folder-");
+        var packagePath = Path.Combine(directory.FullName, "Base.wz");
+        File.WriteAllBytes(packagePath, AppTestFixtures.CreatePkg1());
+        var viewModel = new MainWindowViewModel();
+
+        try
+        {
+            await viewModel.OpenPathAsync(directory.FullName);
+            var window = CreateWindow(viewModel);
+
+            try
+            {
+                var folderRoot = Assert.Single(viewModel.RootNodes);
+                var package = Assert.Single(folderRoot.Children);
+                var tree = window.FindControl<TreeView>("ResourcesTree");
+                Assert.NotNull(tree);
+                tree.SelectedItem = package;
+                using var frame = CaptureFrame(window);
+
+                Assert.Equal("folder", folderRoot.Kind);
+                Assert.Equal("package", package.Kind);
+                AssertStatusText(window, $"Loaded folder: {directory.Name}");
+                AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: true);
+                AssertButtonEnabled(window, "InspectSelectedImageButton", expected: false);
+                AssertPngCanBeSaved(frame);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_ShowsPackageOpenStateInHeadless()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-app-headless-package-");
+        var packagePath = Path.Combine(directory.FullName, "Base.wz");
+        File.WriteAllBytes(packagePath, AppTestFixtures.CreatePkg1());
+        var viewModel = new MainWindowViewModel();
+
+        try
+        {
+            await viewModel.OpenPathAsync(directory.FullName);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            await viewModel.OpenSelectedPackageAsync();
+            var window = CreateWindow(viewModel);
+
+            try
+            {
+                using var frame = CaptureFrame(window);
+                var pathTextBox = window.FindControl<TextBox>("PathTextBox");
+
+                Assert.Equal(packagePath, pathTextBox?.Text);
+                AssertStatusText(window, "Loaded pkg1: Base.wz");
+                Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
+                AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: false);
+                AssertButtonEnabled(window, "InspectSelectedImageButton", expected: false);
+                AssertPngCanBeSaved(frame);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task MainWindow_ShowsImageInspectionStateInHeadless()
+    {
+        var packagePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none",
+            DepthText = "1"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(packagePath);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            await viewModel.InspectSelectedImageAsync();
+            var window = CreateWindow(viewModel);
+
+            try
+            {
+                using var frame = CaptureFrame(window);
+                var selectorTextBox = window.FindControl<TextBox>("SelectorTextBox");
+
+                Assert.Equal("Canvas.img", selectorTextBox?.Text);
+                AssertStatusText(window, $"Loaded pkg1: {Path.GetFileName(packagePath)}");
+                Assert.Equal("image", Assert.Single(viewModel.RootNodes).Kind);
+                Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
+                AssertButtonEnabled(window, "OpenSelectedPackageButton", expected: false);
+                AssertButtonEnabled(window, "InspectSelectedImageButton", expected: false);
+                AssertPngCanBeSaved(frame);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            File.Delete(packagePath);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task MainWindow_KeepsPrimaryControlsInsideInitialViewport()
     {
         var viewModel = new MainWindowViewModel
@@ -226,6 +373,20 @@ public class MainWindowHeadlessTests
         Assert.True(activityLogList.Bounds.Height > 0);
     }
 
+    private static void AssertStatusText(MainWindow window, string expected)
+    {
+        var status = window.FindControl<TextBlock>("StatusTextBlock");
+        Assert.NotNull(status);
+        Assert.Equal(expected, status.Text);
+    }
+
+    private static void AssertButtonEnabled(MainWindow window, string name, bool expected)
+    {
+        var button = window.FindControl<Button>(name);
+        Assert.NotNull(button);
+        Assert.Equal(expected, button.IsEffectivelyEnabled);
+    }
+
     private static MainWindow CreateWindow(
         MainWindowViewModel viewModel,
         double width = 1100,
@@ -244,7 +405,9 @@ public class MainWindowHeadlessTests
 
     private static Bitmap CaptureFrame(MainWindow window)
     {
+        Dispatcher.UIThread.RunJobs();
         AvaloniaHeadlessPlatform.ForceRenderTimerTick(1);
+        Dispatcher.UIThread.RunJobs();
         var frame = window.CaptureRenderedFrame();
         return Assert.IsAssignableFrom<Bitmap>(frame);
     }
@@ -374,16 +537,7 @@ public class MainWindowHeadlessTests
 
     private static string FixturePath(string name)
     {
-        return Path.Combine(
-            AppContext.BaseDirectory,
-            "..",
-            "..",
-            "..",
-            "..",
-            "..",
-            "fixtures",
-            "synthetic",
-            name);
+        return AppTestFixtures.FixturePath(name);
     }
 
     private sealed class TestFramebuffer : ILockedFramebuffer

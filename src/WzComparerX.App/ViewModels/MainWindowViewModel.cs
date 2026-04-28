@@ -1,8 +1,7 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using WzComparerX.WzLib;
+using WzComparerX.App.Services;
 using WzComparerX.Core;
 
 namespace WzComparerX.App.ViewModels;
@@ -14,9 +13,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
+    [NotifyCanExecuteChangedFor(nameof(OpenSelectedPackageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string pathText = "fixtures/synthetic/basic-tree.json";
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(InspectSelectedImageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ActivateSelectedNodeCommand))]
     private string selectorText = string.Empty;
 
     [ObservableProperty]
@@ -190,9 +194,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private bool CanInspectSelectedImage()
     {
-        return !IsBusy &&
-            SelectedNode?.Kind == "image" &&
-            !string.Equals(CurrentFormat, "synthetic", StringComparison.OrdinalIgnoreCase);
+        if (IsBusy ||
+            SelectedNode?.Kind != "image" ||
+            string.Equals(CurrentFormat, "synthetic", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var selectedSelector = ResourceImageSelector.Normalize(
+            SelectedNode.Path ?? SelectedNode.Name,
+            Path.GetFileName(PathText.Trim()));
+        var currentSelector = ResourceImageSelector.Normalize(
+            SelectorText,
+            Path.GetFileName(PathText.Trim()));
+        return selectedSelector is not null &&
+            !string.Equals(selectedSelector, currentSelector, StringComparison.Ordinal);
     }
 
     private bool CanOpenSelectedPackage()
@@ -200,7 +216,8 @@ public partial class MainWindowViewModel : ViewModelBase
         return !IsBusy &&
             SelectedNode?.Kind == "package" &&
             !string.IsNullOrWhiteSpace(SelectedNode.Path) &&
-            File.Exists(SelectedNode.Path);
+            File.Exists(SelectedNode.Path) &&
+            !PathsEqual(SelectedNode.Path, PathText);
     }
 
     private bool CanActivateSelectedNode()
@@ -298,62 +315,35 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool TryCreateInspectionOptions(out ResourceInspectionOptions options)
     {
         options = new ResourceInspectionOptions(IncludeDebugMetadata: true);
-        if (!TryParseStringKey(KeyText.Trim(), out var stringKey))
+        if (!ResourceInspectionOptionParser.TryParse(KeyText, DepthText, out options, out var errorMessage))
         {
-            StatusMessage = $"Unknown string key: {KeyText}";
+            StatusMessage = errorMessage;
             AddActivity("error", StatusMessage);
             return false;
         }
 
-        if (!int.TryParse(DepthText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var depth) ||
-            depth < 0 ||
-            depth > WzImageInspectionReader.MaxPropertyInspectionDepth)
-        {
-            StatusMessage = $"Depth must be between 0 and {WzImageInspectionReader.MaxPropertyInspectionDepth}.";
-            AddActivity("error", StatusMessage);
-            return false;
-        }
-
-        options = new ResourceInspectionOptions(stringKey, depth, IncludeDebugMetadata: true);
         return true;
-    }
-
-    private static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)
-    {
-        if (string.IsNullOrWhiteSpace(value) ||
-            string.Equals(value, "auto", StringComparison.OrdinalIgnoreCase))
-        {
-            kind = null;
-            return true;
-        }
-
-        if (string.Equals(value, "none", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(value, "noop", StringComparison.OrdinalIgnoreCase))
-        {
-            kind = WzStringEncryptionKind.None;
-            return true;
-        }
-
-        if (string.Equals(value, "kms", StringComparison.OrdinalIgnoreCase))
-        {
-            kind = WzStringEncryptionKind.Kms;
-            return true;
-        }
-
-        if (string.Equals(value, "gms", StringComparison.OrdinalIgnoreCase))
-        {
-            kind = WzStringEncryptionKind.Gms;
-            return true;
-        }
-
-        kind = WzStringEncryptionKind.None;
-        return false;
     }
 
     private static string? NormalizeOptional(string value)
     {
         var trimmed = value.Trim();
         return trimmed.Length == 0 ? null : trimmed;
+    }
+
+    private static bool PathsEqual(string left, string right)
+    {
+        try
+        {
+            return string.Equals(
+                Path.GetFullPath(left),
+                Path.GetFullPath(right),
+                StringComparison.Ordinal);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return string.Equals(left, right, StringComparison.Ordinal);
+        }
     }
 }
 
