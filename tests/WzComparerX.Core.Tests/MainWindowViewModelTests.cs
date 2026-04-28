@@ -60,6 +60,21 @@ public class MainWindowViewModelTests
         Assert.NotEmpty(viewModel.RootNodes);
     }
 
+    [Fact]
+    public async Task OpenPathAsync_ClearsImageSelectorAndLoadsPath()
+    {
+        var viewModel = new MainWindowViewModel
+        {
+            SelectorText = "old.img"
+        };
+
+        await viewModel.OpenPathAsync(FixturePath("basic-tree.json"));
+
+        Assert.Equal(string.Empty, viewModel.SelectorText);
+        Assert.Equal("Loaded synthetic: basic-tree.json", viewModel.StatusMessage);
+        Assert.Single(viewModel.RootNodes);
+    }
+
     [Theory]
     [InlineData("Base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]
     [InlineData("base_000.wz/StandardPDD.img", "Base_000.wz", "StandardPDD.img")]

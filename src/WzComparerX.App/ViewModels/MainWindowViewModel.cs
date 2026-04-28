@@ -61,6 +61,19 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public bool HasDiagnostics => SelectedDiagnostics.Count > 0;
 
+    public async Task OpenPathAsync(string path)
+    {
+        var trimmed = path.Trim();
+        if (trimmed.Length == 0)
+        {
+            return;
+        }
+
+        PathText = trimmed;
+        SelectorText = string.Empty;
+        await LoadAsync();
+    }
+
     [RelayCommand(CanExecute = nameof(CanLoad))]
     public async Task LoadAsync()
     {
