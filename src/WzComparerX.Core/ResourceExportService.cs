@@ -99,11 +99,7 @@ public sealed class ResourceExportService
         CancellationToken cancellationToken)
     {
         var inspection = await ReadImageInspectionAsync(path, selector, options, cancellationToken);
-        var canvas = FindCanvas(inspection, selector);
-        if (canvas is null)
-        {
-            throw Unsupported(ResourceExportKind.Canvas, selector);
-        }
+        var canvas = SelectCanvas(inspection, selector, options.ValueSelector);
 
         if (canvas.Value.CompressionKind != WzImageCanvasCompressionKind.Zlib)
         {
@@ -157,20 +153,40 @@ public sealed class ResourceExportService
         }
     }
 
-    private static CanvasExportTarget? FindCanvas(WzImageInspection inspection, string? selector)
+    private static CanvasExportTarget SelectCanvas(
+        WzImageInspection inspection,
+        string? selector,
+        string? valueSelector)
     {
-        if (inspection.ObjectValue is WzImageCanvasInspection canvas)
+        if (string.IsNullOrWhiteSpace(valueSelector))
         {
-            return new CanvasExportTarget(canvas, selector);
+            if (inspection.ObjectValue is WzImageCanvasInspection rootCanvas)
+            {
+                return new CanvasExportTarget(rootCanvas, selector);
+            }
+
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueRequired(ResourceExportKind.Canvas, selector));
         }
 
-        return inspection.Properties?
+        var matches = inspection.Properties?
             .SelectMany(Flatten)
-            .Select(property => property.Value is WzImageCanvasInspection value
-                ? new CanvasExportTarget(value, property.Path ?? selector)
-                : null)
-            .OfType<CanvasExportTarget>()
-            .FirstOrDefault();
+            .Where(property => string.Equals(property.Path, valueSelector, StringComparison.Ordinal))
+            .ToArray() ?? [];
+
+        if (matches.Length == 0)
+        {
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueNotFound(valueSelector, selector));
+        }
+
+        if (matches.Length > 1)
+        {
+            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueAmbiguous(valueSelector, selector));
+        }
+
+        var match = matches[0];
+        return match.Value is WzImageCanvasInspection canvas
+            ? new CanvasExportTarget(canvas, match.Path ?? valueSelector)
+            : throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueUnsupported(ResourceExportKind.Canvas, valueSelector, selector));
     }
 
     private static IEnumerable<WzImagePropertyInspectionEntry> Flatten(WzImagePropertyInspectionEntry property)

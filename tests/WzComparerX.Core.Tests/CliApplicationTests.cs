@@ -525,7 +525,7 @@ public class CliApplicationTests
 
         try
         {
-            var result = await RunCliAsync("export", "--type", "canvas", "--out", outputPath, "--key", "none", path, "Canvas.img");
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", outputPath, "--value", "icon", "--key", "none", path, "Canvas.img");
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
@@ -540,6 +540,67 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportCanvasWithoutValue_ReturnsStructuredDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1));
+        var expectedError = await ReadExpectedFixtureAsync("export-value-required.stderr.txt");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(expectedError, result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExportCanvasMissingValue_ReturnsStructuredDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1));
+        var expectedError = await ReadExpectedFixtureAsync("export-value-not-found.stderr.txt");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--value", "missing", "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(expectedError, result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExportCanvasNonCanvasValue_ReturnsStructuredDiagnostic()
+    {
+        const string text = "#Property\nname=hello\n";
+        var path = WriteTemporaryPkg1ImageFile("Text.img", CreateTextImage(text));
+        var expectedError = await ReadExpectedFixtureAsync("export-value-unsupported.stderr.txt");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--value", "name", "--key", "none", path, "Text.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(expectedError, result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task ExportCanvasWithoutOut_RequiresFileOutput()
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff];
@@ -548,7 +609,7 @@ public class CliApplicationTests
 
         try
         {
-            var result = await RunCliAsync("export", "--type", "canvas", "--key", "none", path, "Canvas.img");
+            var result = await RunCliAsync("export", "--type", "canvas", "--value", "icon", "--key", "none", path, "Canvas.img");
 
             Assert.Equal(2, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
@@ -570,7 +631,7 @@ public class CliApplicationTests
 
         try
         {
-            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--value", "icon", "--key", "none", path, "Canvas.img");
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
@@ -592,7 +653,7 @@ public class CliApplicationTests
 
         try
         {
-            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--value", "icon", "--key", "none", path, "Canvas.img");
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
@@ -614,7 +675,7 @@ public class CliApplicationTests
 
         try
         {
-            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--key", "none", path, "Canvas.img");
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", TemporaryOutputPath(), "--value", "icon", "--key", "none", path, "Canvas.img");
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);

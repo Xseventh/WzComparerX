@@ -58,6 +58,10 @@ Current examples:
 - `wcx.export.canvas.formatUnsupported`
 - `wcx.export.canvas.decodeFailed`
 - `wcx.export.binary.outRequired`
+- `wcx.export.value.required`
+- `wcx.export.value.notFound`
+- `wcx.export.value.unsupported`
+- `wcx.export.value.ambiguous`
 
 Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.

@@ -12,4 +12,8 @@ public static class ResourceDiagnosticCodes
     public const string ExportCanvasFormatUnsupported = "wcx.export.canvas.formatUnsupported";
     public const string ExportCanvasDecodeFailed = "wcx.export.canvas.decodeFailed";
     public const string ExportBinaryOutRequired = "wcx.export.binary.outRequired";
+    public const string ExportValueRequired = "wcx.export.value.required";
+    public const string ExportValueNotFound = "wcx.export.value.notFound";
+    public const string ExportValueUnsupported = "wcx.export.value.unsupported";
+    public const string ExportValueAmbiguous = "wcx.export.value.ambiguous";
 }

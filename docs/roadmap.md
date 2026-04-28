@@ -92,8 +92,9 @@ Tasks:
   CLI export are started and covered by committed synthetic fixtures.
 - Continue export surface decisions for stdout vs `--out`, text vs binary
   content, and partial/unsupported payload diagnostics.
-- Define and implement explicit Canvas value selection for export. The design
-  is tracked in `docs/canvas-export-selector-plan.md`.
+- Define and implement explicit Canvas value selection for export. Implemented
+  with `--value <property-path>` and documented in
+  `docs/canvas-export-selector-plan.md`.
 
 Exit criteria:
 
@@ -102,8 +103,8 @@ Exit criteria:
 - Output is covered by snapshot-like expected files.
 - Parser diagnostics are available through `inspect --debug`.
 - Diagnostics rules are documented and tested.
-- Canvas export does not rely on "first Canvas wins"; callers can select a
-  Canvas value explicitly and that behavior has CLI golden coverage.
+- Canvas export does not rely on "first Canvas wins"; callers select a Canvas
+  value explicitly and that behavior has CLI golden coverage.
 - PNG export is not required for M3. It remains a later user-facing image export
   milestone after raw Canvas bytes, value selection, and diagnostics are stable.
 

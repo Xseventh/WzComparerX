@@ -1,0 +1,1 @@
+error [wcx.export.value.unsupported]: Selected export value is not supported for Canvas export: name. (Text.img/name)

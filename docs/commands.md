@@ -138,7 +138,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- export --type metadata fi
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type text --key auto path/to/String.wz SomeText.img
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key auto path/to/UI.wz SomeScript.lua
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --out script.lua --key auto path/to/UI.wz SomeScript.lua
-dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out canvas.raw --key auto path/to/Base_000.wz SomeCanvas.img
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out canvas.raw --value icon --key auto path/to/Base_000.wz SomeCanvas.img
 ```
 
 `export --type metadata` writes the same stable inspection JSON shape used by
@@ -146,11 +146,10 @@ dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --ou
 IMG streams. `export --type lua` writes the full decoded Lua script for
 supported Lua IMG blocks. If a Lua image contains multiple blocks, they are
 concatenated in stream order without inserting extra separators. `export --type
-canvas` currently writes raw decoded Canvas pixel bytes for the first supported
-Canvas value in the selected IMG; it is not PNG export yet and currently only
-supports the first narrow direct-zlib Canvas format slice. The first-Canvas
-selection behavior is temporary; see `docs/canvas-export-selector-plan.md` for
-the explicit value selector that should replace it before M3 closes.
+canvas` currently writes raw decoded Canvas pixel bytes for the Canvas value
+selected by `--value <property-path>`. If the selected IMG root object is
+directly a Canvas, `--value` can be omitted. It is not PNG export yet and
+currently only supports the first narrow direct-zlib Canvas format slice.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 
@@ -163,7 +162,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key n
 
 xxd -r -p fixtures/synthetic/canvas-zlib.pkg1.hex /tmp/wcx-canvas-zlib.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect --debug --json --key none --depth 2 /tmp/wcx-canvas-zlib.wz Canvas.img
-dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out /tmp/wcx-canvas.raw --key none /tmp/wcx-canvas-zlib.wz Canvas.img
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out /tmp/wcx-canvas.raw --value icon --key none /tmp/wcx-canvas-zlib.wz Canvas.img
 ```
 
 By default, text exports write their payload to stdout and keep diagnostics on

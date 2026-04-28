@@ -112,4 +112,59 @@ public static class ResourceInspectionDiagnostics
             Code: ResourceDiagnosticCodes.ExportBinaryOutRequired,
             Source: ResourceDiagnosticSources.Export);
     }
+
+    public static ResourceInspectionDiagnostic ExportValueRequired(ResourceExportKind kind, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"{kind} export requires --value <path> unless the selected image root is directly exportable.",
+            selector,
+            ResourceDiagnosticCodes.ExportValueRequired,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportValueNotFound(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Export value not found: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.ExportValueNotFound,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportValueUnsupported(ResourceExportKind kind, string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Selected export value is not supported for {kind} export: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.ExportValueUnsupported,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportValueAmbiguous(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Export value selector is ambiguous: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.ExportValueAmbiguous,
+            ResourceDiagnosticSources.Export);
+    }
+
+    private static string? Combine(string? selector, string? valueSelector)
+    {
+        if (string.IsNullOrWhiteSpace(selector))
+        {
+            return valueSelector;
+        }
+
+        if (string.IsNullOrWhiteSpace(valueSelector))
+        {
+            return selector;
+        }
+
+        return $"{selector}/{valueSelector}";
+    }
 }

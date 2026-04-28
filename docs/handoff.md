@@ -161,9 +161,9 @@ Canvas decode/export follows the narrow plan in
 single verified pixel format first, payload decoder separate from parser
 metadata and Core export. The first raw-byte `export --type canvas --out` slice
 exists for direct zlib Canvas payloads with format `2` / `2562`. PNG export is
-not required for M3; it remains later user-facing image export work. M3 should
-not close while Canvas export still relies on implicit first-Canvas selection;
-the explicit value selector design is in `docs/canvas-export-selector-plan.md`.
+not required for M3; it remains later user-facing image export work. Canvas
+export now uses `--value <property-path>` for IMG-internal Canvas selection; the
+selector design is in `docs/canvas-export-selector-plan.md`.
 Committed synthetic PKG1 hex fixtures now cover Canvas, WC text-format IMG, and
 Lua IMG export paths, with expected text/JSON/stdout/stderr golden outputs
 under `fixtures/expected`.

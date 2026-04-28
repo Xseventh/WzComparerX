@@ -1,0 +1,1 @@
+error [wcx.export.value.required]: Canvas export requires --value <path> unless the selected image root is directly exportable. (Canvas.img)

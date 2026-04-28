@@ -22,6 +22,7 @@ public static class CliApplication
         string? path = null;
         string? selector = null;
         string? exportOutputPath = null;
+        string? exportValueSelector = null;
         for (var i = 1; i < args.Length; i++)
         {
             if (string.Equals(args[i], "--json", StringComparison.OrdinalIgnoreCase))
@@ -39,6 +40,19 @@ public static class CliApplication
                 }
 
                 exportOutputPath = args[i + 1];
+                i++;
+                continue;
+            }
+
+            if (string.Equals(args[i], "--value", StringComparison.OrdinalIgnoreCase))
+            {
+                if (i + 1 >= args.Length)
+                {
+                    WriteUsage(error);
+                    return 2;
+                }
+
+                exportValueSelector = args[i + 1];
                 i++;
                 continue;
             }
@@ -113,6 +127,12 @@ public static class CliApplication
             return 2;
         }
 
+        if (exportValueSelector is not null && !string.Equals(command, "export", StringComparison.OrdinalIgnoreCase))
+        {
+            WriteUsage(error);
+            return 2;
+        }
+
         if (json && string.Equals(command, "export", StringComparison.OrdinalIgnoreCase))
         {
             error.WriteLine("--json is not supported for export because export writes resource content directly.");
@@ -179,7 +199,7 @@ public static class CliApplication
             {
                 var service = new ResourceExportService();
 
-                var options = new ResourceExportOptions(exportKind, stringKey, imagePropertyDepth);
+                var options = new ResourceExportOptions(exportKind, stringKey, imagePropertyDepth, exportValueSelector);
                 var document = await service.ExportAsync(path, selector, options);
                 if (exportOutputPath is not null)
                 {
@@ -220,8 +240,8 @@ public static class CliApplication
         error.WriteLine("  wcx list [--json] <synthetic-fixture.json>");
         error.WriteLine("  wcx header [--json] <wz-file>");
         error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
-        error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
-        error.WriteLine("  wcx export [--type metadata|text|lua|canvas] [--out <path>] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+        error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|noop|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+        error.WriteLine("  wcx export [--type metadata|text|lua|canvas] [--out <path>] [--value <property-path>] [--key auto|none|noop|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
     }
 
     private static void WriteDiagnostics(
