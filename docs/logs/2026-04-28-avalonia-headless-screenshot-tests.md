@@ -18,6 +18,9 @@ app manually.
   data has varied rendered content.
 - Added viewport layout checks for the default M4 window size and a compact
   window size.
+- Closed headless windows after each test to keep the test session isolated.
+- Added an opt-in `WCX_HEADLESS_SCREENSHOT_DIR` artifact path for writing the
+  captured PNG outside the repository during manual visual checks.
 
 ## Findings
 
@@ -26,8 +29,11 @@ app manually.
   an app UI bug.
 - The current primary controls stay inside both the default `1100x720` and a
   compact `900x640` headless viewport.
+- Manual artifact generation produced
+  `/private/tmp/wcx-headless-screens/main-window-synthetic-1100x720.png`.
 
 ## Verification
 
 - `dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false`
 - `dotnet test tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj --no-build -m:1`
+- `WCX_HEADLESS_SCREENSHOT_DIR=/private/tmp/wcx-headless-screens dotnet test tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj --no-build -m:1`

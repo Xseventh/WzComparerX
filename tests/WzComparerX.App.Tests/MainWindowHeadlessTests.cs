@@ -21,14 +21,20 @@ public class MainWindowHeadlessTests
         {
             DataContext = viewModel
         };
+        try
+        {
+            window.Show();
 
-        window.Show();
-
-        Assert.Same(viewModel, window.DataContext);
-        Assert.NotNull(FindControl<TreeView>(window));
-        Assert.NotNull(FindTab(window, "Selection"));
-        Assert.NotNull(FindTab(window, "Diagnostics"));
-        Assert.NotNull(FindTab(window, "Activity"));
+            Assert.Same(viewModel, window.DataContext);
+            Assert.NotNull(FindControl<TreeView>(window));
+            Assert.NotNull(FindTab(window, "Selection"));
+            Assert.NotNull(FindTab(window, "Diagnostics"));
+            Assert.NotNull(FindTab(window, "Activity"));
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -41,10 +47,18 @@ public class MainWindowHeadlessTests
         await viewModel.LoadAsync();
         var window = CreateWindow(viewModel);
 
-        using var frame = CaptureFrame(window);
-        Assert.Equal(new PixelSize(1100, 720), frame.PixelSize);
-        AssertPngCanBeSaved(frame);
-        AssertRenderedContentIsNotBlank(frame);
+        try
+        {
+            using var frame = CaptureFrame(window);
+            Assert.Equal(new PixelSize(1100, 720), frame.PixelSize);
+            AssertPngCanBeSaved(frame);
+            SaveScreenshotArtifact(frame, "main-window-synthetic-1100x720.png");
+            AssertRenderedContentIsNotBlank(frame);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -57,10 +71,17 @@ public class MainWindowHeadlessTests
         await viewModel.LoadAsync();
         var window = CreateWindow(viewModel);
 
-        using var frame = CaptureFrame(window);
-        Assert.Equal(new PixelSize(1100, 720), frame.PixelSize);
+        try
+        {
+            using var frame = CaptureFrame(window);
+            Assert.Equal(new PixelSize(1100, 720), frame.PixelSize);
 
-        AssertPrimaryControlsInsideViewport(window);
+            AssertPrimaryControlsInsideViewport(window);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]
@@ -73,10 +94,17 @@ public class MainWindowHeadlessTests
         await viewModel.LoadAsync();
         var window = CreateWindow(viewModel, width: 900, height: 640);
 
-        using var frame = CaptureFrame(window);
-        Assert.Equal(new PixelSize(900, 640), frame.PixelSize);
+        try
+        {
+            using var frame = CaptureFrame(window);
+            Assert.Equal(new PixelSize(900, 640), frame.PixelSize);
 
-        AssertPrimaryControlsInsideViewport(window);
+            AssertPrimaryControlsInsideViewport(window);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     private static void AssertPrimaryControlsInsideViewport(MainWindow window)
@@ -145,6 +173,18 @@ public class MainWindowHeadlessTests
         }
 
         Assert.True(colors.Count > 16, $"Expected varied rendered pixels, but only found {colors.Count} colors.");
+    }
+
+    private static void SaveScreenshotArtifact(Bitmap frame, string fileName)
+    {
+        var directory = Environment.GetEnvironmentVariable("WCX_HEADLESS_SCREENSHOT_DIR");
+        if (string.IsNullOrWhiteSpace(directory))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(directory);
+        frame.Save(Path.Combine(directory, fileName));
     }
 
     private static void AssertControlInsideViewport(MainWindow window, string name)
