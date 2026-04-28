@@ -1,0 +1,1 @@
+error [wcx.export.unsupported]: Selected image is not a supported Lua IMG: Text.img. (Text.img)

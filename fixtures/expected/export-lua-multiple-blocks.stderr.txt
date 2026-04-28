@@ -1,0 +1,1 @@
+info [wcx.export.lua.multipleBlocks]: Exported 2 Lua blocks in stream order. (Script.lua)

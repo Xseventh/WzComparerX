@@ -436,6 +436,7 @@ public class CliApplicationTests
     public async Task ExportLuaImage_ConcatenatesMultipleBlocksWithoutSeparator()
     {
         var path = WriteTemporaryPkg1ImageFile("Script.lua", CreateLuaImage("return ", "42\n"));
+        var expectedError = await ReadExpectedFixtureAsync("export-lua-multiple-blocks.stderr.txt");
 
         try
         {
@@ -443,7 +444,7 @@ public class CliApplicationTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal("return 42\n", result.Output);
-            Assert.Contains("info [wcx.export.lua.multipleBlocks]: Exported 2 Lua blocks in stream order. (Script.lua)", result.Error);
+            Assert.Equal(expectedError, result.Error);
         }
         finally
         {
@@ -502,6 +503,7 @@ public class CliApplicationTests
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff];
         var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage(pixels, width: 1));
+        var expectedError = await ReadExpectedFixtureAsync("export-canvas-out-required.stderr.txt");
 
         try
         {
@@ -509,9 +511,7 @@ public class CliApplicationTests
 
             Assert.Equal(2, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains(
-                "error [wcx.export.binary.outRequired]: Binary export requires --out <path>.",
-                result.Error);
+            Assert.Equal(expectedError, result.Error);
         }
         finally
         {
@@ -525,6 +525,7 @@ public class CliApplicationTests
         var path = WriteTemporaryPkg1ImageFile(
             "Canvas.img",
             CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1, payload: [0x01, 0x02, 0x03]));
+        var expectedError = await ReadExpectedFixtureAsync("export-canvas-unsupported-compression.stderr.txt");
 
         try
         {
@@ -532,9 +533,7 @@ public class CliApplicationTests
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains(
-                "error [wcx.export.canvas.compressionUnsupported]: Canvas export does not support compression kind ChunkedEncryptedZlib. (icon)",
-                result.Error);
+            Assert.Equal(expectedError, result.Error);
         }
         finally
         {
@@ -548,6 +547,7 @@ public class CliApplicationTests
         var path = WriteTemporaryPkg1ImageFile(
             "Canvas.img",
             CreateCanvasImage([0x10, 0x20], width: 1, format: 1));
+        var expectedError = await ReadExpectedFixtureAsync("export-canvas-unsupported-format.stderr.txt");
 
         try
         {
@@ -555,9 +555,7 @@ public class CliApplicationTests
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains(
-                "error [wcx.export.canvas.formatUnsupported]: Canvas export does not support format 1. (icon)",
-                result.Error);
+            Assert.Equal(expectedError, result.Error);
         }
         finally
         {
@@ -592,6 +590,7 @@ public class CliApplicationTests
     {
         const string text = "#Property\nname=hello\n";
         var path = WriteTemporaryPkg1ImageFile("Text.img", CreateTextImage(text));
+        var expectedError = await ReadExpectedFixtureAsync("export-unsupported-lua.stderr.txt");
 
         try
         {
@@ -599,7 +598,7 @@ public class CliApplicationTests
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Contains("error [wcx.export.unsupported]: Selected image is not a supported Lua IMG: Text.img. (Text.img)", result.Error);
+            Assert.Equal(expectedError, result.Error);
         }
         finally
         {
@@ -678,6 +677,11 @@ public class CliApplicationTests
         }
 
         throw new FileNotFoundException($"Could not locate expected fixture '{fileName}'.");
+    }
+
+    private static async Task<string> ReadExpectedFixtureAsync(string fileName)
+    {
+        return (await File.ReadAllTextAsync(ExpectedFixturePath(fileName))).ReplaceLineEndings();
     }
 
     private static string MaterializeHexFixture(string fileName, string extension)

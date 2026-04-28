@@ -17,7 +17,8 @@ fixtures/
 - `synthetic/`: Generated or hand-built samples that are safe to commit.
 - `external/`: Local-only samples copied by the developer. Keep real client
   files out of git.
-- `expected/`: Expected JSON/XML/text outputs for regression tests.
+- `expected/`: Expected JSON/XML/text/stdout/stderr outputs for regression
+  tests.
 
 Text `.hex` fixtures under `synthetic/` are byte-for-byte binary samples encoded
 as hexadecimal so they stay reviewable in git. Tests materialize them into

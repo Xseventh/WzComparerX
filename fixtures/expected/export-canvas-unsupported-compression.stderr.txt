@@ -1,0 +1,1 @@
+error [wcx.export.canvas.compressionUnsupported]: Canvas export does not support compression kind ChunkedEncryptedZlib. (icon)
