@@ -210,6 +210,10 @@ M4 started:
   redundant re-inspection of the currently selected IMG entry.
 - App key/depth text parsing is isolated from `MainWindowViewModel`, keeping the
   view model focused on orchestration and visible state.
+- App projection helpers are now split out of `MainWindowViewModel`: selector
+  normalization lives in App services, while resource node, metadata,
+  diagnostics, and activity log projection models live in dedicated ViewModel
+  files.
 - `WzComparerX.App.Tests` now owns Avalonia UI/ViewModel tests and uses
   Avalonia Headless for window/control smoke coverage. Skia-backed headless
   screenshot smoke tests verify that the main window renders nonblank content
