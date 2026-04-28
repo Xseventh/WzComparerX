@@ -122,12 +122,15 @@ public class ResourceDocumentServiceTests
         var directory = Directory.CreateTempSubdirectory("wcx-split-package-");
         var baseDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Base"));
         var effectDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Effect"));
+        var canvasDirectory = Directory.CreateDirectory(Path.Combine(effectDirectory.FullName, "_Canvas"));
         var basePath = Path.Combine(baseDirectory.FullName, "Base.wz");
         var effectPath = Path.Combine(effectDirectory.FullName, "Effect.wz");
         var effectShardPath = Path.Combine(effectDirectory.FullName, "Effect_000.wz");
+        var canvasPackagePath = Path.Combine(canvasDirectory.FullName, "_Canvas.wz");
         await File.WriteAllBytesAsync(basePath, CreatePkg1DirectoryPackage(CreateDirectoryStub("Effect")));
         await File.WriteAllBytesAsync(effectPath, CreatePkg1DirectoryPackage(CreateDirectoryStub("_Canvas")));
         await File.WriteAllBytesAsync(effectShardPath, CreatePkg1DirectoryPackage(CreateImageDirectory("BasicEff.img")));
+        await File.WriteAllBytesAsync(canvasPackagePath, CreatePkg1DirectoryPackage(CreateImageDirectory("Canvas.img")));
         var service = new ResourceInspectionService();
 
         try
@@ -135,7 +138,10 @@ public class ResourceDocumentServiceTests
             var inspection = await service.InspectAsync(
                 basePath,
                 selector: null,
-                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 2,
+                    IncludeDebugMetadata: true));
 
             var effect = Assert.Single(inspection.Root.Children, child => child.Name == "Effect");
             Assert.Equal("directory", effect.Kind);
@@ -144,7 +150,11 @@ public class ResourceDocumentServiceTests
             var primaryPackage = Assert.Single(effect.Children, child => child.Name == "Effect.wz");
             Assert.Equal("package", primaryPackage.Kind);
             Assert.Equal(effectPath, primaryPackage.Path);
-            Assert.Contains(primaryPackage.Children, child => child.Name == "_Canvas");
+            var canvas = Assert.Single(primaryPackage.Children, child => child.Name == "_Canvas");
+            var canvasPackage = Assert.Single(canvas.Children, child => child.Name == "_Canvas.wz");
+            Assert.Equal("package", canvasPackage.Kind);
+            Assert.Equal(canvasPackagePath, canvasPackage.Path);
+            Assert.Empty(canvasPackage.Children);
 
             var shardPackage = Assert.Single(effect.Children, child => child.Name == "Effect_000.wz");
             Assert.Equal("package", shardPackage.Kind);
@@ -174,7 +184,10 @@ public class ResourceDocumentServiceTests
             var inspection = await service.InspectAsync(
                 packagePath,
                 selector: null,
-                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 2,
+                    IncludeDebugMetadata: true));
 
             var resources = Assert.Single(inspection.Root.Children, child => child.Name == "Resources");
             var canvas = Assert.Single(resources.Children, child => child.Name == "_Canvas");
@@ -183,6 +196,43 @@ public class ResourceDocumentServiceTests
             Assert.Equal("package", linkedPackage.Kind);
             Assert.Equal(canvasPackagePath, linkedPackage.Path);
             Assert.Contains(linkedPackage.Children, child => child.Name == "Texture.img" && child.Kind == "image");
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDirectory_DoesNotLinkCurrentPackageShardsThroughSameNameChild()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-same-name-split-package-");
+        var packageDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map"));
+        var backDirectory = Directory.CreateDirectory(Path.Combine(packageDirectory.FullName, "Back"));
+        var packagePath = Path.Combine(packageDirectory.FullName, "Map.wz");
+        var shardPath = Path.Combine(packageDirectory.FullName, "Map_000.wz");
+        var backPackagePath = Path.Combine(backDirectory.FullName, "Back.wz");
+        await File.WriteAllBytesAsync(packagePath, CreatePkg1DirectoryPackage(CreateDirectoryStubs("Back", "Map")));
+        await File.WriteAllBytesAsync(shardPath, CreatePkg1DirectoryPackage(CreateImageDirectory("Field.img")));
+        await File.WriteAllBytesAsync(backPackagePath, CreatePkg1DirectoryPackage(CreateImageDirectory("Back.img")));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                packagePath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 1,
+                    IncludeDebugMetadata: true));
+
+            var back = Assert.Single(inspection.Root.Children, child => child.Name == "Back");
+            var backPackage = Assert.Single(back.Children, child => child.Name == "Back.wz");
+            Assert.Equal(backPackagePath, backPackage.Path);
+
+            var map = Assert.Single(inspection.Root.Children, child => child.Name == "Map");
+            Assert.Empty(map.Children);
         }
         finally
         {
@@ -390,6 +440,26 @@ public class ResourceDocumentServiceTests
         bytes.Add(0x00);
         bytes.AddRange(BitConverter.GetBytes(0u));
         bytes.Add(0x00);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateDirectoryStubs(params string[] names)
+    {
+        var bytes = new List<byte> { checked((byte)names.Length) };
+        foreach (var name in names)
+        {
+            bytes.Add(0x03);
+            AddWzString(bytes, name);
+            bytes.Add(0x00);
+            bytes.Add(0x00);
+            bytes.AddRange(BitConverter.GetBytes(0u));
+        }
+
+        foreach (var _ in names)
+        {
+            bytes.Add(0x00);
+        }
+
         return bytes.ToArray();
     }
 

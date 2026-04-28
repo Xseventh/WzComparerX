@@ -69,7 +69,9 @@ public sealed class ResourceInspectionService
             inspection,
             options,
             includeSplitPackageLinks: true,
-            cancellationToken);
+            cancellationToken,
+            remainingSplitPackageLinkDepth: Math.Max(0, options.MaxPropertyDepth),
+            splitPackageAncestors: CreateSplitPackageAncestors(inspection.Header.SourcePath));
         return new ResourceInspectionDocument(
             inspection.Header.SourcePath,
             inspection.Header.Format.ToString().ToLowerInvariant(),
@@ -120,6 +122,8 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         bool includeSplitPackageLinks,
         CancellationToken cancellationToken,
+        int remainingSplitPackageLinkDepth = 0,
+        IReadOnlySet<string>? splitPackageAncestors = null,
         string? rootPath = null)
     {
         var rootName = Path.GetFileName(inspection.Header.SourcePath);
@@ -149,9 +153,15 @@ public sealed class ResourceInspectionService
                 options.IncludeDebugMetadata ? BuildDirectoryEntryMetadata(entry) : null);
         }
 
-        if (includeSplitPackageLinks)
+        if (includeSplitPackageLinks && remainingSplitPackageLinkDepth > 0)
         {
-            await AddSplitPackageLinksAsync(builder, inspection, options, cancellationToken);
+            await AddSplitPackageLinksAsync(
+                builder,
+                inspection,
+                options,
+                cancellationToken,
+                remainingSplitPackageLinkDepth,
+                splitPackageAncestors);
         }
 
         return builder.ToNode();
@@ -231,7 +241,9 @@ public sealed class ResourceInspectionService
         InspectionNodeBuilder builder,
         WzDirectoryInspection inspection,
         ResourceInspectionOptions options,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int remainingSplitPackageLinkDepth,
+        IReadOnlySet<string>? splitPackageAncestors)
     {
         foreach (var entry in inspection.Entries)
         {
@@ -250,7 +262,12 @@ public sealed class ResourceInspectionService
             foreach (var packagePath in ResolveSplitPackagePaths(inspection.Header.SourcePath, entryPath))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var linkedNode = await TryBuildLinkedPackageNodeAsync(packagePath, options, cancellationToken);
+                var linkedNode = await TryBuildLinkedPackageNodeAsync(
+                    packagePath,
+                    options,
+                    cancellationToken,
+                    remainingSplitPackageLinkDepth,
+                    splitPackageAncestors);
                 if (linkedNode is not null)
                 {
                     builder.AddLinkedChild(
@@ -314,13 +331,15 @@ public sealed class ResourceInspectionService
         if (Directory.Exists(currentPackageRelativeDirectory))
         {
             yield return currentPackageRelativeDirectory;
+            yield break;
         }
 
         if (!string.IsNullOrWhiteSpace(workspaceDirectory))
         {
             var workspaceRelativeDirectory = Path.Combine(workspaceDirectory, relativePath);
             if (Directory.Exists(workspaceRelativeDirectory) &&
-                !PathsEqual(workspaceRelativeDirectory, currentPackageRelativeDirectory))
+                !PathsEqual(workspaceRelativeDirectory, currentPackageRelativeDirectory) &&
+                !PathsEqual(workspaceRelativeDirectory, sourceDirectory))
             {
                 yield return workspaceRelativeDirectory;
             }
@@ -344,10 +363,23 @@ public sealed class ResourceInspectionService
     private static async Task<ResourceInspectionNode?> TryBuildLinkedPackageNodeAsync(
         string path,
         ResourceInspectionOptions options,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int remainingSplitPackageLinkDepth,
+        IReadOnlySet<string>? splitPackageAncestors)
     {
+        var fullPath = GetFullPathOrOriginal(path);
+        if (splitPackageAncestors?.Contains(fullPath) == true)
+        {
+            return null;
+        }
+
         try
         {
+            if (remainingSplitPackageLinkDepth <= 1)
+            {
+                return await TryBuildShallowLinkedPackageNodeAsync(path, cancellationToken);
+            }
+
             var inspection = await WzImageInspectionLoader.ReadDirectoryAsync(path, options.StringKey, cancellationToken);
             if (!inspection.Header.IsValid)
             {
@@ -357,13 +389,67 @@ public sealed class ResourceInspectionService
             return await BuildDirectoryRootAsync(
                 inspection,
                 options,
-                includeSplitPackageLinks: false,
+                includeSplitPackageLinks: true,
                 cancellationToken,
+                remainingSplitPackageLinkDepth: remainingSplitPackageLinkDepth - 1,
+                splitPackageAncestors: AddSplitPackageAncestor(splitPackageAncestors, fullPath),
                 rootPath: path);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
         {
             return null;
+        }
+    }
+
+    private static async Task<ResourceInspectionNode?> TryBuildShallowLinkedPackageNodeAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        var header = await new WzPackageHeaderReader().ReadAsync(path, cancellationToken);
+        if (!header.IsValid)
+        {
+            return null;
+        }
+
+        var name = Path.GetFileName(path);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = path;
+        }
+
+        return new ResourceInspectionNode(
+            name,
+            "package",
+            path,
+            header.Format.ToString().ToLowerInvariant());
+    }
+
+    private static HashSet<string> CreateSplitPackageAncestors(string sourcePath)
+    {
+        return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            GetFullPathOrOriginal(sourcePath)
+        };
+    }
+
+    private static HashSet<string> AddSplitPackageAncestor(IReadOnlySet<string>? ancestors, string path)
+    {
+        var next = ancestors is not null
+            ? new HashSet<string>(ancestors, StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        next.Add(path);
+        return next;
+    }
+
+    private static string GetFullPathOrOriginal(string path)
+    {
+        try
+        {
+            return Path.GetFullPath(path);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return path;
         }
     }
 

@@ -104,8 +104,10 @@ package directories in Core inspection when a stub has no parsed children. For
 example, `Data/Base/Base.wz` entry `Effect` can expand to linked package nodes
 from `Data/Effect/Effect.wz` and `Data/Effect/Effect_*.wz`, while
 `Data/UI/UI.wz` entry `_Canvas` can expand to `Data/UI/_Canvas/_Canvas.wz` and
-its numbered shards. The App consumes the resulting inspection tree directly;
-it does not implement separate path guessing.
+its numbered shards. Directory `--depth` bounds recursive split-package
+expansion; packages at the boundary are kept as shallow package nodes so large
+client trees remain responsive. The App consumes the resulting inspection tree
+directly; it does not implement separate path guessing.
 
 `Data/Base/Base_000.wz` contains image entries such as `smap.img`,
 `StandardPDD.img`, and `zmap.img`. Their calculated offsets point to IMG
