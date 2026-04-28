@@ -19,6 +19,7 @@ public sealed class ResourceExportService
             ResourceExportKind.Metadata => await ExportMetadataAsync(path, selector, options, cancellationToken),
             ResourceExportKind.Text => await ExportTextImageAsync(path, selector, options, cancellationToken),
             ResourceExportKind.Lua => await ExportLuaAsync(path, selector, options, cancellationToken),
+            ResourceExportKind.Canvas => await ExportCanvasAsync(path, selector, options, cancellationToken),
             _ => throw new InvalidDataException($"Unsupported export type: {options.Kind}.")
         };
     }
@@ -91,6 +92,38 @@ public sealed class ResourceExportService
             diagnostics);
     }
 
+    private static async Task<ResourceExportDocument> ExportCanvasAsync(
+        string path,
+        string? selector,
+        ResourceExportOptions options,
+        CancellationToken cancellationToken)
+    {
+        var inspection = await ReadImageInspectionAsync(path, selector, options, cancellationToken);
+        var canvas = FindCanvas(inspection);
+        if (canvas is null)
+        {
+            throw Unsupported(ResourceExportKind.Canvas, selector);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        await using var stream = File.OpenRead(path);
+        WzImageCanvasBitmap bitmap;
+        try
+        {
+            bitmap = new WzImageCanvasPayloadDecoder().Decode(stream, canvas);
+        }
+        catch (NotSupportedException)
+        {
+            throw Unsupported(ResourceExportKind.Canvas, selector);
+        }
+
+        return new ResourceExportDocument(
+            inspection.Header.SourcePath,
+            ResourceExportKind.Canvas,
+            "application/octet-stream",
+            bitmap.Pixels);
+    }
+
     private static IEnumerable<string> ExtractLuaScripts(WzImageInspection inspection)
     {
         if (inspection.ObjectValue is WzImageLuaInspection lua)
@@ -110,6 +143,34 @@ public sealed class ResourceExportService
             {
                 yield return entry.Script;
             }
+        }
+    }
+
+    private static WzImageCanvasInspection? FindCanvas(WzImageInspection inspection)
+    {
+        if (inspection.ObjectValue is WzImageCanvasInspection canvas)
+        {
+            return canvas;
+        }
+
+        return inspection.Properties?
+            .SelectMany(Flatten)
+            .Select(property => property.Value)
+            .OfType<WzImageCanvasInspection>()
+            .FirstOrDefault();
+    }
+
+    private static IEnumerable<WzImagePropertyInspectionEntry> Flatten(WzImagePropertyInspectionEntry property)
+    {
+        yield return property;
+        if (property.Children is null)
+        {
+            yield break;
+        }
+
+        foreach (var child in property.Children.SelectMany(Flatten))
+        {
+            yield return child;
         }
     }
 

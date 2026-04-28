@@ -84,7 +84,8 @@ Tasks:
   stable severity/source/code constants, shared CLI text formatting, and
   `docs/diagnostics.md`.
 - Define first Canvas decode/export slice. Documented in
-  `docs/canvas-decode-export-plan.md`; implementation still pending.
+  `docs/canvas-decode-export-plan.md`; initial WzLib direct-zlib decoder and
+  raw-byte CLI export are started.
 
 Exit criteria:
 

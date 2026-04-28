@@ -58,6 +58,7 @@ public static class ResourceInspectionDiagnostics
         {
             ResourceExportKind.Text => $"Selected image is not a supported text IMG: {selector}.",
             ResourceExportKind.Lua => $"Selected image is not a supported Lua IMG: {selector}.",
+            ResourceExportKind.Canvas => $"Selected image is not a supported Canvas IMG: {selector}.",
             _ => $"Unsupported export type: {kind}."
         };
 

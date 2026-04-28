@@ -215,7 +215,7 @@ public static class CliApplication
         error.WriteLine("  wcx header [--json] <wz-file>");
         error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
         error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
-        error.WriteLine("  wcx export [--type metadata|text|lua] [--out <path>] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+        error.WriteLine("  wcx export [--type metadata|text|lua|canvas] [--out <path>] [--key auto|none|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
     }
 
     private static void WriteDiagnostics(
@@ -283,6 +283,12 @@ public static class CliApplication
         if (string.Equals(value, "lua", StringComparison.OrdinalIgnoreCase))
         {
             kind = ResourceExportKind.Lua;
+            return true;
+        }
+
+        if (string.Equals(value, "canvas", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = ResourceExportKind.Canvas;
             return true;
         }
 

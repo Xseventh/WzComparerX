@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using WzComparerX.Cli;
@@ -454,6 +455,49 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportCanvasWithOut_WritesRawPixelsToFile()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff, 0x40, 0x50, 0x60, 0xff];
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage(pixels));
+        var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-canvas-{Guid.NewGuid():N}.bin");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", outputPath, "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(pixels, await File.ReadAllBytesAsync(outputPath));
+        }
+        finally
+        {
+            File.Delete(path);
+            File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ExportCanvasWithoutOut_RequiresFileOutput()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage(pixels, width: 1));
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(2, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Contains("Binary export requires --out <path>.", result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task ExportUnsupportedType_ReturnsStructuredDiagnostic()
     {
         const string text = "#Property\nname=hello\n";
@@ -625,6 +669,39 @@ public class CliApplicationTests
         }
 
         return bytes.ToArray();
+    }
+
+    private static byte[] CreateCanvasImage(byte[] pixels, int width = 2, int height = 1)
+    {
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x00,
+                width,
+                height,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload)));
+    }
+
+    private static byte[] CreateDirectZlibPayload(byte[] pixels)
+    {
+        using var output = new MemoryStream();
+        output.WriteByte(0x00);
+        using (var zlib = new ZLibStream(output, CompressionMode.Compress, leaveOpen: true))
+        {
+            zlib.Write(pixels);
+        }
+
+        return output.ToArray();
     }
 
     private static byte[] CreateObjectProperty(string name, byte[] objectValue)

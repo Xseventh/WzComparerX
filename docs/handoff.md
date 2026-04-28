@@ -144,7 +144,9 @@ object-type families only when new behavior needs them.
 Canvas decode/export should start from the narrow plan in
 `docs/canvas-decode-export-plan.md`: synthetic fixture first, direct zlib and a
 single verified pixel format first, payload decoder separate from parser
-metadata and Core export.
+metadata and Core export. The first raw-byte `export --type canvas --out` slice
+now exists for direct zlib Canvas payloads with format `2` / `2562`; PNG export
+and broader format coverage remain pending.
 
 ## Suggested Next Prompt
 

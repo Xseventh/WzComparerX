@@ -4,5 +4,6 @@ public enum ResourceExportKind
 {
     Metadata,
     Text,
-    Lua
+    Lua,
+    Canvas
 }
