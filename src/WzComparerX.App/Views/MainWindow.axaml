@@ -144,11 +144,39 @@
                             </ScrollViewer>
                         </TabItem>
                         <TabItem Header="Preview">
-                            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+                            <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
                                 <TextBlock x:Name="CanvasPreviewStatusTextBlock"
                                            Text="{Binding CanvasPreviewStatus}"
                                            TextWrapping="Wrap"/>
-                                <Border Grid.Row="1"
+                                <StackPanel Grid.Row="1"
+                                            Orientation="Horizontal"
+                                            Spacing="6"
+                                            VerticalAlignment="Center">
+                                    <TextBlock x:Name="CanvasPreviewScaleTextBlock"
+                                               Text="{Binding CanvasPreview.ScaleLabel}"
+                                               VerticalAlignment="Center"
+                                               MinWidth="82"/>
+                                    <Button x:Name="CanvasPreviewAutoScaleButton"
+                                            Content="Auto"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="auto"/>
+                                    <Button Content="1x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="1"/>
+                                    <Button Content="2x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="2"/>
+                                    <Button Content="4x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="4"/>
+                                    <Button Content="8x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="8"/>
+                                    <Button Content="16x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="16"/>
+                                </StackPanel>
+                                <Border Grid.Row="2"
                                         Background="#202020"
                                         BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                         BorderThickness="1"

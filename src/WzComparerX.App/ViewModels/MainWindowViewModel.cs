@@ -402,6 +402,27 @@ public partial class MainWindowViewModel : ViewModelBase
         return LoadCanvasPreviewAsync(node, Interlocked.Increment(ref canvasPreviewRequestId));
     }
 
+    [RelayCommand]
+    private void SetCanvasPreviewScale(string? scale)
+    {
+        if (CanvasPreview is null)
+        {
+            return;
+        }
+
+        if (string.Equals(scale, "auto", StringComparison.OrdinalIgnoreCase))
+        {
+            CanvasPreview.SetScale(null);
+            return;
+        }
+
+        var normalizedScale = scale?.Trim().TrimEnd('x', 'X');
+        if (int.TryParse(normalizedScale, out var parsedScale))
+        {
+            CanvasPreview.SetScale(parsedScale);
+        }
+    }
+
     private async Task LoadCanvasPreviewAsync(ResourceInspectionNodeViewModel node, int requestId)
     {
         if (!CanLoadCanvasPreview(node))

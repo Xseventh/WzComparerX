@@ -313,6 +313,7 @@ public class MainWindowViewModelTests
             Assert.Equal("Canvas.img", viewModel.CanvasPreview.Selector);
             Assert.Equal("icon", viewModel.CanvasPreview.ValuePath);
             Assert.Equal(16, viewModel.CanvasPreview.Scale);
+            Assert.Equal("Auto (16x)", viewModel.CanvasPreview.ScaleLabel);
             Assert.Equal(32, viewModel.CanvasPreview.DisplayWidth);
             Assert.Equal(16, viewModel.CanvasPreview.DisplayHeight);
             Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", viewModel.CanvasPreviewStatus);
@@ -409,9 +410,75 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        Assert.Equal(2, preview.Scale);
-        Assert.Equal(112, preview.DisplayWidth);
-        Assert.Equal(140, preview.DisplayHeight);
+        Assert.Equal(4, preview.Scale);
+        Assert.Equal("Auto (4x)", preview.ScaleLabel);
+        Assert.Equal(224, preview.DisplayWidth);
+        Assert.Equal(280, preview.DisplayHeight);
+    }
+
+    [Fact]
+    public void CanvasPreviewViewModel_AllowsManualDisplayScale()
+    {
+        var document = new ResourceCanvasImageDocument(
+            SourcePath: "Canvas.wz",
+            Selector: "Canvas.img",
+            ValuePath: "miniMap/canvas",
+            Width: 96,
+            Height: 60,
+            Format: 1,
+            PixelFormat: "bgra8888",
+            Pixels: []);
+        var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
+
+        Assert.Equal(3, preview.Scale);
+        Assert.Equal("Auto (3x)", preview.ScaleLabel);
+
+        preview.SetScale(8);
+
+        Assert.Equal(8, preview.Scale);
+        Assert.Equal("8x", preview.ScaleLabel);
+        Assert.Equal(768, preview.DisplayWidth);
+        Assert.Equal(480, preview.DisplayHeight);
+
+        preview.SetScale(null);
+
+        Assert.Equal(3, preview.Scale);
+        Assert.Equal("Auto (3x)", preview.ScaleLabel);
+    }
+
+    [Fact]
+    public async Task SetCanvasPreviewScaleCommand_UpdatesCurrentPreviewScale()
+    {
+        var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel(
+            document => new ResourceCanvasPreviewViewModel(document, bitmap: null))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            var image = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            viewModel.SelectedNode = image;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            viewModel.SetCanvasPreviewScaleCommand.Execute("4");
+
+            Assert.Equal(4, viewModel.CanvasPreview?.Scale);
+            Assert.Equal("4x", viewModel.CanvasPreview?.ScaleLabel);
+            Assert.Equal(8, viewModel.CanvasPreview?.DisplayWidth);
+
+            viewModel.SetCanvasPreviewScaleCommand.Execute("auto");
+
+            Assert.Equal(16, viewModel.CanvasPreview?.Scale);
+            Assert.Equal("Auto (16x)", viewModel.CanvasPreview?.ScaleLabel);
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            File.Delete(path);
+        }
     }
 
     [Theory]

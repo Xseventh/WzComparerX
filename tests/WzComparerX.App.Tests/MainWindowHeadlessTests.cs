@@ -366,13 +366,18 @@ public class MainWindowHeadlessTests
                 using var frame = CaptureFrame(window);
                 var image = window.FindControl<Image>("CanvasPreviewImage");
                 var status = window.FindControl<TextBlock>("CanvasPreviewStatusTextBlock");
+                var scale = window.FindControl<TextBlock>("CanvasPreviewScaleTextBlock");
+                var autoButton = window.FindControl<Button>("CanvasPreviewAutoScaleButton");
 
                 Assert.NotNull(image);
                 Assert.NotNull(image.Source);
                 Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", status?.Text);
+                Assert.Equal("Auto (16x)", scale?.Text);
+                Assert.NotNull(autoButton);
                 Assert.True(viewModel.HasCanvasPreview);
                 Assert.Equal(2, viewModel.CanvasPreview?.Width);
                 Assert.Equal(1, viewModel.CanvasPreview?.Height);
+                Assert.Equal(16, viewModel.CanvasPreview?.Scale);
                 AssertPngCanBeSaved(frame);
                 SaveScreenshotArtifact(frame, "main-window-canvas-preview-1100x720.png");
             }

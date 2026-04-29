@@ -223,7 +223,8 @@ M4 started:
   when supported; selecting a concrete Canvas node previews that exact value.
   The preview path uses the current narrow direct-zlib format `1` / `2` slice
   through `ResourceCanvasImageService`, with integer display scaling for small
-  bitmaps. Root Canvas IMG objects use the same path.
+  bitmaps. The Preview tab exposes `Auto`, `1x`, `2x`, `4x`, `8x`, and `16x`
+  display scale buttons. Root Canvas IMG objects use the same path.
 - The UI has a basic activity log for load, inspection, and error events.
 - UI command state now avoids redundant re-opening of the current package and
   redundant re-inspection of the currently selected or manually entered IMG
