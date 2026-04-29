@@ -1,5 +1,6 @@
 using WzComparerX.App.Services;
 using WzComparerX.App.ViewModels;
+using WzComparerX.Core;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.App.Tests;
@@ -288,6 +289,76 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectingImageNode_LoadsFirstCanvasPreview()
+    {
+        var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel(
+            document => new ResourceCanvasPreviewViewModel(document, bitmap: null))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            var image = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+
+            viewModel.SelectedNode = image;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.Equal(path, viewModel.PathText);
+            Assert.Equal(string.Empty, viewModel.SelectorText);
+            Assert.True(viewModel.HasCanvasPreview);
+            Assert.NotNull(viewModel.CanvasPreview);
+            Assert.Equal("Canvas.img", viewModel.CanvasPreview.Selector);
+            Assert.Equal("icon", viewModel.CanvasPreview.ValuePath);
+            Assert.Equal(16, viewModel.CanvasPreview.Scale);
+            Assert.Equal(32, viewModel.CanvasPreview.DisplayWidth);
+            Assert.Equal(16, viewModel.CanvasPreview.DisplayHeight);
+            Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", viewModel.CanvasPreviewStatus);
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SelectingImageNodeFromLinkedPackage_LoadsFirstCanvasPreviewWithoutChangingCurrentTree()
+    {
+        var workspace = CreateLinkedCanvasWorkspace();
+        var viewModel = new MainWindowViewModel(
+            document => new ResourceCanvasPreviewViewModel(document, bitmap: null))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(workspace.BasePath);
+            var basePackage = Assert.Single(viewModel.RootNodes);
+            var linkedDirectory = Assert.Single(basePackage.Children, child => child.Name == "Linked");
+            var linkedPackage = Assert.Single(linkedDirectory.Children, child => child.Name == "Linked.wz");
+            var image = Assert.Single(linkedPackage.Children, child => child.Name == "Canvas.img");
+
+            viewModel.SelectedNode = image;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.Equal(workspace.BasePath, viewModel.PathText);
+            Assert.Equal(string.Empty, viewModel.SelectorText);
+            Assert.Equal("Canvas.img", viewModel.CanvasPreview?.Selector);
+            Assert.Equal("icon", viewModel.CanvasPreview?.ValuePath);
+            Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            workspace.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task SelectingCanvasNode_LoadsCanvasPreview()
     {
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
@@ -322,6 +393,25 @@ public class MainWindowViewModelTests
             viewModel.CanvasPreview?.Dispose();
             File.Delete(path);
         }
+    }
+
+    [Fact]
+    public void CanvasPreviewViewModel_ScalesSmallImagesForDisplay()
+    {
+        var document = new ResourceCanvasImageDocument(
+            SourcePath: "Canvas.wz",
+            Selector: "Canvas.img",
+            ValuePath: "icon",
+            Width: 56,
+            Height: 70,
+            Format: 1,
+            PixelFormat: "bgra8888",
+            Pixels: []);
+        var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
+
+        Assert.Equal(2, preview.Scale);
+        Assert.Equal(112, preview.DisplayWidth);
+        Assert.Equal(140, preview.DisplayHeight);
     }
 
     [Theory]

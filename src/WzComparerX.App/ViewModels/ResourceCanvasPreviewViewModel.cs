@@ -14,6 +14,7 @@ public sealed class ResourceCanvasPreviewViewModel : IDisposable
         Height = document.Height;
         Format = document.Format;
         Bitmap = bitmap;
+        Scale = CalculateScale(document.Width, document.Height);
     }
 
     public string SourcePath { get; }
@@ -28,6 +29,12 @@ public sealed class ResourceCanvasPreviewViewModel : IDisposable
 
     public int Format { get; }
 
+    public int Scale { get; }
+
+    public double DisplayWidth => Width * Scale;
+
+    public double DisplayHeight => Height * Scale;
+
     public Bitmap? Bitmap { get; }
 
     public string Title => ValuePath is null
@@ -37,5 +44,18 @@ public sealed class ResourceCanvasPreviewViewModel : IDisposable
     public void Dispose()
     {
         Bitmap?.Dispose();
+    }
+
+    private static int CalculateScale(int width, int height)
+    {
+        var longestSide = Math.Max(width, height);
+        if (longestSide <= 0)
+        {
+            return 1;
+        }
+
+        const int targetLongestSide = 160;
+        const int maxScale = 16;
+        return Math.Clamp(targetLongestSide / longestSide, 1, maxScale);
     }
 }

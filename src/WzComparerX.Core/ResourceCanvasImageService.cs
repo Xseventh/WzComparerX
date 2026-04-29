@@ -11,6 +11,38 @@ public sealed class ResourceCanvasImageService
         ResourceInspectionOptions? options = null,
         CancellationToken cancellationToken = default)
     {
+        return await LoadCoreAsync(
+            path,
+            selector,
+            valueSelector,
+            useFirstCanvasFallback: false,
+            options,
+            cancellationToken);
+    }
+
+    public async Task<ResourceCanvasImageDocument> LoadFirstAsync(
+        string path,
+        string selector,
+        ResourceInspectionOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await LoadCoreAsync(
+            path,
+            selector,
+            valueSelector: null,
+            useFirstCanvasFallback: true,
+            options,
+            cancellationToken);
+    }
+
+    private static async Task<ResourceCanvasImageDocument> LoadCoreAsync(
+        string path,
+        string selector,
+        string? valueSelector,
+        bool useFirstCanvasFallback,
+        ResourceInspectionOptions? options,
+        CancellationToken cancellationToken)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentException.ThrowIfNullOrWhiteSpace(selector);
 
@@ -21,7 +53,11 @@ public sealed class ResourceCanvasImageService
             options.StringKey,
             options.MaxPropertyDepth,
             cancellationToken);
-        var target = SelectCanvas(context.ImageInspection, selector, valueSelector);
+        var target = SelectCanvas(
+            context.ImageInspection,
+            selector,
+            valueSelector,
+            useFirstCanvasFallback);
         ValidateCanvas(target.Value, target.Path);
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -106,13 +142,25 @@ public sealed class ResourceCanvasImageService
     private static CanvasImageTarget SelectCanvas(
         WzImageInspection inspection,
         string? selector,
-        string? valueSelector)
+        string? valueSelector,
+        bool useFirstCanvasFallback)
     {
         if (string.IsNullOrWhiteSpace(valueSelector))
         {
             if (inspection.ObjectValue is WzImageCanvasInspection rootCanvas)
             {
                 return new CanvasImageTarget(rootCanvas, null);
+            }
+
+            if (useFirstCanvasFallback)
+            {
+                var firstCanvas = inspection.Properties?
+                    .SelectMany(Flatten)
+                    .FirstOrDefault(property => property.Value is WzImageCanvasInspection);
+                if (firstCanvas?.Value is WzImageCanvasInspection firstCanvasValue)
+                {
+                    return new CanvasImageTarget(firstCanvasValue, firstCanvas.Path);
+                }
             }
 
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueRequired(selector));

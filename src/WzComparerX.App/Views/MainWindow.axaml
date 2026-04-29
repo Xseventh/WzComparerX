@@ -157,7 +157,10 @@
                                                   VerticalScrollBarVisibility="Auto">
                                         <Image x:Name="CanvasPreviewImage"
                                                Source="{Binding CanvasPreview.Bitmap}"
-                                               Stretch="None"
+                                               Width="{Binding CanvasPreview.DisplayWidth}"
+                                               Height="{Binding CanvasPreview.DisplayHeight}"
+                                               Stretch="Fill"
+                                               RenderOptions.BitmapInterpolationMode="None"
                                                HorizontalAlignment="Left"
                                                VerticalAlignment="Top"/>
                                     </ScrollViewer>

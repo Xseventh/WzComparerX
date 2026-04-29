@@ -414,7 +414,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        var target = ResolveManualImageTarget();
+        var target = ResolveCanvasPreviewImageTarget(node);
         if (target is null || string.IsNullOrWhiteSpace(target.Selector))
         {
             CanvasPreviewStatus = "Select an inspected IMG before previewing Canvas.";
@@ -423,11 +423,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            var document = await canvasImageService.LoadAsync(
-                target.PackagePath,
-                target.Selector,
-                GetCanvasPreviewValueSelector(node),
-                options);
+            var valueSelector = GetCanvasPreviewValueSelector(node);
+            var document = valueSelector is null
+                ? await canvasImageService.LoadFirstAsync(
+                    target.PackagePath,
+                    target.Selector,
+                    options)
+                : await canvasImageService.LoadAsync(
+                    target.PackagePath,
+                    target.Selector,
+                    valueSelector,
+                    options);
             var preview = canvasPreviewFactory(document);
             if (!IsCurrentCanvasPreviewRequest(node, requestId))
             {
@@ -475,22 +481,18 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private bool CanLoadCanvasPreview(ResourceInspectionNodeViewModel? node)
     {
+        var target = ResolveCanvasPreviewImageTarget(node);
         return IsCanvasPreviewNode(node) &&
             !IsBusy &&
-            RootNodes.Count == 1 &&
-            RootNodes[0].Kind == "image" &&
-            !string.IsNullOrWhiteSpace(PathText) &&
-            File.Exists(PathText.Trim());
+            target is not null &&
+            !string.Equals(Path.GetExtension(target.PackagePath), ".json", StringComparison.OrdinalIgnoreCase) &&
+            File.Exists(target.PackagePath);
     }
 
     private static bool IsCanvasPreviewNode(ResourceInspectionNodeViewModel? node)
     {
         return node is not null &&
-            (node.Kind == "canvas" ||
-             node.Kind == "image" &&
-             node.DebugMetadata.Any(item =>
-                 item.Name == "valueType" &&
-                 string.Equals(item.Value, "canvas", StringComparison.OrdinalIgnoreCase)));
+            (node.Kind == "image" || node.Kind == "canvas");
     }
 
     private static string? GetCanvasPreviewValueSelector(ResourceInspectionNodeViewModel node)
@@ -501,7 +503,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private static string GetCanvasPreviewIdleStatus(ResourceInspectionNodeViewModel? node)
     {
         return node?.Kind == "image"
-            ? "Inspect this IMG to preview Canvas values."
+            ? "Select an IMG to preview its first Canvas value."
             : "Select a Canvas node to preview.";
     }
 
@@ -520,6 +522,13 @@ public partial class MainWindowViewModel : ViewModelBase
     private ResourceImageSelectorTarget? ResolveManualImageTarget()
     {
         return ResourceImageSelector.Resolve(PathText.Trim(), SelectorText);
+    }
+
+    private ResourceImageSelectorTarget? ResolveCanvasPreviewImageTarget(ResourceInspectionNodeViewModel? node)
+    {
+        return node?.Kind == "image"
+            ? ResourceImageSelector.Resolve(PathText.Trim(), node.Path ?? node.Name)
+            : ResolveManualImageTarget();
     }
 
     private bool IsCurrentCanvasPreviewRequest(ResourceInspectionNodeViewModel node, int requestId)

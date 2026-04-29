@@ -148,8 +148,10 @@ Tasks:
   inspected as a complete IMG tree.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Canvas preview. Started with lazy Canvas value preview through Core using the
-  current direct-zlib format `1` / `2` decoder slice. Root Canvas IMG objects and
-  nested Canvas property nodes share the same viewer path.
+  current direct-zlib format `1` / `2` decoder slice. Selecting an IMG node
+  previews the first supported Canvas value, while root Canvas IMG objects and
+  nested Canvas property nodes share the same viewer path. Small bitmaps are
+  displayed with capped integer scaling.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless

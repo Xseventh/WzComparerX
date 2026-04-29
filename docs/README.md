@@ -116,7 +116,9 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - 双击 package / image node 触发对应 ViewModel 命令。
 - Document metadata panel。
 - Selection / Diagnostics panel。
-- Canvas preview tab for the current narrow direct-zlib format `1` / `2` slice.
+- Canvas preview tab for the current narrow direct-zlib format `1` / `2` slice,
+  including first-Canvas auto preview when selecting an IMG node and integer
+  display scaling for small bitmaps.
 - Activity log panel。
 - 在 IMG inspection 后返回当前 package directory。
 - 对 GMS split-package 布局做 conservative linking，例如：
