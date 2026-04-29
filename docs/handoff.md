@@ -234,7 +234,7 @@ M4 started:
   ini is absent, and merges shard directory entries under the entry package
   while retaining each shard IMG's original source path.
 - UI command state now avoids redundant re-opening of the current package.
-- App key/depth text parsing is isolated from `MainWindowViewModel`, keeping the
+- App key/options text parsing is isolated from `MainWindowViewModel`, keeping the
   view model focused on orchestration and visible state.
 - App projection helpers are now split out of `MainWindowViewModel`: selector
   normalization lives in App services, while resource node, metadata,

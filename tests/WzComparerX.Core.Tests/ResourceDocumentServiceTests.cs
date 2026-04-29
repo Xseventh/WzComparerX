@@ -464,6 +464,39 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectImageConvenienceOverload_UsesFullPropertyDepthByDefault()
+    {
+        var imageBytes = CreatePropertyImage(
+            CreateObjectProperty(
+                "child",
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateScalarProperty("foo", 42))));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                selector: "Canvas.img",
+                stringKey: WzStringEncryptionKind.None);
+
+            var nested = Assert.Single(inspection.Root.Children, child => child.Name == "child");
+            var child = Assert.Single(nested.Children, child => child.Name == "foo");
+            Assert.Equal("int32", child.Kind);
+            Assert.Equal("42", child.DisplayValue);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugJson_IncludesStructuredMetadata()
     {
         var path = WriteTemporaryPkg1ImageFile(CreatePropertyImage());
@@ -906,6 +939,15 @@ public class ResourceDocumentServiceTests
         bytes.Add(0x09);
         bytes.AddRange(BitConverter.GetBytes(objectValue.Length));
         bytes.AddRange(objectValue);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateScalarProperty(string name, int value)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x03);
+        bytes.Add((byte)value);
         return bytes.ToArray();
     }
 

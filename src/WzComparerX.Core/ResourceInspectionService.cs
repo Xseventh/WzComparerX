@@ -9,7 +9,7 @@ public sealed class ResourceInspectionService
         string path,
         string? selector = null,
         WzStringEncryptionKind? stringKey = WzStringEncryptionKind.None,
-        int maxPropertyDepth = 1,
+        int maxPropertyDepth = WzImageInspectionReader.FullPropertyInspectionDepth,
         CancellationToken cancellationToken = default)
     {
         return InspectAsync(
