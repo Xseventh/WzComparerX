@@ -118,8 +118,9 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - Selection / Diagnostics panel。
 - Canvas preview tab for the current narrow direct-zlib format `1` / `2` slice,
   including first-Canvas auto preview when selecting an IMG node and integer
-  display scaling for small bitmaps. The Preview tab now exposes `Auto`, `1x`,
-  `2x`, `4x`, `8x`, and `16x` display scale controls.
+  display scaling for small bitmaps plus proportional Auto shrink for large
+  bitmaps. The Preview tab now exposes `Auto`, `1x`, `2x`, `4x`, `8x`, and
+  `16x` display scale controls.
 - Activity log panel。
 - 在 IMG inspection 后返回当前 package directory。
 - 对 GMS split-package 布局做 conservative linking，例如：

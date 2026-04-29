@@ -151,8 +151,8 @@ Tasks:
   current direct-zlib format `1` / `2` decoder slice. Selecting an IMG node
   previews the first supported Canvas value, while root Canvas IMG objects and
   nested Canvas property nodes share the same viewer path. Small bitmaps are
-  displayed with capped integer scaling and explicit `Auto`, `1x`, `2x`, `4x`,
-  `8x`, and `16x` controls.
+  displayed with capped integer scaling, very large bitmaps shrink in `Auto`,
+  and explicit `1x`, `2x`, `4x`, `8x`, and `16x` controls remain available.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless

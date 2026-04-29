@@ -377,7 +377,7 @@ public class MainWindowHeadlessTests
                 Assert.True(viewModel.HasCanvasPreview);
                 Assert.Equal(2, viewModel.CanvasPreview?.Width);
                 Assert.Equal(1, viewModel.CanvasPreview?.Height);
-                Assert.Equal(16, viewModel.CanvasPreview?.Scale);
+                Assert.Equal(16d, viewModel.CanvasPreview?.Scale);
                 AssertPngCanBeSaved(frame);
                 SaveScreenshotArtifact(frame, "main-window-canvas-preview-1100x720.png");
             }

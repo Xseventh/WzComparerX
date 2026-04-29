@@ -312,10 +312,10 @@ public class MainWindowViewModelTests
             Assert.NotNull(viewModel.CanvasPreview);
             Assert.Equal("Canvas.img", viewModel.CanvasPreview.Selector);
             Assert.Equal("icon", viewModel.CanvasPreview.ValuePath);
-            Assert.Equal(16, viewModel.CanvasPreview.Scale);
+            Assert.Equal(16d, viewModel.CanvasPreview.Scale);
             Assert.Equal("Auto (16x)", viewModel.CanvasPreview.ScaleLabel);
-            Assert.Equal(32, viewModel.CanvasPreview.DisplayWidth);
-            Assert.Equal(16, viewModel.CanvasPreview.DisplayHeight);
+            Assert.Equal(32d, viewModel.CanvasPreview.DisplayWidth);
+            Assert.Equal(16d, viewModel.CanvasPreview.DisplayHeight);
             Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", viewModel.CanvasPreviewStatus);
         }
         finally
@@ -410,10 +410,10 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        Assert.Equal(4, preview.Scale);
+        Assert.Equal(4d, preview.Scale);
         Assert.Equal("Auto (4x)", preview.ScaleLabel);
-        Assert.Equal(224, preview.DisplayWidth);
-        Assert.Equal(280, preview.DisplayHeight);
+        Assert.Equal(224d, preview.DisplayWidth);
+        Assert.Equal(280d, preview.DisplayHeight);
     }
 
     [Fact]
@@ -430,20 +430,51 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        Assert.Equal(3, preview.Scale);
+        Assert.Equal(3d, preview.Scale);
         Assert.Equal("Auto (3x)", preview.ScaleLabel);
 
         preview.SetScale(8);
 
-        Assert.Equal(8, preview.Scale);
+        Assert.Equal(8d, preview.Scale);
         Assert.Equal("8x", preview.ScaleLabel);
-        Assert.Equal(768, preview.DisplayWidth);
-        Assert.Equal(480, preview.DisplayHeight);
+        Assert.Equal(768d, preview.DisplayWidth);
+        Assert.Equal(480d, preview.DisplayHeight);
 
         preview.SetScale(null);
 
-        Assert.Equal(3, preview.Scale);
+        Assert.Equal(3d, preview.Scale);
         Assert.Equal("Auto (3x)", preview.ScaleLabel);
+    }
+
+    [Fact]
+    public void CanvasPreviewViewModel_ShrinksLargeImagesInAutoMode()
+    {
+        var document = new ResourceCanvasImageDocument(
+            SourcePath: "Map.wz",
+            Selector: "LargeMap.img",
+            ValuePath: "miniMap/canvas",
+            Width: 2048,
+            Height: 1024,
+            Format: 1,
+            PixelFormat: "bgra8888",
+            Pixels: []);
+        var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
+
+        Assert.Equal(0.46875d, preview.Scale, precision: 5);
+        Assert.Equal("Auto (47%)", preview.ScaleLabel);
+        Assert.Equal(960d, preview.DisplayWidth);
+        Assert.Equal(480d, preview.DisplayHeight);
+
+        preview.SetScale(1);
+
+        Assert.Equal(1d, preview.Scale);
+        Assert.Equal("1x", preview.ScaleLabel);
+        Assert.Equal(2048d, preview.DisplayWidth);
+
+        preview.SetScale(null);
+
+        Assert.Equal(0.46875d, preview.Scale, precision: 5);
+        Assert.Equal("Auto (47%)", preview.ScaleLabel);
     }
 
     [Fact]
@@ -465,13 +496,13 @@ public class MainWindowViewModelTests
 
             viewModel.SetCanvasPreviewScaleCommand.Execute("4");
 
-            Assert.Equal(4, viewModel.CanvasPreview?.Scale);
+            Assert.Equal(4d, viewModel.CanvasPreview?.Scale);
             Assert.Equal("4x", viewModel.CanvasPreview?.ScaleLabel);
-            Assert.Equal(8, viewModel.CanvasPreview?.DisplayWidth);
+            Assert.Equal(8d, viewModel.CanvasPreview?.DisplayWidth);
 
             viewModel.SetCanvasPreviewScaleCommand.Execute("auto");
 
-            Assert.Equal(16, viewModel.CanvasPreview?.Scale);
+            Assert.Equal(16d, viewModel.CanvasPreview?.Scale);
             Assert.Equal("Auto (16x)", viewModel.CanvasPreview?.ScaleLabel);
         }
         finally

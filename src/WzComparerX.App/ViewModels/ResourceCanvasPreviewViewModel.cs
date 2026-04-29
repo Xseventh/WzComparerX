@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia.Media.Imaging;
 using WzComparerX.Core;
 
@@ -31,15 +32,15 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
 
     public int Format { get; }
 
-    public int AutoScale { get; }
+    public double AutoScale { get; }
 
-    public int Scale => manualScale ?? AutoScale;
+    public double Scale => manualScale ?? AutoScale;
 
     public double DisplayWidth => Width * Scale;
 
     public double DisplayHeight => Height * Scale;
 
-    public string ScaleLabel => manualScale is null ? $"Auto ({Scale}x)" : $"{Scale}x";
+    public string ScaleLabel => manualScale is null ? $"Auto ({FormatScale(Scale)})" : $"{Scale:0}x";
 
     public Bitmap? Bitmap { get; }
 
@@ -61,7 +62,7 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(ScaleLabel));
     }
 
-    private static int CalculateAutoScale(int width, int height)
+    private static double CalculateAutoScale(int width, int height)
     {
         var longestSide = Math.Max(width, height);
         if (longestSide <= 0)
@@ -69,8 +70,27 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
             return 1;
         }
 
-        const int targetLongestSide = 320;
+        const int targetSmallLongestSide = 320;
+        const int shrinkThresholdLongestSide = 1024;
+        const int targetLargeLongestSide = 960;
         const int maxScale = 16;
-        return Math.Clamp(targetLongestSide / longestSide, 1, maxScale);
+        if (longestSide > shrinkThresholdLongestSide)
+        {
+            return (double)targetLargeLongestSide / longestSide;
+        }
+
+        var integerScale = Math.Floor((double)targetSmallLongestSide / longestSide);
+        return Math.Clamp(integerScale, 1, maxScale);
+    }
+
+    private static string FormatScale(double scale)
+    {
+        if (scale >= 1)
+        {
+            return scale.ToString("0", CultureInfo.InvariantCulture) + "x";
+        }
+
+        var percent = Math.Max(1, (int)Math.Round(scale * 100, MidpointRounding.AwayFromZero));
+        return percent.ToString(CultureInfo.InvariantCulture) + "%";
     }
 }
