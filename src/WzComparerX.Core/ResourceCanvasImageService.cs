@@ -53,15 +53,18 @@ public sealed class ResourceCanvasImageService
             options.StringKey,
             options.MaxPropertyDepth,
             cancellationToken);
-        var target = SelectCanvas(
+        var target = await SelectCanvasAsync(
+            path,
             context.ImageInspection,
             selector,
             valueSelector,
-            useFirstCanvasFallback);
+            useFirstCanvasFallback,
+            options,
+            cancellationToken);
         ValidateCanvas(target.Value, target.Path);
 
         cancellationToken.ThrowIfCancellationRequested();
-        await using var stream = File.OpenRead(path);
+        await using var stream = File.OpenRead(target.SourcePath);
         WzImageCanvasBitmap bitmap;
         try
         {
@@ -74,8 +77,8 @@ public sealed class ResourceCanvasImageService
 
         var pixels = ConvertToBgra8888(bitmap, target.Path);
         return new ResourceCanvasImageDocument(
-            context.ImageInspection.Header.SourcePath,
-            context.ImageInspection.Selector,
+            target.SourcePath,
+            target.Selector,
             target.Path,
             bitmap.Width,
             bitmap.Height,
@@ -139,17 +142,20 @@ public sealed class ResourceCanvasImageService
         return source.Length == expectedLength ? source : source[..expectedLength];
     }
 
-    private static CanvasImageTarget SelectCanvas(
+    private static async Task<CanvasImageTarget> SelectCanvasAsync(
+        string sourcePath,
         WzImageInspection inspection,
         string? selector,
         string? valueSelector,
-        bool useFirstCanvasFallback)
+        bool useFirstCanvasFallback,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(valueSelector))
         {
             if (inspection.ObjectValue is WzImageCanvasInspection rootCanvas)
             {
-                return new CanvasImageTarget(rootCanvas, null);
+                return new CanvasImageTarget(sourcePath, inspection.Selector, rootCanvas, null);
             }
 
             if (useFirstCanvasFallback)
@@ -159,7 +165,7 @@ public sealed class ResourceCanvasImageService
                     .FirstOrDefault(property => property.Value is WzImageCanvasInspection);
                 if (firstCanvas?.Value is WzImageCanvasInspection firstCanvasValue)
                 {
-                    return new CanvasImageTarget(firstCanvasValue, firstCanvas.Path);
+                    return new CanvasImageTarget(sourcePath, inspection.Selector, firstCanvasValue, firstCanvas.Path);
                 }
             }
 
@@ -182,9 +188,214 @@ public sealed class ResourceCanvasImageService
         }
 
         var match = matches[0];
-        return match.Value is WzImageCanvasInspection canvas
-            ? new CanvasImageTarget(canvas, match.Path ?? valueSelector)
-            : throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector));
+        if (match.Value is WzImageCanvasInspection canvas)
+        {
+            return new CanvasImageTarget(sourcePath, inspection.Selector, canvas, match.Path ?? valueSelector);
+        }
+
+        if (match.Value is string linkValue && IsCanvasLinkProperty(match))
+        {
+            var linkedTarget = await ResolveCanvasLinkAsync(
+                sourcePath,
+                inspection,
+                match,
+                linkValue,
+                options,
+                cancellationToken);
+            if (linkedTarget is not null)
+            {
+                return linkedTarget;
+            }
+        }
+
+        throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector));
+    }
+
+    private static async Task<CanvasImageTarget?> ResolveCanvasLinkAsync(
+        string sourcePath,
+        WzImageInspection inspection,
+        WzImagePropertyInspectionEntry linkProperty,
+        string linkValue,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
+    {
+        var normalizedValue = NormalizePropertyPath(linkValue);
+        if (string.IsNullOrWhiteSpace(normalizedValue))
+        {
+            return null;
+        }
+
+        if (string.Equals(linkProperty.Name, "_inlink", StringComparison.Ordinal))
+        {
+            var inlinkCanvas = FindCanvasProperty(inspection, normalizedValue);
+            return inlinkCanvas?.Value is WzImageCanvasInspection canvas
+                ? new CanvasImageTarget(sourcePath, inspection.Selector, canvas, inlinkCanvas.Path ?? normalizedValue)
+                : null;
+        }
+
+        var logicalTarget = await ResolveLogicalImageValueAsync(
+            sourcePath,
+            normalizedValue,
+            options.StringKey,
+            cancellationToken);
+        if (logicalTarget is null)
+        {
+            return null;
+        }
+
+        var context = await WzImageInspectionLoader.LoadAsync(
+            logicalTarget.PackagePath,
+            logicalTarget.Selector,
+            options.StringKey,
+            options.MaxPropertyDepth,
+            cancellationToken);
+        var linkedCanvasProperty = string.IsNullOrWhiteSpace(logicalTarget.ValuePath)
+            ? null
+            : FindCanvasProperty(context.ImageInspection, logicalTarget.ValuePath);
+        if (linkedCanvasProperty?.Value is WzImageCanvasInspection linkedCanvas)
+        {
+            return new CanvasImageTarget(
+                logicalTarget.PackagePath,
+                logicalTarget.Selector,
+                linkedCanvas,
+                linkedCanvasProperty.Path ?? logicalTarget.ValuePath);
+        }
+
+        if (string.IsNullOrWhiteSpace(logicalTarget.ValuePath) &&
+            context.ImageInspection.ObjectValue is WzImageCanvasInspection rootCanvas)
+        {
+            return new CanvasImageTarget(logicalTarget.PackagePath, logicalTarget.Selector, rootCanvas, null);
+        }
+
+        return null;
+    }
+
+    private static async Task<LogicalImageValueTarget?> ResolveLogicalImageValueAsync(
+        string currentPackagePath,
+        string logicalPath,
+        WzStringEncryptionKind? stringKey,
+        CancellationToken cancellationToken)
+    {
+        var normalized = NormalizePropertyPath(logicalPath);
+        var parts = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var imageIndex = Array.FindIndex(parts, part => part.EndsWith(".img", StringComparison.OrdinalIgnoreCase));
+        if (imageIndex < 0)
+        {
+            return null;
+        }
+
+        var dataRoot = FindDataRoot(currentPackagePath);
+        if (dataRoot is null)
+        {
+            return null;
+        }
+
+        var imageName = parts[imageIndex];
+        var valuePath = imageIndex + 1 < parts.Length ? string.Join('/', parts[(imageIndex + 1)..]) : null;
+        var packageSegments = parts[..imageIndex];
+        foreach (var candidate in EnumerateLogicalPackageCandidates(dataRoot, packageSegments, imageName))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var target = await TryResolveImageInPackageGroupAsync(
+                candidate.PackagePath,
+                candidate.Selector,
+                valuePath,
+                stringKey,
+                cancellationToken);
+            if (target is not null)
+            {
+                return target;
+            }
+        }
+
+        return null;
+    }
+
+    private static async Task<LogicalImageValueTarget?> TryResolveImageInPackageGroupAsync(
+        string packagePath,
+        string selector,
+        string? valuePath,
+        WzStringEncryptionKind? stringKey,
+        CancellationToken cancellationToken)
+    {
+        if (!File.Exists(packagePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var group = await WzPackageGroupInspectionLoader.LoadAsync(packagePath, stringKey, cancellationToken);
+            foreach (var member in group.Members)
+            {
+                if (WzImageInspectionLoader.TryFindImageEntry(member.Inspection, selector) is not null)
+                {
+                    return new LogicalImageValueTarget(member.SourcePath, selector, valuePath);
+                }
+            }
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<LogicalPackageCandidate> EnumerateLogicalPackageCandidates(
+        string dataRoot,
+        string[] packageSegments,
+        string imageName)
+    {
+        if (packageSegments.Length > 0)
+        {
+            var firstSegment = packageSegments[0];
+            var rootPackagePath = Path.Combine(dataRoot, firstSegment, firstSegment + ".wz");
+            var rootSelectorParts = packageSegments.Skip(1).Append(imageName).ToArray();
+            yield return new LogicalPackageCandidate(rootPackagePath, string.Join('/', rootSelectorParts));
+
+            var folder = Path.Combine([dataRoot, .. packageSegments]);
+            var folderPackagePath = Path.Combine(folder, packageSegments[^1] + ".wz");
+            yield return new LogicalPackageCandidate(folderPackagePath, imageName);
+        }
+    }
+
+    private static WzImagePropertyInspectionEntry? FindCanvasProperty(WzImageInspection inspection, string valuePath)
+    {
+        return inspection.Properties?
+            .SelectMany(Flatten)
+            .FirstOrDefault(property =>
+                property.Value is WzImageCanvasInspection &&
+                string.Equals(property.Path, valuePath, StringComparison.Ordinal)) ?? null;
+    }
+
+    private static bool IsCanvasLinkProperty(WzImagePropertyInspectionEntry property)
+    {
+        return property.Kind == "string" &&
+            (string.Equals(property.Name, "source", StringComparison.Ordinal) ||
+             string.Equals(property.Name, "_inlink", StringComparison.Ordinal) ||
+             string.Equals(property.Name, "_outlink", StringComparison.Ordinal));
+    }
+
+    private static string NormalizePropertyPath(string value)
+    {
+        return value.Trim().Replace('\\', '/').Trim('/');
+    }
+
+    private static string? FindDataRoot(string path)
+    {
+        var directory = Path.GetDirectoryName(path);
+        while (!string.IsNullOrWhiteSpace(directory))
+        {
+            if (string.Equals(Path.GetFileName(directory), "Data", StringComparison.OrdinalIgnoreCase))
+            {
+                return directory;
+            }
+
+            directory = Directory.GetParent(directory)?.FullName;
+        }
+
+        return null;
     }
 
     private static IEnumerable<WzImagePropertyInspectionEntry> Flatten(WzImagePropertyInspectionEntry property)
@@ -201,5 +412,13 @@ public sealed class ResourceCanvasImageService
         }
     }
 
-    private sealed record CanvasImageTarget(WzImageCanvasInspection Value, string? Path);
+    private sealed record CanvasImageTarget(
+        string SourcePath,
+        string Selector,
+        WzImageCanvasInspection Value,
+        string? Path);
+
+    private sealed record LogicalPackageCandidate(string PackagePath, string Selector);
+
+    private sealed record LogicalImageValueTarget(string PackagePath, string Selector, string? ValuePath);
 }

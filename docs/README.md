@@ -112,18 +112,25 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - folder inspection：扫描目录中的 `.wz` package。
 - package node open：在资源树中打开 package。
 - IMG selector 输入。
-- 选中 image node 后执行 `Inspect Image`。
+- Resources tree 和 IMG Content tree 分离：选中 image node 会按 WC 的
+  `TryExtract()` 体验自动提取完整单个 IMG 到 IMG Content tree，Resources
+  tree 保持 package / directory 结构。
+- `Inspect Image` 保留为手动 selector / refresh 入口。
 - 双击 package / image node 触发对应 ViewModel 命令。
 - Document metadata panel。
 - Selection / Diagnostics panel。
 - Canvas preview tab for the current narrow direct-zlib format `1` / `2` slice,
-  including first-Canvas auto preview when selecting an IMG node and integer
-  display scaling for small bitmaps plus proportional Auto shrink for large
-  bitmaps. The Preview tab now exposes `Auto`, `1x`, `2x`, `4x`, `8x`, and
-  `16x` display scale controls.
+  following the selected IMG Content node. Selecting Canvas nodes previews that
+  exact value; selecting `source` / `_inlink` / `_outlink` string nodes resolves
+  the linked Canvas when the current workspace layout can be mapped. The Preview
+  tab exposes `Auto`, `1x`, `2x`, `4x`, `8x`, and `16x` display scale controls.
 - Activity log panel。
-- 在 IMG inspection 后返回当前 package directory。
-- 对 GMS split-package 布局做 conservative linking，例如：
+- 对 GMS split-package 布局做 WC-style package group 合并，例如：
+  - 打开 `Map1.wz` 时如果旁边有 `Map1.ini`，会按 `LastWzIndex` 合并
+    `Map1_000.wz...` 的目录项；
+  - 没有 `.ini` 时会 fallback 连续枚举 `Name_000.wz`、`Name_001.wz`；
+  - merged shard 的 IMG node 仍保留原始 shard package target，供 App
+    正确提取 IMG；
   - `Base/Base.wz` 下的 `Effect` 可链接到 `Effect/Effect.wz` 和 `Effect/Effect_000.wz`；
   - `UI/UI.wz` 下的 `_Canvas` 可链接到 `UI/_Canvas/_Canvas.wz` 和编号 shard。
 

@@ -59,14 +59,15 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
-        var inspection = await WzImageInspectionLoader.ReadDirectoryAsync(path, options.StringKey, cancellationToken);
+        var group = await WzPackageGroupInspectionLoader.LoadAsync(path, options.StringKey, cancellationToken);
+        var inspection = group.Entry;
         if (!inspection.Header.IsValid)
         {
             throw new InvalidDataException($"Invalid WZ package: {inspection.Header.SourcePath}.");
         }
 
-        var root = await BuildDirectoryRootAsync(
-            inspection,
+        var root = await BuildPackageGroupRootAsync(
+            group,
             options,
             includeSplitPackageLinks: true,
             cancellationToken,
@@ -75,7 +76,7 @@ public sealed class ResourceInspectionService
             inspection.Header.SourcePath,
             inspection.Header.Format.ToString().ToLowerInvariant(),
             root,
-            options.IncludeDebugMetadata ? BuildDirectoryDocumentMetadata(inspection) : null);
+            options.IncludeDebugMetadata ? BuildDirectoryDocumentMetadata(group) : null);
     }
 
     private static async Task<ResourceInspectionDocument> InspectImageAsync(
@@ -124,6 +125,27 @@ public sealed class ResourceInspectionService
         IReadOnlySet<string>? splitPackageAncestors = null,
         string? rootPath = null)
     {
+        var group = new WzPackageGroupInspection(
+            inspection,
+            [new WzPackageGroupMemberInspection(inspection, IsEntry: true)]);
+        return await BuildPackageGroupRootAsync(
+            group,
+            options,
+            includeSplitPackageLinks,
+            cancellationToken,
+            splitPackageAncestors,
+            rootPath);
+    }
+
+    private static async Task<ResourceInspectionNode> BuildPackageGroupRootAsync(
+        WzPackageGroupInspection group,
+        ResourceInspectionOptions options,
+        bool includeSplitPackageLinks,
+        CancellationToken cancellationToken,
+        IReadOnlySet<string>? splitPackageAncestors = null,
+        string? rootPath = null)
+    {
+        var inspection = group.Entry;
         var rootName = Path.GetFileName(inspection.Header.SourcePath);
         if (string.IsNullOrWhiteSpace(rootName))
         {
@@ -135,20 +157,29 @@ public sealed class ResourceInspectionService
             "package",
             rootPath ?? rootName,
             inspection.Header.Format.ToString().ToLowerInvariant());
-        foreach (var entry in inspection.Entries)
-        {
-            var entryPath = entry.Path ?? entry.Name ?? entry.Index.ToString(CultureInfo.InvariantCulture);
-            var parts = entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length == 0)
-            {
-                parts = [entryPath];
-            }
 
-            builder.AddPath(
-                parts,
-                0,
-                entry.Kind.ToString().ToLowerInvariant(),
-                options.IncludeDebugMetadata ? BuildDirectoryEntryMetadata(entry) : null);
+        foreach (var member in group.Members)
+        {
+            foreach (var entry in member.Inspection.Entries)
+            {
+                var entryPath = entry.Path ?? entry.Name ?? entry.Index.ToString(CultureInfo.InvariantCulture);
+                var parts = entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0)
+                {
+                    parts = [entryPath];
+                }
+
+                var leafPath = !member.IsEntry && entry.Kind == WzDirectoryEntryKind.Image
+                    ? CombinePackageSelector(member.SourcePath, entryPath)
+                    : null;
+
+                builder.AddPath(
+                    parts,
+                    0,
+                    entry.Kind.ToString().ToLowerInvariant(),
+                    options.IncludeDebugMetadata ? BuildDirectoryEntryMetadata(entry, member.IsEntry ? null : member.SourcePath) : null,
+                    leafPath);
+            }
         }
 
         if (includeSplitPackageLinks)
@@ -208,10 +239,20 @@ public sealed class ResourceInspectionService
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzDirectoryInspection inspection)
     {
+        return BuildDirectoryDocumentMetadata(
+            new WzPackageGroupInspection(
+                inspection,
+                [new WzPackageGroupMemberInspection(inspection, IsEntry: true)]));
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzPackageGroupInspection group)
+    {
+        var inspection = group.Entry;
         var metadata = new List<ResourceInspectionMetadata>
         {
             new("entryCount", inspection.EntryCount),
-            new("totalEntryCount", inspection.Entries.Count)
+            new("totalEntryCount", group.Members.Sum(member => member.Inspection.Entries.Count)),
+            new("packageGroupCount", group.Members.Count)
         };
         AddOptional(metadata, "stringKey", inspection.StringEncryptionKind?.ToString().ToLowerInvariant());
         AddOptional(metadata, "wzVersion", inspection.WzVersion);
@@ -219,7 +260,9 @@ public sealed class ResourceInspectionService
         return metadata;
     }
 
-    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryEntryMetadata(WzDirectoryEntryInspection entry)
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryEntryMetadata(
+        WzDirectoryEntryInspection entry,
+        string? sourcePath = null)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
@@ -231,6 +274,7 @@ public sealed class ResourceInspectionService
             new("hashOffset", entry.HashOffset)
         };
         AddOptional(metadata, "offset", entry.Offset);
+        AddOptional(metadata, "sourcePath", sourcePath);
         return metadata;
     }
 
@@ -361,13 +405,7 @@ public sealed class ResourceInspectionService
 
     private static IEnumerable<string> EnumerateSplitPackageFiles(string entryDirectory, string packageStem)
     {
-        var primaryPackagePath = Path.Combine(entryDirectory, packageStem + ".wz");
-        if (File.Exists(primaryPackagePath))
-        {
-            yield return primaryPackagePath;
-        }
-
-        foreach (var candidate in Directory.EnumerateFiles(entryDirectory, packageStem + "_*.wz").OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+        foreach (var candidate in WzPackageGroupInspectionLoader.EnumeratePackageGroupEntryPaths(entryDirectory, packageStem))
         {
             yield return candidate;
         }
@@ -387,14 +425,14 @@ public sealed class ResourceInspectionService
 
         try
         {
-            var inspection = await WzImageInspectionLoader.ReadDirectoryAsync(path, options.StringKey, cancellationToken);
-            if (!inspection.Header.IsValid)
+            var group = await WzPackageGroupInspectionLoader.LoadAsync(path, options.StringKey, cancellationToken);
+            if (!group.Entry.Header.IsValid)
             {
                 return null;
             }
 
-            return await BuildDirectoryRootAsync(
-                inspection,
+            return await BuildPackageGroupRootAsync(
+                group,
                 options,
                 includeSplitPackageLinks: true,
                 cancellationToken,
@@ -629,6 +667,11 @@ public sealed class ResourceInspectionService
         return string.IsNullOrEmpty(parentPath) ? name : $"{parentPath}/{name}";
     }
 
+    private static string CombinePackageSelector(string packagePath, string selector)
+    {
+        return $"{packagePath}/{selector.Replace('\\', '/')}";
+    }
+
     private sealed class InspectionNodeBuilder
     {
         private readonly List<InspectionNodeBuilder> children = [];
@@ -645,7 +688,7 @@ public sealed class ResourceInspectionService
 
         public string Kind { get; private set; }
 
-        public string? Path { get; }
+        public string? Path { get; private set; }
 
         public string? DisplayValue { get; }
 
@@ -655,13 +698,16 @@ public sealed class ResourceInspectionService
             string[] parts,
             int index,
             string leafKind,
-            IReadOnlyList<ResourceInspectionMetadata>? debugMetadata)
+            IReadOnlyList<ResourceInspectionMetadata>? debugMetadata,
+            string? leafPath = null)
         {
             var name = parts[index];
             var child = children.FirstOrDefault(candidate => candidate.Name == name);
             if (child is null)
             {
-                var path = string.IsNullOrEmpty(Path) ? name : $"{Path}/{name}";
+                var path = index == parts.Length - 1 && leafPath is not null
+                    ? leafPath
+                    : string.IsNullOrEmpty(Path) ? name : $"{Path}/{name}";
                 var kind = index == parts.Length - 1 ? leafKind : "directory";
                 child = new InspectionNodeBuilder(name, kind, path);
                 children.Add(child);
@@ -671,10 +717,14 @@ public sealed class ResourceInspectionService
             {
                 child.Kind = leafKind;
                 child.DebugMetadata = debugMetadata;
+                if (leafPath is not null)
+                {
+                    child.Path = leafPath;
+                }
                 return;
             }
 
-            child.AddPath(parts, index + 1, leafKind, debugMetadata);
+            child.AddPath(parts, index + 1, leafKind, debugMetadata, leafPath);
         }
 
         public bool HasChildren(string[] parts)

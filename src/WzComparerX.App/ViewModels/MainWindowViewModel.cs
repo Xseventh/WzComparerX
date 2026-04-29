@@ -13,6 +13,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ResourceCanvasImageService canvasImageService;
     private readonly Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel> canvasPreviewFactory;
     private int canvasPreviewRequestId;
+    private int imageContentRequestId;
+    private ResourceImageSelectorTarget? currentImageContentTarget;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LoadCommand))]
@@ -41,7 +43,12 @@ public partial class MainWindowViewModel : ViewModelBase
     private string statusMessage = "Ready";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelection))]
     private ResourceInspectionNodeViewModel? selectedNode;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelection))]
+    private ResourceInspectionNodeViewModel? selectedImageContentNode;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(InspectImageCommand))]
@@ -54,6 +61,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private string canvasPreviewStatus = "Select a Canvas node to preview.";
+
+    [ObservableProperty]
+    private string imageContentStatus = "Select an IMG resource.";
 
     public MainWindowViewModel()
         : this(new ResourceInspectionService())
@@ -79,6 +89,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<ResourceInspectionNodeViewModel> RootNodes { get; } = [];
 
+    public ObservableCollection<ResourceInspectionNodeViewModel> ImageContentNodes { get; } = [];
+
     public ObservableCollection<ResourceMetadataItemViewModel> DocumentMetadata { get; } = [];
 
     public ObservableCollection<ResourceMetadataItemViewModel> SelectedMetadata { get; } = [];
@@ -87,11 +99,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ObservableCollection<ResourceActivityLogItemViewModel> ActivityLog { get; } = [];
 
-    public bool HasSelection => SelectedNode is not null;
+    public bool HasSelection => SelectedNode is not null || SelectedImageContentNode is not null;
 
     public bool HasDiagnostics => SelectedDiagnostics.Count > 0;
 
     public bool HasCanvasPreview => CanvasPreview is not null;
+
+    public bool HasImageContent => ImageContentNodes.Count > 0;
 
     public async Task OpenPathAsync(string path)
     {
@@ -112,13 +126,6 @@ public partial class MainWindowViewModel : ViewModelBase
         if (CanOpenSelectedPackageNode() && SelectedNode?.Path is not null)
         {
             await OpenPathAsync(SelectedNode.Path);
-            return;
-        }
-
-        if (CanOpenCurrentPackage())
-        {
-            SelectorText = string.Empty;
-            await LoadAsync();
         }
     }
 
@@ -155,6 +162,7 @@ public partial class MainWindowViewModel : ViewModelBase
             if (Directory.Exists(path))
             {
                 SelectorText = string.Empty;
+                ClearImageContent("Select an IMG resource.");
                 var folderDocument = await folderInspectionService.InspectAsync(path);
                 ApplyDocument(folderDocument);
                 StatusMessage = $"Loaded folder: {Path.GetFileName(Path.TrimEndingDirectorySeparator(folderDocument.SourcePath))}";
@@ -167,31 +175,39 @@ public partial class MainWindowViewModel : ViewModelBase
                 return;
             }
 
-            var imageTarget = ResourceImageSelector.Resolve(path, SelectorText);
+            var imageTarget = !string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase)
+                ? ResourceImageSelector.Resolve(path, SelectorText)
+                : null;
             if (imageTarget is not null && !PathsEqual(imageTarget.PackagePath, path))
             {
                 path = imageTarget.PackagePath;
                 PathText = path;
             }
 
-            var selector = imageTarget?.Selector;
-            if (!string.Equals(selector, NormalizeOptional(SelectorText), StringComparison.Ordinal))
+            if (imageTarget is not null &&
+                !string.Equals(imageTarget.Selector, NormalizeOptional(SelectorText), StringComparison.Ordinal))
             {
-                SelectorText = selector ?? string.Empty;
+                SelectorText = imageTarget.Selector;
             }
 
             var document = await inspectionService.InspectAsync(
                 path,
-                selector,
+                selector: null,
                 options);
 
             ApplyDocument(document);
             StatusMessage = $"Loaded {document.Format}: {Path.GetFileName(document.SourcePath)}";
             AddActivity("success", StatusMessage);
+
+            if (imageTarget is not null)
+            {
+                await LoadImageContentAsync(imageTarget, updateSelector: true);
+            }
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             RootNodes.Clear();
+            ClearImageContent("Select an IMG resource.");
             DocumentMetadata.Clear();
             SelectedNode = null;
             CurrentFormat = string.Empty;
@@ -220,9 +236,8 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        PathText = target.PackagePath;
         SelectorText = target.Selector;
-        await LoadAsync();
+        await LoadImageContentAsync(target, updateSelector: true);
     }
 
     private bool CanLoad()
@@ -244,8 +259,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return false;
         }
 
-        var target = ResolveSelectedImageTarget();
-        return target is not null && !IsCurrentImageTarget(target);
+        return ResolveSelectedImageTarget() is not null;
     }
 
     private bool CanInspectManualSelector()
@@ -260,21 +274,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var target = ResolveManualImageTarget();
         return target is not null &&
-            !IsCurrentImageTarget(target) &&
             !string.Equals(Path.GetExtension(PathText.Trim()), ".json", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private bool IsCurrentImageTarget(ResourceImageSelectorTarget target)
-    {
-        return RootNodes.Count == 1 &&
-            RootNodes[0].Kind == "image" &&
-            string.Equals(RootNodes[0].Name, target.Selector, StringComparison.Ordinal) &&
-            PathsEqual(PathText.Trim(), target.PackagePath);
     }
 
     private bool CanOpenPackage()
     {
-        return CanOpenSelectedPackageNode() || CanOpenCurrentPackage();
+        return CanOpenSelectedPackageNode();
     }
 
     private bool CanOpenSelectedPackageNode()
@@ -284,17 +289,6 @@ public partial class MainWindowViewModel : ViewModelBase
             !string.IsNullOrWhiteSpace(SelectedNode.Path) &&
             File.Exists(SelectedNode.Path) &&
             !PathsEqual(SelectedNode.Path, PathText);
-    }
-
-    private bool CanOpenCurrentPackage()
-    {
-        return !IsBusy &&
-            RootNodes.Count == 1 &&
-            RootNodes[0].Kind == "image" &&
-            !string.IsNullOrWhiteSpace(SelectorText) &&
-            !string.IsNullOrWhiteSpace(PathText) &&
-            !Directory.Exists(PathText.Trim()) &&
-            !string.Equals(Path.GetExtension(PathText.Trim()), ".json", StringComparison.OrdinalIgnoreCase);
     }
 
     private bool CanActivateSelectedNode()
@@ -307,20 +301,114 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSelection));
         SetSelectedMetadata(value);
         SetSelectedDiagnostics(value);
-        QueueCanvasPreview(value);
+        QueueImageContentInspection(value);
         InspectImageCommand.NotifyCanExecuteChanged();
         OpenPackageCommand.NotifyCanExecuteChanged();
         ActivateSelectedNodeCommand.NotifyCanExecuteChanged();
     }
 
+    partial void OnSelectedImageContentNodeChanged(ResourceInspectionNodeViewModel? value)
+    {
+        OnPropertyChanged(nameof(HasSelection));
+        SetSelectedMetadata(value);
+        SetSelectedDiagnostics(value);
+        QueueCanvasPreview(value);
+    }
+
     private void ApplyDocument(ResourceInspectionDocument document)
     {
+        ClearImageContent("Select an IMG resource.");
         ClearCanvasPreview("Select a Canvas node to preview.");
         RootNodes.Clear();
         RootNodes.Add(ResourceInspectionNodeViewModel.FromNode(document.Root));
         SetDocumentMetadata(document);
         SelectedNode = RootNodes[0];
         CurrentFormat = document.Format;
+    }
+
+    private void QueueImageContentInspection(ResourceInspectionNodeViewModel? node)
+    {
+        if (node?.Kind != "image")
+        {
+            return;
+        }
+
+        var target = ResolveSelectedImageTarget();
+        if (target is null ||
+            currentImageContentTarget is not null &&
+            PathsEqual(currentImageContentTarget.PackagePath, target.PackagePath) &&
+            string.Equals(currentImageContentTarget.Selector, target.Selector, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var requestId = Interlocked.Increment(ref imageContentRequestId);
+        ImageContentStatus = $"Loading IMG: {target.Selector}";
+        _ = LoadImageContentAsync(target, updateSelector: false, requestId);
+    }
+
+    private Task LoadImageContentAsync(ResourceImageSelectorTarget target, bool updateSelector)
+    {
+        return LoadImageContentAsync(target, updateSelector, Interlocked.Increment(ref imageContentRequestId));
+    }
+
+    private async Task LoadImageContentAsync(
+        ResourceImageSelectorTarget target,
+        bool updateSelector,
+        int requestId)
+    {
+        if (!TryCreateInspectionOptions(out var options))
+        {
+            return;
+        }
+
+        try
+        {
+            ImageContentStatus = $"Loading IMG: {target.Selector}";
+            var document = await inspectionService.InspectAsync(
+                target.PackagePath,
+                target.Selector,
+                options);
+            if (requestId != imageContentRequestId)
+            {
+                return;
+            }
+
+            currentImageContentTarget = target;
+            ImageContentNodes.Clear();
+            ImageContentNodes.Add(ResourceInspectionNodeViewModel.FromNode(document.Root));
+            OnPropertyChanged(nameof(HasImageContent));
+            SelectedImageContentNode = ImageContentNodes[0];
+            if (updateSelector)
+            {
+                SelectorText = target.Selector;
+            }
+
+            ImageContentStatus = $"Loaded IMG: {target.Selector}";
+            AddActivity("success", ImageContentStatus);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException)
+        {
+            if (requestId != imageContentRequestId)
+            {
+                return;
+            }
+
+            ClearImageContent("Select an IMG resource.");
+            ImageContentStatus = ex.Message;
+            AddActivity("error", ImageContentStatus);
+        }
+    }
+
+    private void ClearImageContent(string status)
+    {
+        Interlocked.Increment(ref imageContentRequestId);
+        currentImageContentTarget = null;
+        ImageContentNodes.Clear();
+        SelectedImageContentNode = null;
+        ImageContentStatus = status;
+        OnPropertyChanged(nameof(HasImageContent));
+        ClearCanvasPreview("Select a Canvas node to preview.");
     }
 
     private void AddActivity(string kind, string message)
@@ -513,19 +601,37 @@ public partial class MainWindowViewModel : ViewModelBase
     private static bool IsCanvasPreviewNode(ResourceInspectionNodeViewModel? node)
     {
         return node is not null &&
-            (node.Kind == "image" || node.Kind == "canvas");
+            (node.Kind == "canvas" ||
+             IsRootCanvasImageNode(node) ||
+             IsCanvasLinkNode(node));
     }
 
     private static string? GetCanvasPreviewValueSelector(ResourceInspectionNodeViewModel node)
     {
-        return node.Kind == "canvas" ? node.Path : null;
+        return node.Kind == "canvas" || IsCanvasLinkNode(node) ? node.Path : null;
     }
 
     private static string GetCanvasPreviewIdleStatus(ResourceInspectionNodeViewModel? node)
     {
-        return node?.Kind == "image"
-            ? "Select an IMG to preview its first Canvas value."
+        return IsCanvasPreviewNode(node)
+            ? "Select a Canvas node or link to preview."
             : "Select a Canvas node to preview.";
+    }
+
+    private static bool IsRootCanvasImageNode(ResourceInspectionNodeViewModel node)
+    {
+        return node.Kind == "image" &&
+            node.DebugMetadata.Any(item =>
+                item.Name == "valueType" &&
+                string.Equals(item.Value, "canvas", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsCanvasLinkNode(ResourceInspectionNodeViewModel node)
+    {
+        return node.Kind == "string" &&
+            (string.Equals(node.Name, "source", StringComparison.Ordinal) ||
+             string.Equals(node.Name, "_inlink", StringComparison.Ordinal) ||
+             string.Equals(node.Name, "_outlink", StringComparison.Ordinal));
     }
 
     private static ResourceCanvasPreviewViewModel CreateCanvasPreview(ResourceCanvasImageDocument document)
@@ -547,14 +653,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private ResourceImageSelectorTarget? ResolveCanvasPreviewImageTarget(ResourceInspectionNodeViewModel? node)
     {
-        return node?.Kind == "image"
-            ? ResourceImageSelector.Resolve(PathText.Trim(), node.Path ?? node.Name)
-            : ResolveManualImageTarget();
+        return node is not null ? currentImageContentTarget : null;
     }
 
     private bool IsCurrentCanvasPreviewRequest(ResourceInspectionNodeViewModel node, int requestId)
     {
-        return requestId == canvasPreviewRequestId && ReferenceEquals(node, SelectedNode);
+        return requestId == canvasPreviewRequestId && ReferenceEquals(node, SelectedImageContentNode);
     }
 
     private void ReplaceCanvasPreview(ResourceCanvasPreviewViewModel? preview)

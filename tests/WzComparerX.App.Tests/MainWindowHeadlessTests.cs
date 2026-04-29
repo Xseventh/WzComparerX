@@ -29,6 +29,7 @@ public class MainWindowHeadlessTests
 
             Assert.Same(viewModel, window.DataContext);
             Assert.NotNull(FindControl<TreeView>(window));
+            Assert.NotNull(window.FindControl<TreeView>("ImageContentTree"));
             Assert.NotNull(FindTab(window, "Selection"));
             Assert.NotNull(FindTab(window, "Diagnostics"));
             Assert.NotNull(FindTab(window, "Preview"));
@@ -289,10 +290,11 @@ public class MainWindowHeadlessTests
 
                 Assert.Equal("Canvas.img", selectorTextBox?.Text);
                 AssertStatusText(window, $"Loaded pkg1: {Path.GetFileName(packagePath)}");
-                Assert.Equal("image", Assert.Single(viewModel.RootNodes).Kind);
-                Assert.Contains(viewModel.DocumentMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
-                AssertButtonEnabled(window, "OpenPackageButton", expected: true);
-                AssertButtonEnabled(window, "InspectImageButton", expected: false);
+                Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
+                Assert.Equal("image", Assert.Single(viewModel.ImageContentNodes).Kind);
+                Assert.Contains(viewModel.SelectedMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
+                AssertButtonEnabled(window, "OpenPackageButton", expected: false);
+                AssertButtonEnabled(window, "InspectImageButton", expected: true);
                 AssertPngCanBeSaved(frame);
             }
             finally
@@ -353,8 +355,8 @@ public class MainWindowHeadlessTests
             await viewModel.OpenPathAsync(packagePath);
             viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
             await viewModel.InspectImageAsync();
-            var canvas = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
-            viewModel.SelectedNode = canvas;
+            var canvas = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children);
+            viewModel.SelectedImageContentNode = canvas;
             await WaitForCanvasPreviewAsync(viewModel);
             var window = CreateWindow(viewModel);
 
@@ -448,6 +450,7 @@ public class MainWindowHeadlessTests
         AssertControlInsideViewport(window, "OpenPackageButton");
         AssertControlInsideViewport(window, "InspectImageButton");
         AssertControlInsideViewport(window, "ResourcesTree");
+        AssertControlInsideViewport(window, "ImageContentTree");
         AssertControlInsideViewport(window, "DetailsTabControl");
         AssertControlInsideViewport(window, "ActivityLogPanel");
     }

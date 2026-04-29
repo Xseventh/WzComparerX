@@ -145,7 +145,7 @@ public class ResourceDocumentServiceTests
 
             var effect = Assert.Single(inspection.Root.Children, child => child.Name == "Effect");
             Assert.Equal("directory", effect.Kind);
-            Assert.Equal(2, effect.Children.Count);
+            Assert.Single(effect.Children);
 
             var primaryPackage = Assert.Single(effect.Children, child => child.Name == "Effect.wz");
             Assert.Equal("package", primaryPackage.Kind);
@@ -155,11 +155,9 @@ public class ResourceDocumentServiceTests
             Assert.Equal("package", canvasPackage.Kind);
             Assert.Equal(canvasPackagePath, canvasPackage.Path);
             Assert.Contains(canvasPackage.Children, child => child.Name == "Canvas.img" && child.Kind == "image");
-
-            var shardPackage = Assert.Single(effect.Children, child => child.Name == "Effect_000.wz");
-            Assert.Equal("package", shardPackage.Kind);
-            Assert.Equal(effectShardPath, shardPackage.Path);
-            Assert.Contains(shardPackage.Children, child => child.Name == "BasicEff.img" && child.Kind == "image");
+            var shardImage = Assert.Single(primaryPackage.Children, child => child.Name == "BasicEff.img");
+            Assert.Equal("image", shardImage.Kind);
+            Assert.Equal($"{effectShardPath}/BasicEff.img", shardImage.Path);
         }
         finally
         {
@@ -265,6 +263,10 @@ public class ResourceDocumentServiceTests
 
             var map = Assert.Single(inspection.Root.Children, child => child.Name == "Map");
             Assert.Empty(map.Children);
+
+            var field = Assert.Single(inspection.Root.Children, child => child.Name == "Field.img");
+            Assert.Equal("image", field.Kind);
+            Assert.Equal($"{shardPath}/Field.img", field.Path);
         }
         finally
         {
@@ -296,6 +298,91 @@ public class ResourceDocumentServiceTests
 
             var back = Assert.Single(inspection.Root.Children, child => child.Name == "Back");
             Assert.Empty(back.Children);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDirectory_MergesNumberedShardsFromIniIntoEntryPackage()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-package-group-ini-");
+        var mapDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map1"));
+        var entryPath = Path.Combine(mapDirectory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(mapDirectory.FullName, "Map1_000.wz");
+        await File.WriteAllBytesAsync(entryPath, CreatePkg1DirectoryPackage([0x00]));
+        await File.WriteAllBytesAsync(shardPath, CreatePkg1DirectoryPackage(CreateImageDirectory("100000000.img")));
+        await File.WriteAllTextAsync(Path.Combine(mapDirectory.FullName, "Map1.ini"), "LastWzIndex|0");
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                entryPath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 1,
+                    IncludeDebugMetadata: true));
+
+            var image = Assert.Single(inspection.Root.Children, child => child.Name == "100000000.img");
+            Assert.Equal("image", image.Kind);
+            Assert.Equal($"{shardPath}/100000000.img", image.Path);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "packageGroupCount" && Equals(item.Value, 2));
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDirectory_MergedImageNodeTargetCanInspectShardImage()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-package-group-target-");
+        var mapDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map1"));
+        var entryPath = Path.Combine(mapDirectory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(mapDirectory.FullName, "Map1_000.wz");
+        var imageBytes = CreatePropertyImage(CreateObjectProperty(
+            "icon",
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x00,
+                1,
+                1,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(3),
+                0x00,
+                0x78,
+                0x9c)));
+        await File.WriteAllBytesAsync(entryPath, CreatePkg1DirectoryPackage([0x00]));
+        await File.WriteAllBytesAsync(shardPath, CreatePkg1ImagePackage("Canvas.img", imageBytes));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var directoryInspection = await service.InspectAsync(
+                entryPath,
+                selector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+            var image = Assert.Single(directoryInspection.Root.Children, child => child.Name == "Canvas.img");
+            Assert.Equal($"{shardPath}/Canvas.img", image.Path);
+
+            var imageInspection = await service.InspectAsync(
+                shardPath,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
+
+            Assert.Equal("Canvas.img", imageInspection.Root.Name);
+            Assert.Contains(imageInspection.Root.Children, child => child.Name == "icon" && child.Kind == "canvas");
         }
         finally
         {
@@ -470,6 +557,62 @@ public class ResourceDocumentServiceTests
         finally
         {
             File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ResolvesOutlinkCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var directory = Directory.CreateTempSubdirectory("wcx-canvas-outlink-");
+        var sourceDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "CanvasSource"));
+        var proxyDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "Proxy"));
+        var sourcePath = Path.Combine(sourceDirectory.FullName, "CanvasSource.wz");
+        var proxyPath = Path.Combine(proxyDirectory.FullName, "Proxy.wz");
+        await File.WriteAllBytesAsync(
+            sourcePath,
+            CreatePkg1ImagePackage(
+                "Linked.img",
+                CreatePropertyImage(CreateObjectProperty("icon", CreateObjectValue(
+                    "Canvas",
+                    0x00,
+                    0x00,
+                    1,
+                    1,
+                    2,
+                    0x00,
+                    1,
+                    0,
+                    (byte)0x00,
+                    (byte)0x00,
+                    BitConverter.GetBytes(CreateDirectZlibPayload(pixels).Length),
+                    CreateDirectZlibPayload(pixels))))));
+        await File.WriteAllBytesAsync(
+            proxyPath,
+            CreatePkg1ImagePackage(
+                "Proxy.img",
+                CreatePropertyImage(CreateLinkedCanvasProperty(
+                    "proxy",
+                    "_outlink",
+                    "Map/CanvasSource/Linked.img/icon"))));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                proxyPath,
+                "Proxy.img",
+                "proxy/_outlink",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(sourcePath, document.SourcePath);
+            Assert.Equal("Linked.img", document.Selector);
+            Assert.Equal("icon", document.ValuePath);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
         }
     }
 
@@ -660,6 +803,13 @@ public class ResourceDocumentServiceTests
         return [.. header, .. encryptedVersion, .. directoryData];
     }
 
+    private static byte[] CreatePkg1ImagePackage(string imageName, byte[] imageBytes)
+    {
+        var directoryData = CreateDirectoryDataForImage(imageName, imageBytes.Length - 4);
+        var header = CreateHeader("PKG1", string.Empty, dataSize: directoryData.Length + imageBytes.Length);
+        return [.. header, .. directoryData, .. imageBytes];
+    }
+
     private static uint CreateHashOffset(uint hashOffsetPosition, uint desiredOffset)
     {
         const uint headerSize = 16;
@@ -707,6 +857,34 @@ public class ResourceDocumentServiceTests
             (byte)0x00,
             BitConverter.GetBytes(payload.Length),
             payload);
+    }
+
+    private static byte[] CreateLinkedCanvasProperty(string name, string linkName, string linkValue)
+    {
+        byte[] pixels = [0x00, 0x00, 0x00, 0x00];
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString(linkName),
+                0x08,
+                CreateImageString(linkValue),
+                1,
+                1,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload));
     }
 
     private static byte[] CreateDirectZlibPayload(byte[] pixels)

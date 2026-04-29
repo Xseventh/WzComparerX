@@ -133,26 +133,28 @@ Tasks:
 - Open file/folder command. Started with one `Browse` entry containing
   WC-aligned `Open Wz...` and folder picker choices. `Load` automatically
   handles file paths or folder paths. Folder inspection lists discovered WZ
-  packages, and selected packages can be opened from the tree. After IMG
-  inspection, `Open Package` returns to the current package directory.
+  packages, and selected packages can be opened from the tree.
 - Node tree view. Started with a path-based load command bound to Core
-  inspection; selected image nodes can be loaded through the same inspect path,
+  inspection; selected image nodes are extracted into a separate IMG Content
+  tree through the same inspect path,
   and double-click activation opens package/image nodes through ViewModel
-  commands. Redundant activation of the already-open package or already-selected
-  IMG is suppressed at the command-state layer. Empty split-package stubs now
-  expand eagerly into linked package nodes when the package workspace layout is
-  present.
+  commands. Redundant activation of the already-open package is suppressed at
+  the command-state layer. Empty split-package stubs now expand eagerly into
+  linked WC-style package group nodes when the package workspace layout is
+  present, and entry packages merge numbered shards from `Name.ini` /
+  `Name_000.wz...` while preserving each image node's original source package.
 - IMG selector workflow. Started with manual selector inspection through the
   same `Inspect Image` action used for selected image nodes. UI inspection now
   follows WC's lazy/full IMG model: only the selected IMG is loaded, and it is
-  inspected as a complete IMG tree.
+  inspected as a complete IMG Content tree without replacing the resource tree.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Canvas preview. Started with lazy Canvas value preview through Core using the
-  current direct-zlib format `1` / `2` decoder slice. Selecting an IMG node
-  previews the first supported Canvas value, while root Canvas IMG objects and
-  nested Canvas property nodes share the same viewer path. Small bitmaps are
-  displayed with capped integer scaling, very large bitmaps shrink in `Auto`,
-  and explicit `1x`, `2x`, `4x`, `8x`, and `16x` controls remain available.
+  current direct-zlib format `1` / `2` decoder slice. Preview now follows IMG
+  Content selection: Canvas nodes preview exact values, root Canvas IMG objects
+  share the same viewer path, and `source` / `_inlink` / `_outlink` strings can
+  resolve linked Canvas values. Small bitmaps are displayed with capped integer
+  scaling, very large bitmaps shrink in `Auto`, and explicit `1x`, `2x`, `4x`,
+  `8x`, and `16x` controls remain available.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless

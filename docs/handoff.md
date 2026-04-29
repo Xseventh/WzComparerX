@@ -200,36 +200,40 @@ M4 started:
   inspection nodes into a UI tree.
 - The UI has an IMG selector field plus an `Inspect Image` action for selected
   image nodes or a manually entered IMG selector. String key input mirrors the
-  current inspect workflow. IMG inspection is lazy and full per selected IMG,
-  matching WC's `TryExtract()` behavior.
+  current inspect workflow. Resources and IMG Content are now separate trees:
+  selecting an image node extracts that single IMG into IMG Content while the
+  package/directory Resources tree stays in place. This matches WC's
+  `Wz_Image.TryExtract()` browsing model without replacing the source tree.
 - The path row has one `Browse` entry with native file and folder picker menu
   choices. The `Load` action automatically handles file paths and folder paths.
   Folder paths scan `.wz` headers into a folder inspection tree; selecting a
-  package node enables `Open Package`. When the current view is an IMG
-  inspection, `Open Package` clears the IMG selector and returns to the current
-  package directory. Opening a new file or package clears the previous IMG
-  selector before loading.
+  package node enables `Open Package`. Opening a new file, folder, or package
+  clears previous IMG Content and Canvas preview state.
 - Double-clicking activatable resource nodes routes through the ViewModel:
   package nodes open their package, and image nodes run the same image
   inspection action as the `Inspect Image` button.
-- Image nodes from linked split packages now resolve through their actual
-  `<package>.wz/<image>.img` target. The UI switches to the linked package path
-  before inspecting the IMG instead of treating the full path as a selector
-  inside the previously opened package.
+- Image nodes from linked or merged split packages now resolve through their
+  actual `<package>.wz/<image>.img` target, so IMG Content can load from the
+  original shard while the current Resources tree remains focused on the entry
+  package.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
-- The UI has a Preview tab for Canvas values. Selecting an image node now
-  lazily inspects that IMG in the background and previews the first Canvas value
-  when supported; selecting a concrete Canvas node previews that exact value.
-  The preview path uses the current narrow direct-zlib format `1` / `2` slice
+- The UI has a Preview tab for Canvas values. Preview follows IMG Content
+  selection: selecting a Canvas node previews that exact value, root Canvas IMG
+  objects use the same path, and `source` / `_inlink` / `_outlink` string nodes
+  resolve to linked Canvas values when the workspace path can be mapped. The
+  preview path uses the current narrow direct-zlib format `1` / `2` slice
   through `ResourceCanvasImageService`. Auto display scale enlarges small
   bitmaps with capped integer scaling and shrinks very large bitmaps
   proportionally, while manual `1x`, `2x`, `4x`, `8x`, and `16x` buttons remain
-  exact. Root Canvas IMG objects use the same path.
+  exact.
 - The UI has a basic activity log for load, inspection, and error events.
-- UI command state now avoids redundant re-opening of the current package and
-  redundant re-inspection of the currently selected or manually entered IMG
-  entry.
+- Core directory inspection now has a WC-style package group layer above the
+  single-file WzLib parser. Opening `Name.wz` detects `Name.ini` and
+  `LastWzIndex`, falls back to contiguous `Name_000.wz...` enumeration when the
+  ini is absent, and merges shard directory entries under the entry package
+  while retaining each shard IMG's original source path.
+- UI command state now avoids redundant re-opening of the current package.
 - App key/depth text parsing is isolated from `MainWindowViewModel`, keeping the
   view model focused on orchestration and visible state.
 - App projection helpers are now split out of `MainWindowViewModel`: selector

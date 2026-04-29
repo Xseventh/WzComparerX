@@ -44,14 +44,14 @@ internal static class WzImageInspectionLoader
         return reader.ReadAsync(path, cancellationToken);
     }
 
-    private static WzDirectoryEntryInspection FindImageEntry(WzDirectoryInspection inspection, string selector)
+    public static WzDirectoryEntryInspection? TryFindImageEntry(WzDirectoryInspection inspection, string selector)
     {
         if (int.TryParse(selector, out var index))
         {
             var indexed = inspection.Entries.FirstOrDefault(entry => entry.Index == index);
             if (indexed is not null)
             {
-                return EnsureImage(indexed, selector);
+                return indexed.Kind == WzDirectoryEntryKind.Image ? indexed : null;
             }
         }
 
@@ -64,16 +64,17 @@ internal static class WzImageInspectionLoader
             return named;
         }
 
-        throw new InvalidDataException($"Image entry not found: {selector}.");
+        return null;
     }
 
-    private static WzDirectoryEntryInspection EnsureImage(WzDirectoryEntryInspection entry, string selector)
+    private static WzDirectoryEntryInspection FindImageEntry(WzDirectoryInspection inspection, string selector)
     {
-        if (entry.Kind != WzDirectoryEntryKind.Image)
+        var entry = TryFindImageEntry(inspection, selector);
+        if (entry is not null)
         {
-            throw new InvalidDataException($"Selected entry is not an image: {selector}.");
+            return entry;
         }
 
-        return entry;
+        throw new InvalidDataException($"Image entry not found: {selector}.");
     }
 }

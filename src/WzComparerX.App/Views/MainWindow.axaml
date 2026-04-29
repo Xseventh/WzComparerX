@@ -70,7 +70,7 @@
 
         <Grid Grid.Row="2" ColumnDefinitions="2*,3*" ColumnSpacing="12">
             <Border Classes="panel">
-                <Grid RowDefinitions="Auto,Auto,*" RowSpacing="8">
+                <Grid RowDefinitions="Auto,Auto,*,Auto,Auto,*" RowSpacing="8">
                     <TextBlock Classes="section-title" Text="Resources"/>
                     <TextBlock Grid.Row="1"
                                x:Name="StatusTextBlock"
@@ -81,6 +81,25 @@
                               ItemsSource="{Binding RootNodes}"
                               SelectedItem="{Binding SelectedNode, Mode=TwoWay}"
                               DoubleTapped="ResourcesTree_OnDoubleTapped">
+                        <TreeView.DataTemplates>
+                            <TreeDataTemplate DataType="vm:ResourceInspectionNodeViewModel"
+                                              ItemsSource="{Binding Children}">
+                                <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis"/>
+                            </TreeDataTemplate>
+                        </TreeView.DataTemplates>
+                    </TreeView>
+                    <TextBlock Grid.Row="3"
+                               Classes="section-title"
+                               Text="IMG Content"
+                               Margin="0,10,0,0"/>
+                    <TextBlock Grid.Row="4"
+                               x:Name="ImageContentStatusTextBlock"
+                               Text="{Binding ImageContentStatus}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TreeView Grid.Row="5"
+                              x:Name="ImageContentTree"
+                              ItemsSource="{Binding ImageContentNodes}"
+                              SelectedItem="{Binding SelectedImageContentNode, Mode=TwoWay}">
                         <TreeView.DataTemplates>
                             <TreeDataTemplate DataType="vm:ResourceInspectionNodeViewModel"
                                               ItemsSource="{Binding Children}">
