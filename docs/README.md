@@ -115,8 +115,10 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - Resources tree 和 IMG Content tree 分离：选中 image node 会按 WC 的
   `TryExtract()` 体验自动提取完整单个 IMG 到 IMG Content tree，Resources
   tree 保持 package / directory 结构。
-- `Inspect Image` 保留为手动 selector / refresh 入口。
-- 双击 package / image node 触发对应 ViewModel 命令。
+- `Load IMG` 只作为手动 selector / refresh 入口；资源树里选中 image
+  node 时会自动加载 IMG Content。
+- 双击 package / image node 触发对应 ViewModel 命令；package open 不再作为
+  主工具栏按钮暴露。
 - Document metadata panel。
 - Selection / Diagnostics panel。
 - Canvas preview tab for the current narrow direct-zlib format `1` / `2` slice,

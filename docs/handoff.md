@@ -20,6 +20,7 @@ codex/wcx-modernization
 Recent commits:
 
 ```text
+ecfd10a Align Avalonia IMG browsing with WC
 1f13770 Document WCX project progress in Chinese
 335835a Eager load split package trees
 1949d1b Match WC split package lookup roots
@@ -198,20 +199,19 @@ M4 started:
 - The Avalonia shell now has a path-based resource loader.
 - The main window view model calls `ResourceInspectionService` and projects Core
   inspection nodes into a UI tree.
-- The UI has an IMG selector field plus an `Inspect Image` action for selected
-  image nodes or a manually entered IMG selector. String key input mirrors the
-  current inspect workflow. Resources and IMG Content are now separate trees:
-  selecting an image node extracts that single IMG into IMG Content while the
-  package/directory Resources tree stays in place. This matches WC's
-  `Wz_Image.TryExtract()` browsing model without replacing the source tree.
+- The UI has an IMG selector field plus a `Load IMG` action for manually entered
+  IMG selectors or refreshes. String key input mirrors the current inspect
+  workflow. Resources and IMG Content are now separate trees: selecting an image
+  node extracts that single IMG into IMG Content while the package/directory
+  Resources tree stays in place. This matches WC's `Wz_Image.TryExtract()`
+  browsing model without replacing the source tree.
 - The path row has one `Browse` entry with native file and folder picker menu
   choices. The `Load` action automatically handles file paths and folder paths.
   Folder paths scan `.wz` headers into a folder inspection tree; selecting a
-  package node enables `Open Package`. Opening a new file, folder, or package
-  clears previous IMG Content and Canvas preview state.
+  package node can still be activated from the tree. Opening a new file, folder,
+  or package clears previous IMG Content and Canvas preview state.
 - Double-clicking activatable resource nodes routes through the ViewModel:
-  package nodes open their package, and image nodes run the same image
-  inspection action as the `Inspect Image` button.
+  package nodes open their package, and image nodes load/refresh IMG Content.
 - Image nodes from linked or merged split packages now resolve through their
   actual `<package>.wz/<image>.img` target, so IMG Content can load from the
   original shard while the current Resources tree remains focused on the entry

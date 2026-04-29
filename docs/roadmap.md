@@ -137,16 +137,16 @@ Tasks:
 - Node tree view. Started with a path-based load command bound to Core
   inspection; selected image nodes are extracted into a separate IMG Content
   tree through the same inspect path,
-  and double-click activation opens package/image nodes through ViewModel
-  commands. Redundant activation of the already-open package is suppressed at
-  the command-state layer. Empty split-package stubs now expand eagerly into
+  and double-click activation opens package nodes or refreshes image content
+  through ViewModel commands. Empty split-package stubs now expand eagerly into
   linked WC-style package group nodes when the package workspace layout is
   present, and entry packages merge numbered shards from `Name.ini` /
   `Name_000.wz...` while preserving each image node's original source package.
-- IMG selector workflow. Started with manual selector inspection through the
-  same `Inspect Image` action used for selected image nodes. UI inspection now
-  follows WC's lazy/full IMG model: only the selected IMG is loaded, and it is
-  inspected as a complete IMG Content tree without replacing the resource tree.
+- IMG selector workflow. The selector row now uses `Load IMG` only for manual
+  selectors or refreshes; selected image nodes auto-load IMG Content. UI
+  inspection follows WC's lazy/full IMG model: only the selected IMG is loaded,
+  and it is inspected as a complete IMG Content tree without replacing the
+  resource tree.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Canvas preview. Started with lazy Canvas value preview through Core using the
   current direct-zlib format `1` / `2` decoder slice. Preview now follows IMG

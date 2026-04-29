@@ -68,7 +68,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task OpenPackageAsync_LoadsPackageFromFolderInspection()
+    public async Task ActivateSelectedNodeAsync_LoadsPackageFromFolderInspection()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-app-folder-");
         var packagePath = Path.Combine(directory.FullName, "Base.wz");
@@ -85,8 +85,8 @@ public class MainWindowViewModelTests
             Assert.Equal("package", package.Kind);
 
             viewModel.SelectedNode = package;
-            Assert.True(viewModel.OpenPackageCommand.CanExecute(null));
-            await viewModel.OpenPackageAsync();
+            Assert.True(viewModel.ActivateSelectedNodeCommand.CanExecute(null));
+            await viewModel.ActivateSelectedNodeAsync();
 
             Assert.Equal(packagePath, viewModel.PathText);
             Assert.Equal(string.Empty, viewModel.SelectorText);
@@ -165,7 +165,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task InspectImageAsync_KeepsPackageResourceTree()
+    public async Task SelectingImageNode_LoadsImageContentAndKeepsManualLoadDisabled()
     {
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
@@ -177,12 +177,12 @@ public class MainWindowViewModelTests
         {
             await viewModel.OpenPathAsync(path);
             viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
-            await viewModel.InspectImageAsync();
+            await WaitForImageContentAsync(viewModel);
 
             Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
             Assert.Equal("image", Assert.Single(viewModel.ImageContentNodes).Kind);
-            Assert.Equal("Canvas.img", viewModel.SelectorText);
-            Assert.False(viewModel.OpenPackageCommand.CanExecute(null));
+            Assert.Equal(string.Empty, viewModel.SelectorText);
+            Assert.False(viewModel.LoadImageCommand.CanExecute(null));
         }
         finally
         {
@@ -191,7 +191,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task InspectImageAsync_LoadsManualSelector()
+    public async Task LoadImageAsync_LoadsManualSelector()
     {
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
         var viewModel = new MainWindowViewModel
@@ -204,8 +204,8 @@ public class MainWindowViewModelTests
             await viewModel.OpenPathAsync(path);
 
             viewModel.SelectorText = "Canvas.img";
-            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
-            await viewModel.InspectImageAsync();
+            Assert.True(viewModel.LoadImageCommand.CanExecute(null));
+            await viewModel.LoadImageAsync();
 
             var inspectedImage = Assert.Single(viewModel.ImageContentNodes);
             Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
@@ -213,7 +213,7 @@ public class MainWindowViewModelTests
             Assert.Equal("Canvas.img", inspectedImage.Name);
             Assert.Equal("Property", inspectedImage.DisplayValue);
             Assert.Contains(viewModel.SelectedMetadata, item => item.Name == "selector" && item.Value == "Canvas.img");
-            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
+            Assert.True(viewModel.LoadImageCommand.CanExecute(null));
         }
         finally
         {
@@ -222,7 +222,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task InspectImageAsync_LoadsSelectedImageFromLinkedPackage()
+    public async Task SelectingImageNode_LoadsSelectedImageFromLinkedPackage()
     {
         var workspace = CreateLinkedCanvasWorkspace();
         var viewModel = new MainWindowViewModel
@@ -240,12 +240,11 @@ public class MainWindowViewModelTests
 
             Assert.Equal($"{workspace.LinkedPath}/Canvas.img", image.Path);
             viewModel.SelectedNode = image;
-            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
-            await viewModel.InspectImageAsync();
+            await WaitForImageContentAsync(viewModel);
 
             var inspectedImage = Assert.Single(viewModel.ImageContentNodes);
             Assert.Equal(workspace.BasePath, viewModel.PathText);
-            Assert.Equal("Canvas.img", viewModel.SelectorText);
+            Assert.Equal(string.Empty, viewModel.SelectorText);
             Assert.Equal("package", Assert.Single(viewModel.RootNodes).Kind);
             Assert.Equal("image", inspectedImage.Kind);
             Assert.Equal("Canvas.img", inspectedImage.Name);
@@ -258,7 +257,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task InspectImageAsync_LoadsManualSelectorWithEmbeddedPackagePath()
+    public async Task LoadImageAsync_LoadsManualSelectorWithEmbeddedPackagePath()
     {
         var workspace = CreateLinkedCanvasWorkspace();
         var viewModel = new MainWindowViewModel
@@ -271,8 +270,8 @@ public class MainWindowViewModelTests
             await viewModel.OpenPathAsync(workspace.BasePath);
 
             viewModel.SelectorText = $"{workspace.LinkedPath}/Canvas.img";
-            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
-            await viewModel.InspectImageAsync();
+            Assert.True(viewModel.LoadImageCommand.CanExecute(null));
+            await viewModel.LoadImageAsync();
 
             var inspectedImage = Assert.Single(viewModel.ImageContentNodes);
             Assert.Equal(workspace.BasePath, viewModel.PathText);
@@ -303,7 +302,10 @@ public class MainWindowViewModelTests
         {
             File.WriteAllBytes(entryPath, AppTestFixtures.CreatePkg1());
             File.Copy(shardFixturePath, shardPath);
-            await File.WriteAllTextAsync(Path.Combine(mapDirectory.FullName, "Map1.ini"), "LastWzIndex|0");
+            await File.WriteAllTextAsync(
+                Path.Combine(mapDirectory.FullName, "Map1.ini"),
+                "LastWzIndex|0",
+                TestContext.Current.CancellationToken);
 
             await viewModel.OpenPathAsync(entryPath);
             var image = Assert.Single(Assert.Single(viewModel.RootNodes).Children, child => child.Name == "Canvas.img");
@@ -456,7 +458,7 @@ public class MainWindowViewModelTests
         {
             await viewModel.OpenPathAsync(path);
             viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
-            await viewModel.InspectImageAsync();
+            await WaitForImageContentAsync(viewModel);
 
             var canvas = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children);
             Assert.Equal("canvas", canvas.Kind);

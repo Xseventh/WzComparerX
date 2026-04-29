@@ -50,22 +50,18 @@
                     Content="Load"/>
         </Grid>
 
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,2*,Auto,120,Auto,Auto" ColumnSpacing="8">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,2*,Auto,120,Auto" ColumnSpacing="8">
             <TextBlock Text="IMG" VerticalAlignment="Center"/>
             <TextBox Grid.Column="1"
                      x:Name="SelectorTextBox"
                      Text="{Binding SelectorText}"
-                     PlaceholderText="Optional image selector"/>
+                     PlaceholderText="Optional IMG selector"/>
             <TextBlock Grid.Column="2" Text="Key" VerticalAlignment="Center"/>
             <TextBox Grid.Column="3" Text="{Binding KeyText}"/>
             <Button Grid.Column="4"
-                    x:Name="OpenPackageButton"
-                    Command="{Binding OpenPackageCommand}"
-                    Content="Open Package"/>
-            <Button Grid.Column="5"
-                    x:Name="InspectImageButton"
-                    Command="{Binding InspectImageCommand}"
-                    Content="Inspect Image"/>
+                    x:Name="LoadImageButton"
+                    Command="{Binding LoadImageCommand}"
+                    Content="Load IMG"/>
         </Grid>
 
         <Grid Grid.Row="2" ColumnDefinitions="2*,3*" ColumnSpacing="12">
