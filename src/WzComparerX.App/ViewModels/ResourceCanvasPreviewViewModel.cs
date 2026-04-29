@@ -5,7 +5,7 @@ namespace WzComparerX.App.ViewModels;
 
 public sealed class ResourceCanvasPreviewViewModel : IDisposable
 {
-    public ResourceCanvasPreviewViewModel(ResourceCanvasImageDocument document, Bitmap bitmap)
+    public ResourceCanvasPreviewViewModel(ResourceCanvasImageDocument document, Bitmap? bitmap)
     {
         SourcePath = document.SourcePath;
         Selector = document.Selector;
@@ -28,7 +28,7 @@ public sealed class ResourceCanvasPreviewViewModel : IDisposable
 
     public int Format { get; }
 
-    public Bitmap Bitmap { get; }
+    public Bitmap? Bitmap { get; }
 
     public string Title => ValuePath is null
         ? $"{Selector} ({Width}x{Height})"
@@ -36,6 +36,6 @@ public sealed class ResourceCanvasPreviewViewModel : IDisposable
 
     public void Dispose()
     {
-        Bitmap.Dispose();
+        Bitmap?.Dispose();
     }
 }

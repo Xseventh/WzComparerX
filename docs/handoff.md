@@ -212,6 +212,10 @@ M4 started:
 - Double-clicking activatable resource nodes routes through the ViewModel:
   package nodes open their package, and image nodes run the same image
   inspection action as the `Inspect Image` button.
+- Image nodes from linked split packages now resolve through their actual
+  `<package>.wz/<image>.img` target. The UI switches to the linked package path
+  before inspecting the IMG instead of treating the full path as a selector
+  inside the previously opened package.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
 - The UI has a Preview tab for Canvas values. Selecting a Canvas node lazily

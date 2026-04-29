@@ -225,10 +225,74 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task InspectImageAsync_LoadsSelectedImageFromLinkedPackage()
+    {
+        var workspace = CreateLinkedCanvasWorkspace();
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(workspace.BasePath);
+            var basePackage = Assert.Single(viewModel.RootNodes);
+            var linkedDirectory = Assert.Single(basePackage.Children, child => child.Name == "Linked");
+            var linkedPackage = Assert.Single(linkedDirectory.Children, child => child.Name == "Linked.wz");
+            var image = Assert.Single(linkedPackage.Children, child => child.Name == "Canvas.img");
+
+            Assert.Equal($"{workspace.LinkedPath}/Canvas.img", image.Path);
+            viewModel.SelectedNode = image;
+            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
+            await viewModel.InspectImageAsync();
+
+            var inspectedImage = Assert.Single(viewModel.RootNodes);
+            Assert.Equal(workspace.LinkedPath, viewModel.PathText);
+            Assert.Equal("Canvas.img", viewModel.SelectorText);
+            Assert.Equal("image", inspectedImage.Kind);
+            Assert.Equal("Canvas.img", inspectedImage.Name);
+            Assert.Equal("Property", inspectedImage.DisplayValue);
+        }
+        finally
+        {
+            workspace.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task InspectImageAsync_LoadsManualSelectorWithEmbeddedPackagePath()
+    {
+        var workspace = CreateLinkedCanvasWorkspace();
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(workspace.BasePath);
+
+            viewModel.SelectorText = $"{workspace.LinkedPath}/Canvas.img";
+            Assert.True(viewModel.InspectImageCommand.CanExecute(null));
+            await viewModel.InspectImageAsync();
+
+            var inspectedImage = Assert.Single(viewModel.RootNodes);
+            Assert.Equal(workspace.LinkedPath, viewModel.PathText);
+            Assert.Equal("Canvas.img", viewModel.SelectorText);
+            Assert.Equal("image", inspectedImage.Kind);
+        }
+        finally
+        {
+            workspace.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task SelectingCanvasNode_LoadsCanvasPreview()
     {
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
-        var viewModel = new MainWindowViewModel
+        var viewModel = new MainWindowViewModel(
+            document => new ResourceCanvasPreviewViewModel(document, bitmap: null))
         {
             KeyText = "none"
         };
@@ -289,6 +353,24 @@ public class MainWindowViewModelTests
         Assert.Equal(expected, ResourceImageSelector.Normalize(selector, packageRoot));
     }
 
+    [Theory]
+    [InlineData("/tmp/Data/Linked/Linked.wz/Canvas.img", "/tmp/Base/Base.wz", "/tmp/Data/Linked/Linked.wz", "Canvas.img")]
+    [InlineData("/tmp/Data/Linked/Linked.wz/Folder/Canvas.img", "/tmp/Base/Base.wz", "/tmp/Data/Linked/Linked.wz", "Folder/Canvas.img")]
+    [InlineData("Base_000.wz/StandardPDD.img", "/tmp/Base/Base_000.wz", "/tmp/Base/Base_000.wz", "StandardPDD.img")]
+    [InlineData("StandardPDD.img", "/tmp/Base/Base_000.wz", "/tmp/Base/Base_000.wz", "StandardPDD.img")]
+    public void ImageSelector_ResolvesPackagePathAndSelector(
+        string selector,
+        string currentPackagePath,
+        string expectedPackagePath,
+        string expectedSelector)
+    {
+        var target = Assert.IsType<ResourceImageSelectorTarget>(
+            ResourceImageSelector.Resolve(currentPackagePath, selector));
+
+        Assert.Equal(expectedPackagePath, target.PackagePath);
+        Assert.Equal(expectedSelector, target.Selector);
+    }
+
     [Fact]
     public void ImageSelector_TreatsBlankSelectorAsDirectoryInspection()
     {
@@ -298,6 +380,48 @@ public class MainWindowViewModelTests
     private static string FixturePath(string name)
     {
         return AppTestFixtures.FixturePath(name);
+    }
+
+    private static LinkedCanvasWorkspace CreateLinkedCanvasWorkspace()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-linked-canvas-");
+        var baseDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Base"));
+        var linkedDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Linked"));
+        var basePath = Path.Combine(baseDirectory.FullName, "Base.wz");
+        var linkedPath = Path.Combine(linkedDirectory.FullName, "Linked.wz");
+        var linkedFixturePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        try
+        {
+            File.WriteAllBytes(basePath, AppTestFixtures.CreatePkg1DirectoryStubPackage("Linked"));
+            File.Copy(linkedFixturePath, linkedPath);
+        }
+        finally
+        {
+            File.Delete(linkedFixturePath);
+        }
+
+        return new LinkedCanvasWorkspace(directory, basePath, linkedPath);
+    }
+
+    private sealed class LinkedCanvasWorkspace : IDisposable
+    {
+        private readonly DirectoryInfo directory;
+
+        public LinkedCanvasWorkspace(DirectoryInfo directory, string basePath, string linkedPath)
+        {
+            this.directory = directory;
+            BasePath = basePath;
+            LinkedPath = linkedPath;
+        }
+
+        public string BasePath { get; }
+
+        public string LinkedPath { get; }
+
+        public void Dispose()
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     private static async Task WaitForCanvasPreviewAsync(MainWindowViewModel viewModel)
@@ -312,6 +436,6 @@ public class MainWindowViewModelTests
             await Task.Delay(20);
         }
 
-        Assert.Fail("Canvas preview was not loaded.");
+        Assert.Fail($"Canvas preview was not loaded. Status: {viewModel.CanvasPreviewStatus}");
     }
 }
