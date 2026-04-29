@@ -131,9 +131,9 @@
         "Diagnostics": [
           {
             "Severity": "info",
-            "Message": "Canvas pixel decoding is not implemented.",
+            "Message": "Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice.",
             "Path": "icon",
-            "Code": "wcx.payload.canvas.pixelsUnsupported",
+            "Code": "wcx.payload.canvas.pixelsPartial",
             "Source": "parser"
           }
         ],

@@ -214,6 +214,9 @@ M4 started:
   inspection action as the `Inspect Image` button.
 - The UI shows document metadata, selected-node metadata, and selected
   diagnostics.
+- The UI has a Preview tab for Canvas values. Selecting a Canvas node lazily
+  decodes and displays the current narrow direct-zlib format `1` / `2` slice through
+  `ResourceCanvasImageService`; root Canvas IMG objects use the same path.
 - The UI has a basic activity log for load, inspection, and error events.
 - UI command state now avoids redundant re-opening of the current package and
   redundant re-inspection of the currently selected or manually entered IMG

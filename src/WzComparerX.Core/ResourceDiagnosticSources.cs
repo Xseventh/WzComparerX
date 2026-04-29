@@ -4,4 +4,5 @@ public static class ResourceDiagnosticSources
 {
     public const string Parser = "parser";
     public const string Export = "export";
+    public const string Viewer = "viewer";
 }

@@ -143,6 +143,27 @@
                                 </ItemsControl>
                             </ScrollViewer>
                         </TabItem>
+                        <TabItem Header="Preview">
+                            <Grid RowDefinitions="Auto,*" RowSpacing="8">
+                                <TextBlock x:Name="CanvasPreviewStatusTextBlock"
+                                           Text="{Binding CanvasPreviewStatus}"
+                                           TextWrapping="Wrap"/>
+                                <Border Grid.Row="1"
+                                        Background="#202020"
+                                        BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                                        BorderThickness="1"
+                                        Padding="8">
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                                  VerticalScrollBarVisibility="Auto">
+                                        <Image x:Name="CanvasPreviewImage"
+                                               Source="{Binding CanvasPreview.Bitmap}"
+                                               Stretch="None"
+                                               HorizontalAlignment="Left"
+                                               VerticalAlignment="Top"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </TabItem>
                     </TabControl>
                 </Border>
 

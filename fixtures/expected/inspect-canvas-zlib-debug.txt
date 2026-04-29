@@ -38,4 +38,4 @@ Canvas.img [image] : Property
       compressionKind: Zlib
       uncompressedDataLength: 8
     diagnostics:
-      info [wcx.payload.canvas.pixelsUnsupported]: Canvas pixel decoding is not implemented. (icon)
+      info [wcx.payload.canvas.pixelsPartial]: Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice. (icon)

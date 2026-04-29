@@ -35,6 +35,33 @@ public class WzImageCanvasPayloadDecoderTests
     }
 
     [Fact]
+    public void Decode_ReturnsFormat1ZlibRawPixels()
+    {
+        byte[] pixels = [0x21, 0xf3];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 1,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(1, bitmap.Width);
+        Assert.Equal(1, bitmap.Height);
+        Assert.Equal(1, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
     public void Decode_RejectsUnsupportedCompression()
     {
         using var stream = new MemoryStream([0x00, 0x01, 0x02]);
@@ -65,19 +92,19 @@ public class WzImageCanvasPayloadDecoderTests
         var canvas = new WzImageCanvasInspection(
             Width: 1,
             Height: 1,
-            Format: 1,
+            Format: 1026,
             Scale: 0,
             Pages: 1,
             Unknown1: 0,
             DataOffset: 0,
             DataLength: payload.Length,
             WzImageCanvasCompressionKind.Zlib,
-            UncompressedDataLength: 2);
+            UncompressedDataLength: pixels.Length);
         var decoder = new WzImageCanvasPayloadDecoder();
 
         var ex = Assert.Throws<NotSupportedException>(() => decoder.Decode(stream, canvas));
 
-        Assert.Contains("format: 1", ex.Message);
+        Assert.Contains("format: 1026", ex.Message);
     }
 
     [Fact]

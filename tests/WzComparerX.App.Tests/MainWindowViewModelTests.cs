@@ -224,6 +224,42 @@ public class MainWindowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task SelectingCanvasNode_LoadsCanvasPreview()
+    {
+        var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            await viewModel.InspectImageAsync();
+
+            var canvas = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            Assert.Equal("canvas", canvas.Kind);
+            viewModel.SelectedNode = canvas;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.True(viewModel.HasCanvasPreview);
+            Assert.NotNull(viewModel.CanvasPreview);
+            Assert.Equal("Canvas.img", viewModel.CanvasPreview.Selector);
+            Assert.Equal("icon", viewModel.CanvasPreview.ValuePath);
+            Assert.Equal(2, viewModel.CanvasPreview.Width);
+            Assert.Equal(1, viewModel.CanvasPreview.Height);
+            Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", viewModel.CanvasPreviewStatus);
+            Assert.Contains(viewModel.ActivityLog, item => item.Title == "success: Loaded Canvas preview: Canvas.img/icon (2x1)");
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            File.Delete(path);
+        }
+    }
+
     [Theory]
     [InlineData("auto", null)]
     [InlineData("", null)]
@@ -262,5 +298,20 @@ public class MainWindowViewModelTests
     private static string FixturePath(string name)
     {
         return AppTestFixtures.FixturePath(name);
+    }
+
+    private static async Task WaitForCanvasPreviewAsync(MainWindowViewModel viewModel)
+    {
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            if (viewModel.HasCanvasPreview)
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Fail("Canvas preview was not loaded.");
     }
 }

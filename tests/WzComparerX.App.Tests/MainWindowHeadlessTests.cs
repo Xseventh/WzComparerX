@@ -31,6 +31,7 @@ public class MainWindowHeadlessTests
             Assert.NotNull(FindControl<TreeView>(window));
             Assert.NotNull(FindTab(window, "Selection"));
             Assert.NotNull(FindTab(window, "Diagnostics"));
+            Assert.NotNull(FindTab(window, "Preview"));
             Assert.NotNull(window.FindControl<Control>("ActivityLogPanel"));
             Assert.NotNull(window.FindControl<ItemsControl>("ActivityLogList"));
         }
@@ -339,6 +340,55 @@ public class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task MainWindow_ShowsCanvasPreviewInHeadless()
+    {
+        var packagePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(packagePath);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            await viewModel.InspectImageAsync();
+            var canvas = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            viewModel.SelectedNode = canvas;
+            await WaitForCanvasPreviewAsync(viewModel);
+            var window = CreateWindow(viewModel);
+
+            try
+            {
+                var tabControl = window.FindControl<TabControl>("DetailsTabControl");
+                Assert.NotNull(tabControl);
+                tabControl.SelectedIndex = 2;
+                using var frame = CaptureFrame(window);
+                var image = window.FindControl<Image>("CanvasPreviewImage");
+                var status = window.FindControl<TextBlock>("CanvasPreviewStatusTextBlock");
+
+                Assert.NotNull(image);
+                Assert.NotNull(image.Source);
+                Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", status?.Text);
+                Assert.True(viewModel.HasCanvasPreview);
+                Assert.Equal(2, viewModel.CanvasPreview?.Width);
+                Assert.Equal(1, viewModel.CanvasPreview?.Height);
+                AssertPngCanBeSaved(frame);
+                SaveScreenshotArtifact(frame, "main-window-canvas-preview-1100x720.png");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            File.Delete(packagePath);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task MainWindow_KeepsPrimaryControlsInsideInitialViewport()
     {
         var viewModel = new MainWindowViewModel
@@ -570,6 +620,21 @@ public class MainWindowHeadlessTests
     private static string FixturePath(string name)
     {
         return AppTestFixtures.FixturePath(name);
+    }
+
+    private static async Task WaitForCanvasPreviewAsync(MainWindowViewModel viewModel)
+    {
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            if (viewModel.HasCanvasPreview)
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Fail("Canvas preview was not loaded.");
     }
 
     private sealed class TestFramebuffer : ILockedFramebuffer

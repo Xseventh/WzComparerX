@@ -252,7 +252,7 @@ public class CliApplicationTests
             Assert.Contains("height: 8", output);
             Assert.Contains("dataLength: 3", output);
             Assert.Contains("compressionKind: Zlib", output);
-            Assert.Contains("Canvas pixel decoding is not implemented.", output);
+            Assert.Contains("Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice.", output);
         }
         finally
         {
@@ -357,7 +357,7 @@ public class CliApplicationTests
             Assert.Equal(3, GetMetadataInt32(icon, "dataLength"));
             Assert.Equal("Zlib", GetMetadataString(icon, "compressionKind"));
             var diagnostic = Assert.Single(icon.GetProperty("Diagnostics").EnumerateArray());
-            Assert.Equal("wcx.payload.canvas.pixelsUnsupported", diagnostic.GetProperty("Code").GetString());
+            Assert.Equal("wcx.payload.canvas.pixelsPartial", diagnostic.GetProperty("Code").GetString());
         }
         finally
         {

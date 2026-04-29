@@ -182,7 +182,8 @@ For each migrated feature, record:
 - Known unsupported cases:
   - Full unbounded IMG property/value parsing is not implemented yet.
   - Text IMG v2 multiline string parsing is not implemented yet.
-  - Canvas pixel decoding is not implemented yet.
+  - Full Canvas pixel decode coverage is not implemented yet; WCX currently has
+    a narrow direct-zlib slice used by export and the basic Avalonia preview.
   - RawData payload decoding is not implemented yet.
   - Canvas#Video payload decoding is not implemented yet.
   - Sound_DX8 audio payload decoding is not implemented yet.

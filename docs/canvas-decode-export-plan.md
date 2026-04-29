@@ -36,7 +36,8 @@ Non-goals for the first loop:
 - Multi-page Canvas payloads.
 - RawData/Video/Sound payload decoding.
 - Full real-client format coverage.
-- UI rendering.
+- Full UI rendering. A later M4 slice may reuse the same decoder for a narrow
+  preview path.
 
 ## Fixture Strategy
 
@@ -90,3 +91,7 @@ is sufficient for M3 only as a parser/export slice. PNG export and broader
 Canvas format coverage are later user-facing image export work. Canvas export
 now supports the explicit value selector described in
 `docs/canvas-export-selector-plan.md`.
+
+M4 note: the basic Avalonia preview reuses the same payload decoder and adds a
+small viewer conversion path for direct-zlib format `1` / `2` Canvas values.
+This does not change the current raw Canvas export contract.

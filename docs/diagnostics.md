@@ -48,7 +48,7 @@ wcx.<source-or-domain>.<area>.<condition>
 
 Current examples:
 
-- `wcx.payload.canvas.pixelsUnsupported`
+- `wcx.payload.canvas.pixelsPartial`
 - `wcx.payload.rawData.unsupported`
 - `wcx.payload.video.unsupported`
 - `wcx.payload.audio.unsupported`
@@ -62,6 +62,9 @@ Current examples:
 - `wcx.export.value.notFound`
 - `wcx.export.value.unsupported`
 - `wcx.export.value.ambiguous`
+- `wcx.viewer.canvas.compressionUnsupported`
+- `wcx.viewer.canvas.formatUnsupported`
+- `wcx.viewer.canvas.decodeFailed`
 
 Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.
@@ -72,9 +75,9 @@ automation. Temporary debug facts belong in debug metadata instead.
 - `warning`: recoverable issue that may produce incomplete output.
 - `error`: request failed or cannot produce the requested output.
 
-Current parser unsupported-payload diagnostics are `info` because inspection
-metadata is still valid. Unsupported export requests are `error` because the
-requested export cannot be produced.
+Current parser payload diagnostics are `info` because inspection metadata is
+still valid even when payload decode coverage is partial. Unsupported export or
+viewer requests are `error` because the requested content cannot be produced.
 
 Diagnostic messages should be stable enough for golden CLI output. Avoid
 including raw exception text in diagnostic messages; add a new structured field
@@ -84,6 +87,8 @@ or debug surface before exposing volatile implementation details.
 
 - `parser`: WZ/IMG inspection, payload metadata, or decode limitations.
 - `export`: export selection, content production, or export-specific status.
+- `viewer`: UI/viewer content production, such as a Canvas preview decode
+  request.
 
 Future UI should treat source as a filter/grouping hint, not as a replacement
 for severity or code.
@@ -102,7 +107,7 @@ The stable text shape is:
 Examples:
 
 ```text
-info [wcx.payload.canvas.pixelsUnsupported]: Canvas pixel decoding is not implemented. (Canvas.img/icon)
+info [wcx.payload.canvas.pixelsPartial]: Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice. (Canvas.img/icon)
 error [wcx.export.unsupported]: Selected image is not a supported Lua IMG: Text.img. (Text.img)
 ```
 

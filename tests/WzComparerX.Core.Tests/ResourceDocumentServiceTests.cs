@@ -343,7 +343,7 @@ public class ResourceDocumentServiceTests
             Assert.Contains("dataOffset:", output);
             Assert.Contains("dataLength: 3", output);
             Assert.Contains("compressionKind: Zlib", output);
-            Assert.Contains("Canvas pixel decoding is not implemented.", output);
+            Assert.Contains("Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice.", output);
         }
         finally
         {
@@ -433,13 +433,97 @@ public class ResourceDocumentServiceTests
     [Fact]
     public void DiagnosticsFactory_ReturnsStablePayloadDiagnostic()
     {
-        var diagnostic = ResourceInspectionDiagnostics.CanvasPixelDecodingUnsupported("icon");
+        var diagnostic = ResourceInspectionDiagnostics.CanvasPixelDecodingPartial("icon");
 
         Assert.Equal(ResourceDiagnosticSeverities.Info, diagnostic.Severity);
-        Assert.Equal("Canvas pixel decoding is not implemented.", diagnostic.Message);
+        Assert.Equal("Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice.", diagnostic.Message);
         Assert.Equal("icon", diagnostic.Path);
-        Assert.Equal(ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported, diagnostic.Code);
+        Assert.Equal(ResourceDiagnosticCodes.CanvasPixelDecodingPartial, diagnostic.Code);
         Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
+    }
+
+    [Fact]
+    public async Task CanvasImageService_LoadsSelectedCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff, 0x40, 0x50, 0x60, 0xff];
+        var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                "icon",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(path, document.SourcePath);
+            Assert.Equal("Canvas.img", document.Selector);
+            Assert.Equal("icon", document.ValuePath);
+            Assert.Equal(2, document.Width);
+            Assert.Equal(1, document.Height);
+            Assert.Equal(2, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(8, document.Stride);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_LoadsRootCanvasPixelsWithoutValueSelector()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(pixels, width: 1));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal("Canvas.img", document.Selector);
+            Assert.Null(document.ValuePath);
+            Assert.Equal(1, document.Width);
+            Assert.Equal(1, document.Height);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ConvertsFormat1CanvasToBgra8888()
+    {
+        byte[] rawPixels = [0x21, 0xf3];
+        byte[] bgraPixels = [0x11, 0x22, 0x33, 0xff];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 1, format: 1));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(1, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 
     [Fact]
@@ -469,6 +553,22 @@ public class ResourceDocumentServiceTests
         }
 
         throw new FileNotFoundException($"Could not locate fixture '{fileName}'.");
+    }
+
+    private static string MaterializeHexFixture(string fileName, string extension)
+    {
+        var hex = new StringBuilder();
+        foreach (var ch in File.ReadAllText(FixturePath(fileName)))
+        {
+            if (Uri.IsHexDigit(ch))
+            {
+                hex.Append(ch);
+            }
+        }
+
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-resource-fixture-{Guid.NewGuid():N}{extension}");
+        File.WriteAllBytes(path, Convert.FromHexString(hex.ToString()));
+        return path;
     }
 
     private static string WriteTemporaryPkg1ImageFile(byte[] imageBytes)
@@ -588,6 +688,37 @@ public class ResourceDocumentServiceTests
         }
 
         return bytes.ToArray();
+    }
+
+    private static byte[] CreateCanvasImage(byte[] pixels, int width, int height = 1, int format = 2)
+    {
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateImage(
+            "Canvas",
+            0x00,
+            0x00,
+            width,
+            height,
+            format,
+            0x00,
+            1,
+            0,
+            (byte)0x00,
+            (byte)0x00,
+            BitConverter.GetBytes(payload.Length),
+            payload);
+    }
+
+    private static byte[] CreateDirectZlibPayload(byte[] pixels)
+    {
+        using var output = new MemoryStream();
+        output.WriteByte(0x00);
+        using (var zlib = new System.IO.Compression.ZLibStream(output, System.IO.Compression.CompressionMode.Compress, leaveOpen: true))
+        {
+            zlib.Write(pixels);
+        }
+
+        return output.ToArray();
     }
 
     private static byte[] CreateObjectProperty(string name, byte[] objectValue)

@@ -585,7 +585,7 @@ public sealed class ResourceInspectionService
     {
         var diagnostic = value switch
         {
-            WzImageCanvasInspection => ResourceInspectionDiagnostics.CanvasPixelDecodingUnsupported(path),
+            WzImageCanvasInspection => ResourceInspectionDiagnostics.CanvasPixelDecodingPartial(path),
             WzImageRawDataInspection => ResourceInspectionDiagnostics.RawDataPayloadDecodingUnsupported(path),
             WzImageVideoInspection => ResourceInspectionDiagnostics.VideoPayloadDecodingUnsupported(path),
             WzImageSoundInspection => ResourceInspectionDiagnostics.AudioPayloadDecodingUnsupported(path),

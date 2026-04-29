@@ -4,13 +4,13 @@ namespace WzComparerX.Core;
 
 public static class ResourceInspectionDiagnostics
 {
-    public static ResourceInspectionDiagnostic CanvasPixelDecodingUnsupported(string? path)
+    public static ResourceInspectionDiagnostic CanvasPixelDecodingPartial(string? path)
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Info,
-            "Canvas pixel decoding is not implemented.",
+            "Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice.",
             path,
-            ResourceDiagnosticCodes.CanvasPixelDecodingUnsupported,
+            ResourceDiagnosticCodes.CanvasPixelDecodingPartial,
             ResourceDiagnosticSources.Parser);
     }
 
@@ -151,6 +151,88 @@ public static class ResourceInspectionDiagnostics
             Combine(selector, valueSelector),
             ResourceDiagnosticCodes.ExportValueAmbiguous,
             ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewCompressionUnsupported(
+        WzImageCanvasCompressionKind compressionKind,
+        string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas preview does not support compression kind {compressionKind}.",
+            selector,
+            ResourceDiagnosticCodes.CanvasPreviewCompressionUnsupported,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewFormatUnsupported(int format, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas preview currently supports formats 1 and 2 only; found format {format}.",
+            selector,
+            ResourceDiagnosticCodes.CanvasPreviewFormatUnsupported,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewScaleUnsupported(int scale, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas preview currently supports unscaled images only; found scale {scale}.",
+            selector,
+            ResourceDiagnosticCodes.CanvasPreviewScaleUnsupported,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewDecodeFailed(string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            "Canvas preview failed to decode payload.",
+            selector,
+            ResourceDiagnosticCodes.CanvasPreviewDecodeFailed,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewValueRequired(string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            "Canvas preview requires selecting a Canvas value.",
+            selector,
+            ResourceDiagnosticCodes.CanvasPreviewValueRequired,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewValueNotFound(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas preview value not found: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.CanvasPreviewValueNotFound,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewValueUnsupported(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Selected preview value is not a Canvas: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.CanvasPreviewValueUnsupported,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic CanvasPreviewValueAmbiguous(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas preview value selector is ambiguous: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.CanvasPreviewValueAmbiguous,
+            ResourceDiagnosticSources.Viewer);
     }
 
     private static string? Combine(string? selector, string? valueSelector)

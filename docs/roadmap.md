@@ -147,6 +147,9 @@ Tasks:
   follows WC's lazy/full IMG model: only the selected IMG is loaded, and it is
   inspected as a complete IMG tree.
 - Property panel. Started with selected-node metadata and diagnostics.
+- Canvas preview. Started with lazy Canvas value preview through Core using the
+  current direct-zlib format `1` / `2` decoder slice. Root Canvas IMG objects and
+  nested Canvas property nodes share the same viewer path.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless

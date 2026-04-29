@@ -116,6 +116,7 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - 双击 package / image node 触发对应 ViewModel 命令。
 - Document metadata panel。
 - Selection / Diagnostics panel。
+- Canvas preview tab for the current narrow direct-zlib format `1` / `2` slice.
 - Activity log panel。
 - 在 IMG inspection 后返回当前 package directory。
 - 对 GMS split-package 布局做 conservative linking，例如：
@@ -134,6 +135,7 @@ M4 的测试体系已拆到 `WzComparerX.App.Tests`：
 
 - 真实本地 GMS UI smoke 记录。
 - 评估是否把 split-package linking 从 `ResourceInspectionService` 拆出单独 Core helper。
+- 扩展 Canvas preview/decode 格式覆盖，或先明确哪些格式进入 M4。
 - 明确 M4 closeout 标准。
 - 收口 UI 浏览器范围，避免提前进入 search、render、compare 等后续里程碑。
 

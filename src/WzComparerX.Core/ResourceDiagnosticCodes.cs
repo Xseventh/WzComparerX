@@ -2,7 +2,7 @@ namespace WzComparerX.Core;
 
 public static class ResourceDiagnosticCodes
 {
-    public const string CanvasPixelDecodingUnsupported = "wcx.payload.canvas.pixelsUnsupported";
+    public const string CanvasPixelDecodingPartial = "wcx.payload.canvas.pixelsPartial";
     public const string RawDataPayloadDecodingUnsupported = "wcx.payload.rawData.unsupported";
     public const string VideoPayloadDecodingUnsupported = "wcx.payload.video.unsupported";
     public const string AudioPayloadDecodingUnsupported = "wcx.payload.audio.unsupported";
@@ -16,4 +16,12 @@ public static class ResourceDiagnosticCodes
     public const string ExportValueNotFound = "wcx.export.value.notFound";
     public const string ExportValueUnsupported = "wcx.export.value.unsupported";
     public const string ExportValueAmbiguous = "wcx.export.value.ambiguous";
+    public const string CanvasPreviewCompressionUnsupported = "wcx.viewer.canvas.compressionUnsupported";
+    public const string CanvasPreviewFormatUnsupported = "wcx.viewer.canvas.formatUnsupported";
+    public const string CanvasPreviewScaleUnsupported = "wcx.viewer.canvas.scaleUnsupported";
+    public const string CanvasPreviewDecodeFailed = "wcx.viewer.canvas.decodeFailed";
+    public const string CanvasPreviewValueRequired = "wcx.viewer.canvas.valueRequired";
+    public const string CanvasPreviewValueNotFound = "wcx.viewer.canvas.valueNotFound";
+    public const string CanvasPreviewValueUnsupported = "wcx.viewer.canvas.valueUnsupported";
+    public const string CanvasPreviewValueAmbiguous = "wcx.viewer.canvas.valueAmbiguous";
 }
