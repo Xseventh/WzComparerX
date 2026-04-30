@@ -124,7 +124,7 @@ Closeout notes:
 
 ## Milestone 4: Basic Avalonia Browser
 
-Status: closeout.
+Status: done.
 
 Goal: UI can browse the same workspace model as CLI.
 
@@ -178,7 +178,19 @@ Exit criteria:
   cleanup are planned immediately after M4 closeout, not during final UI smoke
   stabilization.
 
+Closeout notes:
+
+- M4 establishes a usable Avalonia browser shell over the Core inspection model.
+- Resources tree, IMG Content tree, Canvas Preview, linked Canvas preview, and
+  WC-style package group merge are covered by App tests and local GMS smoke.
+- Direct-zlib Canvas preview formats `1` / `2` are accepted as the M4 image
+  preview slice; broader decode and PNG export stay later.
+- Post-M4 cleanup has started by extracting Canvas Preview workflow logic out of
+  `MainWindowViewModel`.
+
 ## Milestone 5: Compare Foundation
+
+Status: not started.
 
 Goal: restore WC's central comparison value in a cleaner shape.
 

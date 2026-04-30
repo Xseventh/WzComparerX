@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+bb67eff Record M4 GMS UI smoke
 8d5e68d Align inspection defaults with full IMG browsing
 251ddcc Simplify Avalonia IMG controls
 ecfd10a Align Avalonia IMG browsing with WC
@@ -134,14 +135,13 @@ cae2482 Add Avalonia image inspection workflow
 
 ## Current State
 
-Milestones 1, 2, and 3 are complete. The current mainline is Milestone 4 Basic
-Avalonia Browser closeout. M4 should reuse Core inspection/export models and
-must not add parser behavior directly in app view models. The main risk is now
-scope control and smoke coverage, not whether the browser can run. M2 delivered
-real WZ package header detection, PKG1 directory inspection, recursive
-directory entries, string-key handling, IMG object and property metadata,
-Lua/text IMG inspection, and payload metadata for Canvas, RawData, Video, and
-Sound values.
+Milestones 1 through 4 are complete. The current mainline is post-M4 cleanup
+and Milestone 5 Compare Foundation planning. M4 reused Core inspection/export
+models and kept parser behavior out of App view models. The main risk has moved
+from UI viability to keeping the next feature slices narrow. M2 delivered real
+WZ package header detection, PKG1 directory inspection, recursive directory
+entries, string-key handling, IMG object and property metadata, Lua/text IMG
+inspection, and payload metadata for Canvas, RawData, Video, and Sound values.
 
 `inspect` now projects synthetic fixtures, WZ directories, and WZ IMG payloads
 into a generic inspection tree so future UI/export/search work does not depend
@@ -211,7 +211,7 @@ M3 closeout:
 - XML dump, PNG export, broader Canvas decode, audio/video decode, and full PKG2
   directory parsing are later work.
 
-M4 started:
+M4 completed:
 
 - The Avalonia shell now has a path-based resource loader.
 - The main window view model calls `ResourceInspectionService` and projects Core
@@ -274,6 +274,11 @@ M4 started:
   now load eagerly in the WC style; `--depth` only controls IMG/property
   inspection.
 - Richer task/progress handling is still pending.
+- Canvas Preview workflow logic has started moving out of
+  `MainWindowViewModel`: node eligibility, value-selector selection, and Core
+  Canvas image service calls now live in an App workflow helper. The view model
+  still owns visible state, request ordering, diagnostics projection, and
+  activity messages.
 
 Local GMS smoke status:
 
@@ -298,8 +303,8 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Continue Milestone 4: Basic Avalonia
-Browser. Reuse Core inspection/export models, keep parsing out of view models,
+docs/development-guidelines.md first. Continue post-M4 cleanup and Milestone 5
+planning. Reuse Core inspection/export models, keep parsing out of view models,
 add focused UI/view-model tests where practical, run build/test, update
 docs/logs, and commit the work on the current branch.
 ```

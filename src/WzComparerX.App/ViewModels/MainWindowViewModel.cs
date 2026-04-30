@@ -10,7 +10,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ResourceInspectionService inspectionService;
     private readonly ResourceFolderInspectionService folderInspectionService;
-    private readonly ResourceCanvasImageService canvasImageService;
+    private readonly ResourceCanvasPreviewWorkflow canvasPreviewWorkflow;
     private readonly Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel> canvasPreviewFactory;
     private int canvasPreviewRequestId;
     private int imageContentRequestId;
@@ -76,11 +76,12 @@ public partial class MainWindowViewModel : ViewModelBase
         ResourceInspectionService inspectionService,
         ResourceFolderInspectionService? folderInspectionService = null,
         ResourceCanvasImageService? canvasImageService = null,
+        ResourceCanvasPreviewWorkflow? canvasPreviewWorkflow = null,
         Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel>? canvasPreviewFactory = null)
     {
         this.inspectionService = inspectionService;
         this.folderInspectionService = folderInspectionService ?? new ResourceFolderInspectionService();
-        this.canvasImageService = canvasImageService ?? new ResourceCanvasImageService();
+        this.canvasPreviewWorkflow = canvasPreviewWorkflow ?? new ResourceCanvasPreviewWorkflow(canvasImageService);
         this.canvasPreviewFactory = canvasPreviewFactory ?? CreateCanvasPreview;
     }
 
@@ -470,20 +471,24 @@ public partial class MainWindowViewModel : ViewModelBase
     private void QueueCanvasPreview(ResourceInspectionNodeViewModel? node)
     {
         var requestId = Interlocked.Increment(ref canvasPreviewRequestId);
-        ClearCanvasPreview(GetCanvasPreviewIdleStatus(node));
-        if (!CanLoadCanvasPreview(node))
+        ClearCanvasPreview(canvasPreviewWorkflow.GetIdleStatus(node));
+        var target = ResolveCanvasPreviewImageTarget(node);
+        if (!canvasPreviewWorkflow.CanLoad(node, target, IsBusy))
         {
             return;
         }
 
         CanvasPreviewStatus = "Loading Canvas preview...";
-        _ = LoadCanvasPreviewAsync(node!, requestId);
+        _ = LoadCanvasPreviewAsync(node!, target!, requestId);
     }
 
     public Task LoadCanvasPreviewAsync(ResourceInspectionNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);
-        return LoadCanvasPreviewAsync(node, Interlocked.Increment(ref canvasPreviewRequestId));
+        var target = ResolveCanvasPreviewImageTarget(node);
+        return target is null
+            ? Task.CompletedTask
+            : LoadCanvasPreviewAsync(node, target, Interlocked.Increment(ref canvasPreviewRequestId));
     }
 
     [RelayCommand]
@@ -507,9 +512,12 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadCanvasPreviewAsync(ResourceInspectionNodeViewModel node, int requestId)
+    private async Task LoadCanvasPreviewAsync(
+        ResourceInspectionNodeViewModel node,
+        ResourceImageSelectorTarget target,
+        int requestId)
     {
-        if (!CanLoadCanvasPreview(node))
+        if (!canvasPreviewWorkflow.CanLoad(node, target, IsBusy))
         {
             return;
         }
@@ -519,26 +527,9 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        var target = ResolveCanvasPreviewImageTarget(node);
-        if (target is null || string.IsNullOrWhiteSpace(target.Selector))
-        {
-            CanvasPreviewStatus = "Select an inspected IMG before previewing Canvas.";
-            return;
-        }
-
         try
         {
-            var valueSelector = GetCanvasPreviewValueSelector(node);
-            var document = valueSelector is null
-                ? await canvasImageService.LoadFirstAsync(
-                    target.PackagePath,
-                    target.Selector,
-                    options)
-                : await canvasImageService.LoadAsync(
-                    target.PackagePath,
-                    target.Selector,
-                    valueSelector,
-                    options);
+            var document = await canvasPreviewWorkflow.LoadAsync(node, target, options);
             var preview = canvasPreviewFactory(document);
             if (!IsCurrentCanvasPreviewRequest(node, requestId))
             {
@@ -582,52 +573,6 @@ public partial class MainWindowViewModel : ViewModelBase
             CanvasPreviewStatus = ex.Message;
             AddActivity("error", $"Canvas preview failed: {ex.Message}");
         }
-    }
-
-    private bool CanLoadCanvasPreview(ResourceInspectionNodeViewModel? node)
-    {
-        var target = ResolveCanvasPreviewImageTarget(node);
-        return IsCanvasPreviewNode(node) &&
-            !IsBusy &&
-            target is not null &&
-            !string.Equals(Path.GetExtension(target.PackagePath), ".json", StringComparison.OrdinalIgnoreCase) &&
-            File.Exists(target.PackagePath);
-    }
-
-    private static bool IsCanvasPreviewNode(ResourceInspectionNodeViewModel? node)
-    {
-        return node is not null &&
-            (node.Kind == "canvas" ||
-             IsRootCanvasImageNode(node) ||
-             IsCanvasLinkNode(node));
-    }
-
-    private static string? GetCanvasPreviewValueSelector(ResourceInspectionNodeViewModel node)
-    {
-        return node.Kind == "canvas" || IsCanvasLinkNode(node) ? node.Path : null;
-    }
-
-    private static string GetCanvasPreviewIdleStatus(ResourceInspectionNodeViewModel? node)
-    {
-        return IsCanvasPreviewNode(node)
-            ? "Select a Canvas node or link to preview."
-            : "Select a Canvas node to preview.";
-    }
-
-    private static bool IsRootCanvasImageNode(ResourceInspectionNodeViewModel node)
-    {
-        return node.Kind == "image" &&
-            node.DebugMetadata.Any(item =>
-                item.Name == "valueType" &&
-                string.Equals(item.Value, "canvas", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool IsCanvasLinkNode(ResourceInspectionNodeViewModel node)
-    {
-        return node.Kind == "string" &&
-            (string.Equals(node.Name, "source", StringComparison.Ordinal) ||
-             string.Equals(node.Name, "_inlink", StringComparison.Ordinal) ||
-             string.Equals(node.Name, "_outlink", StringComparison.Ordinal));
     }
 
     private static ResourceCanvasPreviewViewModel CreateCanvasPreview(ResourceCanvasImageDocument document)

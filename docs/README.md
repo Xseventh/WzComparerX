@@ -32,7 +32,8 @@ codex/wcx-modernization
 - Milestone 1：Headless Resource Browser，已完成。
 - Milestone 2：First Real WC Migration，已完成。
 - Milestone 3：Export And Inspect，已完成。
-- Milestone 4：Basic Avalonia Browser，进入 closeout，约 90% 以上。
+- Milestone 4：Basic Avalonia Browser，已完成。
+- 当前短线：M4 后架构整理与 Milestone 5 Compare Foundation 规划。
 
 项目整体已经具备：
 
@@ -104,7 +105,7 @@ Diagnostics 规则见：
 
 - `docs/diagnostics.md`
 
-## 当前主线：Milestone 4 Basic Avalonia Browser
+## Milestone 4 Basic Avalonia Browser
 
 M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模型，而不是在 App 层重新实现解析逻辑。
 
@@ -147,14 +148,7 @@ M4 的测试体系已拆到 `WzComparerX.App.Tests`：
 - TreeView selection / pointer click tests。
 - invalid path、folder open、package open、image inspection visible state tests。
 
-当前 M4 主要剩余工作：
-
-- 复核 2026-05-01 本地 GMS UI smoke 结果并完成 M4 closeout 记录。
-- closeout 后评估是否把 split-package linking 从 `ResourceInspectionService`
-  拆出单独 Core helper。
-- 收口 UI 浏览器范围，避免提前进入 search、render、compare 等后续里程碑。
-
-M4 closeout 标准：
+M4 closeout 标准已经满足：
 
 - UI 继续只通过 Core inspection/export/canvas services 访问资源。
 - Resources tree / IMG Content tree / Canvas Preview 三段主流程可用，并有
@@ -176,6 +170,18 @@ M4 closeout 标准：
 - 大目录和大 Canvas auto-scale 路径可用。
 - 截图为本地产物，不提交仓库；结果记录见
   `docs/logs/2026-05-01-m4-gms-ui-smoke.md`。
+
+M4 完成后已经开始低风险架构整理：
+
+- Canvas Preview 的节点识别、value selector 决策和 Core 调用被拆到 App
+  workflow helper，`MainWindowViewModel` 只保留 UI 状态、请求防抖和 activity
+  更新。
+
+后续短线工作：
+
+- 继续按测试保护拆薄 `MainWindowViewModel` 的 IMG Content / selection 编排。
+- 复核 Core package group / split-package linking 边界，必要时提取 helper。
+- 为 Milestone 5 Compare Foundation 设计最小 CLI / Core / fixture 切片。
 
 ## 架构分层
 

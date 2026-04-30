@@ -48,17 +48,17 @@ Build order:
 
 ## Current Next Milestone
 
-Milestone 4: Basic Avalonia Browser closeout.
+Post-M4 cleanup and Milestone 5 planning.
 
 Immediate direction:
 
 - Keep the UI on Core inspection/export services.
 - Do not add parser behavior to App view models.
-- Treat current direct-zlib Canvas preview as enough for M4 unless a concrete
-  blocker appears.
-- Record local GMS UI smoke for package group merge, IMG Content, Canvas
-  preview, and large Canvas auto-scaling.
-- Defer larger ViewModel/Core helper refactors until after M4 closeout.
+- Split `MainWindowViewModel` responsibilities into small App workflow/helpers
+  when the behavior is already covered by tests.
+- Review Core package group / split-package linking boundaries before expanding
+  compare or search workflows.
+- Prepare Milestone 5 Compare Foundation with a narrow CLI/test-first plan.
 
 ## Commands
 
