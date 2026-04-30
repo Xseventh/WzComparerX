@@ -206,6 +206,99 @@ Exit criteria:
 
 - Two fixture trees can be compared deterministically.
 
+## WC Feature Compatibility Backlog
+
+WCX is a successor to WC, but it should not copy every WC feature as-is. The
+feature backlog below separates the capabilities that should be preserved from
+features that need redesign or may be replaced by modern project workflows.
+
+### Features WCX Should Eventually Support
+
+- Core resource browsing:
+  - open WZ packages, standalone IMG files, and folders;
+  - keep WC-style lazy image extraction;
+  - support node details, metadata, diagnostics, history, copy path, and
+    useful context actions.
+- Parser coverage:
+  - complete PKG1 coverage;
+  - full PKG2 directory parsing and image offset/version profiles;
+  - List.wz handling if it remains needed for target client samples;
+  - `.ms` / `.mn` container support if current client data still depends on
+    them;
+  - split-package and Base.wz linking behavior.
+- IMG/resource values:
+  - full scalar/property traversal;
+  - UOL, link, `_inlink`, `_outlink`, and `source` resolution;
+  - Canvas, Sound, RawData, Video, Lua, and text-format IMG coverage.
+- Image and animation workflows:
+  - broader Canvas pixel format decode matrix;
+  - PNG export;
+  - raw payload export;
+  - animation frame extraction;
+  - GIF/APNG/video export after the rendering/export model is stable.
+- Sound and video workflows:
+  - Sound_DX8 payload extraction;
+  - mp3/wav/pcm export;
+  - playback can come later than deterministic export;
+  - Canvas#Video / VPX video decode should be evaluated after image export.
+- Search and linking:
+  - node search by name, value, image node, and full path;
+  - StringLinker indexing for equipment, items, maps, mobs, NPCs, and skills;
+  - search-result navigation back into the resource browser.
+- Compare:
+  - deterministic Core compare model;
+  - CLI compare and JSON report first;
+  - filters and PNG/link-aware comparisons;
+  - HTML/UI report later.
+- Domain projections:
+  - item, gear, skill, recipe, mob, NPC, familiar, damage-skin, set-item, and
+    similar typed models;
+  - tooltip data projection before pixel-perfect tooltip rendering.
+- User-facing export:
+  - metadata, JSON, WC text IMG, Lua, Canvas, PNG, sound, and compare reports;
+  - database/CSV-style export only if there is a concrete downstream workflow.
+- App settings:
+  - string key / encoding choices;
+  - split-package detection options;
+  - export and preview defaults;
+  - persisted recent paths and user preferences.
+
+### Large-Refactor Feature Families
+
+These WC modules are important, but should not be ported directly. When the
+project reaches them, write a dedicated design plan before implementation.
+
+- CharaSim:
+  - requires a clean domain model split from tooltip rendering and WinForms
+    controls;
+  - should start with typed data projection and headless tests before UI.
+- Avatar:
+  - requires a modern composition/rendering model for body parts, actions,
+    emotions, taming, frame layers, and export;
+  - should share rendering/export primitives with other animation workflows.
+- MapRender:
+  - requires a renderer-independent map scene model before any Avalonia or
+    game-loop UI;
+  - map data, resources, particles, lights, minimap, portals, footholds, life
+    objects, and BGM should be migrated in slices.
+
+### Features To Reconsider Or Replace
+
+- Network chat:
+  - likely not core to WCX and should be skipped unless a real user workflow
+    appears.
+- Auto updater:
+  - prefer GitHub releases, package managers, or platform update tooling before
+    rebuilding WC's custom updater.
+- Plugin SDK:
+  - useful long-term, but should wait until Core/App boundaries are stable.
+- Patcher:
+  - keep as a possible separate tool; do not let it block browser, compare,
+    parser, or rendering milestones.
+- Lua console:
+  - keep as optional and later; scripts should use stable Core APIs instead of
+    global UI state.
+
 ## Later Milestones
 
 - Image rendering/export.
