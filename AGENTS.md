@@ -26,9 +26,11 @@ Primary local development branch:
 codex/wcx-modernization
 ```
 
-Do not push to `origin` unless the user explicitly asks and the remote strategy
-has been clarified. `origin` currently points to the original upstream
-repository.
+Do not push to any remote unless the user explicitly asks. The current local
+remote layout is:
+
+- `origin`: `Xseventh/WzComparerX`
+- `upstream`: `Kagamia/WzComparerX`
 
 ## Core Direction
 
@@ -46,20 +48,17 @@ Build order:
 
 ## Current Next Milestone
 
-Milestone 1: Headless Resource Browser.
+Milestone 4: Basic Avalonia Browser closeout.
 
-Immediate tasks:
+Immediate direction:
 
-- Define minimal raw node model in `WzComparerX.WzLib`.
-- Define document/workspace model in `WzComparerX.Core`.
-- Add synthetic fixture under `fixtures/synthetic/`.
-- Implement CLI command:
-
-```bash
-dotnet run --project src/WzComparerX.Cli -- list fixtures/synthetic/basic-tree.json
-```
-
-- Add deterministic tests.
+- Keep the UI on Core inspection/export services.
+- Do not add parser behavior to App view models.
+- Treat current direct-zlib Canvas preview as enough for M4 unless a concrete
+  blocker appears.
+- Record local GMS UI smoke for package group merge, IMG Content, Canvas
+  preview, and large Canvas auto-scaling.
+- Defer larger ViewModel/Core helper refactors until after M4 closeout.
 
 ## Commands
 
@@ -92,4 +91,3 @@ rerun build/test with elevated permissions.
 - Do not commit `bin/`, `obj/`, full client files, or local-only fixture data.
 - Add or update docs when architectural boundaries change.
 - Add short iteration notes under `docs/logs/`.
-

@@ -124,7 +124,7 @@ Closeout notes:
 
 ## Milestone 4: Basic Avalonia Browser
 
-Status: in progress.
+Status: closeout.
 
 Goal: UI can browse the same workspace model as CLI.
 
@@ -167,6 +167,16 @@ Exit criteria:
 
 - UI uses Core services.
 - UI can browse fixture/sample data.
+- Resources tree, IMG Content tree, and Canvas Preview are covered by
+  ViewModel/headless tests.
+- Local GMS smoke records package group merge, selected IMG extraction, Canvas
+  Preview, large directory behavior, and large Canvas auto-scaling.
+- Direct-zlib Canvas preview for formats `1` / `2` is enough for M4 closeout.
+  Broader Canvas decode, PNG export, MapRender, search, and compare remain
+  later milestones.
+- Larger `MainWindowViewModel` workflow splitting and Core package-group helper
+  cleanup are planned immediately after M4 closeout, not during final UI smoke
+  stabilization.
 
 ## Milestone 5: Compare Foundation
 

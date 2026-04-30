@@ -17,10 +17,25 @@ Current development branch:
 codex/wcx-modernization
 ```
 
+Current remote layout:
+
+```text
+origin   Xseventh/WzComparerX
+upstream Kagamia/WzComparerX
+```
+
 Recent commits:
 
 ```text
+8d5e68d Align inspection defaults with full IMG browsing
+251ddcc Simplify Avalonia IMG controls
 ecfd10a Align Avalonia IMG browsing with WC
+9725296 Shrink large Canvas previews in auto mode
+3208f86 Add Canvas preview zoom controls
+7310f1d Preview Canvas on image selection
+5abfc4f Fix linked package image inspection
+70baa8d Add Avalonia Canvas preview
+84c6c0c Align IMG inspection with WC lazy loading
 1f13770 Document WCX project progress in Chinese
 335835a Eager load split package trees
 1949d1b Match WC split package lookup roots
@@ -120,11 +135,13 @@ cae2482 Add Avalonia image inspection workflow
 ## Current State
 
 Milestones 1, 2, and 3 are complete. The current mainline is Milestone 4 Basic
-Avalonia Browser. M4 should reuse Core inspection/export models and must not add
-parser behavior directly in app view models. M2 delivered real WZ package header
-detection, PKG1 directory inspection, recursive directory entries, string-key
-handling, IMG object and property metadata, Lua/text IMG inspection, and payload
-metadata for Canvas, RawData, Video, and Sound values.
+Avalonia Browser closeout. M4 should reuse Core inspection/export models and
+must not add parser behavior directly in app view models. The main risk is now
+scope control and smoke coverage, not whether the browser can run. M2 delivered
+real WZ package header detection, PKG1 directory inspection, recursive
+directory entries, string-key handling, IMG object and property metadata,
+Lua/text IMG inspection, and payload metadata for Canvas, RawData, Video, and
+Sound values.
 
 `inspect` now projects synthetic fixtures, WZ directories, and WZ IMG payloads
 into a generic inspection tree so future UI/export/search work does not depend
@@ -262,6 +279,14 @@ Local GMS smoke status:
 
 - Base, Base_000, UI_000, Sound_000, and WZ2Lua directory-only smokes are
   recorded in the M2 closeout log.
+- M4 real GMS UI smoke is recorded in
+  `docs/logs/2026-05-01-m4-gms-ui-smoke.md`. The local run opened
+  `Map/Map/Map1/Map1.wz`, merged `Map1_000.wz` entries through the package group
+  path, selected `100000000.img`, populated IMG Content, resolved
+  `miniMap/_outlink` to the real Canvas preview, and covered large directory /
+  large Canvas auto-scaling behavior. Screenshots were saved under
+  `/private/tmp/wcx-gms-ui-smoke-2026-05-01/` during the run and are not
+  committed.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.
@@ -281,5 +306,6 @@ docs/logs, and commit the work on the current branch.
 
 ## Caution
 
-`origin` still points to `https://github.com/Kagamia/WzComparerX.git`. Do not
-push to it unless the user explicitly asks and remote ownership is clarified.
+Do not push to any remote unless the user explicitly asks. In the current local
+clone, `origin` points to `Xseventh/WzComparerX` and `upstream` points to
+`Kagamia/WzComparerX`.

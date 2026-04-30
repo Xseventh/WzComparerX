@@ -19,17 +19,20 @@ WCX 是 WzComparerX 的现代化重建项目，目标是成为 WC（WzComparerR2
 codex/wcx-modernization
 ```
 
-除非用户明确要求，不要向 `origin` 推送。`origin` 的远端策略需要单独确认。
+除非用户明确要求，不要向任何远端推送。当前本机远端布局是：
+
+- `origin`：`Xseventh/WzComparerX`
+- `upstream`：`Kagamia/WzComparerX`
 
 ## 当前进度
 
-截至 2026-04-29：
+截至 2026-05-01：
 
 - Milestone 0：项目启动，已完成。
 - Milestone 1：Headless Resource Browser，已完成。
 - Milestone 2：First Real WC Migration，已完成。
 - Milestone 3：Export And Inspect，已完成。
-- Milestone 4：Basic Avalonia Browser，进行中，约 85% 以上。
+- Milestone 4：Basic Avalonia Browser，进入 closeout，约 90% 以上。
 
 项目整体已经具备：
 
@@ -146,11 +149,33 @@ M4 的测试体系已拆到 `WzComparerX.App.Tests`：
 
 当前 M4 主要剩余工作：
 
-- 真实本地 GMS UI smoke 记录。
-- 评估是否把 split-package linking 从 `ResourceInspectionService` 拆出单独 Core helper。
-- 扩展 Canvas preview/decode 格式覆盖，或先明确哪些格式进入 M4。
-- 明确 M4 closeout 标准。
+- 复核 2026-05-01 本地 GMS UI smoke 结果并完成 M4 closeout 记录。
+- closeout 后评估是否把 split-package linking 从 `ResourceInspectionService`
+  拆出单独 Core helper。
 - 收口 UI 浏览器范围，避免提前进入 search、render、compare 等后续里程碑。
+
+M4 closeout 标准：
+
+- UI 继续只通过 Core inspection/export/canvas services 访问资源。
+- Resources tree / IMG Content tree / Canvas Preview 三段主流程可用，并有
+  Avalonia Headless 或 ViewModel 测试覆盖。
+- 本地 GMS smoke 覆盖 package group merge、选中 IMG 自动填充 IMG Content、
+  Canvas Preview、大目录和大 Canvas auto-scaling。
+- 当前 direct-zlib Canvas preview 格式 `1` / `2` 足够作为 M4 closeout；更宽
+  Canvas 格式矩阵、PNG export、MapRender 进入后续里程碑。
+- `MainWindowViewModel` 和 Core package-group/linking 的进一步拆分在 M4
+  closeout 后进行，不在收尾前做大重构。
+
+2026-05-01 的本地 GMS UI smoke 已验证 `Map/Map/Map1/Map1.wz`：
+
+- `Map1.ini` / `Map1_000.wz` package group merge。
+- 选中 `100000000.img` 后 Resources tree 保持 package 结构，IMG Content tree
+  自动填充完整 IMG。
+- `miniMap/canvas` 的 1x1 placeholder 通过 `_outlink` 解析到真实 Canvas 并显示
+  Preview。
+- 大目录和大 Canvas auto-scale 路径可用。
+- 截图为本地产物，不提交仓库；结果记录见
+  `docs/logs/2026-05-01-m4-gms-ui-smoke.md`。
 
 ## 架构分层
 
