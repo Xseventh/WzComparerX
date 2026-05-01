@@ -187,6 +187,9 @@ M4 完成后已经开始低风险架构整理：
 - Core inspection node 现在带有 `ResourceInspectionIdentity`，用于明确 package
   source、image selector 和 IMG 内部 value path，给后续 Compare/Search/export
   提供不依赖 UI 字符串猜测的资源身份地基。
+- IMG 内部 `source`、`_inlink`、`_outlink`、`link` 字符串和 UOL 节点现在会把
+  normalized linked target 写进 Core identity，并在 `inspect --debug` 中暴露
+  `linkKind` / `linkedTarget`。
 
 后续短线工作：
 

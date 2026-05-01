@@ -249,7 +249,8 @@ public sealed class ResourceInspectionService
             new ResourceInspectionIdentity(
                 PackagePath: packagePath,
                 ImageSelector: imageSelector,
-                ValuePath: property.Path));
+                ValuePath: property.Path,
+                LinkedTarget: GetLinkedTarget(property)));
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzDirectoryInspection inspection)
@@ -429,6 +430,8 @@ public sealed class ResourceInspectionService
             new("kind", property.Kind)
         };
         AddOptional(metadata, "childCount", property.ChildCount);
+        AddOptional(metadata, "linkKind", GetLinkKind(property));
+        AddOptional(metadata, "linkedTarget", GetLinkedTarget(property));
         AddValueMetadata(metadata, property.Value);
         return metadata;
     }
@@ -535,6 +538,38 @@ public sealed class ResourceInspectionService
         return diagnostic is null
             ? null
             : [diagnostic];
+    }
+
+    private static string? GetLinkKind(WzImagePropertyInspectionEntry property)
+    {
+        if (property.Kind == "uol")
+        {
+            return "uol";
+        }
+
+        if (property.Kind != "string")
+        {
+            return null;
+        }
+
+        return property.Name switch
+        {
+            "source" or "_inlink" or "_outlink" or "link" => property.Name,
+            _ => null
+        };
+    }
+
+    private static string? GetLinkedTarget(WzImagePropertyInspectionEntry property)
+    {
+        return GetLinkKind(property) is not null && property.Value is string value
+            ? NormalizeLinkTarget(value)
+            : null;
+    }
+
+    private static string? NormalizeLinkTarget(string value)
+    {
+        var normalized = value.Trim().Replace('\\', '/').Trim('/');
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 
     private static void AddOptional(List<ResourceInspectionMetadata> metadata, string name, object? value)

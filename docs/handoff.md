@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+03a9199 Add Core resource inspection identity
 487d82d Add M5 parser coverage matrix
 aba5c63 Replan post-M4 roadmap
 97b584e Split Core split package resolver
@@ -301,8 +302,11 @@ M4 completed:
   path normalization no longer sit directly in the main inspection flow.
 - Core inspection nodes now carry `ResourceInspectionIdentity` with package
   path, image selector, and inside-IMG value path fields. Merged shard image
-  identities point to their true source shard package, while linked target
-  identity is reserved for the next M5 link-resolution slice.
+  identities point to their true source shard package.
+- Link-like IMG values (`source`, `_inlink`, `_outlink`, `link`, and UOL) now
+  populate normalized `Identity.LinkedTarget` and debug `linkKind` /
+  `linkedTarget` metadata. This is representation only; diagnostics for
+  unresolved or resolved external targets are still the next M5 slice.
 
 Local GMS smoke status:
 

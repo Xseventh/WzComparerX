@@ -452,6 +452,48 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDebugImage_IncludesLinkIdentityAndMetadata()
+    {
+        var imageBytes = CreatePropertyImage(
+            CreateLinkedCanvasProperty("proxy", "_outlink", "Map\\CanvasSource\\Linked.img\\icon"),
+            CreateObjectProperty("ref", CreateObjectValue("UOL", 0x00, CreateImageString("..\\info\\source"))));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
+
+            var proxy = Assert.Single(inspection.Root.Children, child => child.Name == "proxy");
+            var outlink = Assert.Single(proxy.Children, child => child.Name == "_outlink");
+            Assert.Equal("string", outlink.Kind);
+            Assert.NotNull(outlink.Identity);
+            Assert.Equal(path, outlink.Identity.PackagePath);
+            Assert.Equal("Canvas.img", outlink.Identity.ImageSelector);
+            Assert.Equal("proxy/_outlink", outlink.Identity.ValuePath);
+            Assert.Equal("Map/CanvasSource/Linked.img/icon", outlink.Identity.LinkedTarget);
+            Assert.Contains("linkKind: _outlink", output);
+            Assert.Contains("linkedTarget: Map/CanvasSource/Linked.img/icon", output);
+
+            var uol = Assert.Single(inspection.Root.Children, child => child.Name == "ref");
+            Assert.Equal("uol", uol.Kind);
+            Assert.NotNull(uol.Identity);
+            Assert.Equal("../info/source", uol.Identity.LinkedTarget);
+            Assert.Contains("linkKind: uol", output);
+            Assert.Contains("linkedTarget: ../info/source", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectNormalImage_DoesNotIncludeDebugMetadata()
     {
         var path = WriteTemporaryPkg1ImageFile(CreatePropertyImage());
@@ -776,7 +818,7 @@ public class ResourceDocumentServiceTests
     {
         var bytes = new List<byte> { 0x01, 0x04 };
         AddWzString(bytes, name);
-        bytes.Add((byte)imageSize);
+        AddCompressedInt32(bytes, imageSize);
         bytes.Add(0x00);
         var hashOffsetPosition = bytes.Count + 16;
         var imageOffset = 16 + bytes.Count + sizeof(uint) + 4;
@@ -1009,6 +1051,18 @@ public class ResourceDocumentServiceTests
                     throw new ArgumentException($"Unsupported payload part type: {part.GetType()}.");
             }
         }
+    }
+
+    private static void AddCompressedInt32(List<byte> bytes, int value)
+    {
+        if (value > sbyte.MinValue && value <= sbyte.MaxValue)
+        {
+            bytes.Add(unchecked((byte)(sbyte)value));
+            return;
+        }
+
+        bytes.Add(0x80);
+        bytes.AddRange(BitConverter.GetBytes(value));
     }
 
     private static void AddImageObjectName(List<byte> bytes, string value)
