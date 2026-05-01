@@ -184,6 +184,9 @@ M4 完成后已经开始低风险架构整理：
   helper，方便后续复用同一套资源详情展示规则。
 - Core split-package linking 的路径解析策略被拆到独立 helper，`ResourceInspectionService`
   继续负责 inspection tree 组合，不直接承载 workspace/package 路径推导细节。
+- Core inspection node 现在带有 `ResourceInspectionIdentity`，用于明确 package
+  source、image selector 和 IMG 内部 value path，给后续 Compare/Search/export
+  提供不依赖 UI 字符串猜测的资源身份地基。
 
 后续短线工作：
 

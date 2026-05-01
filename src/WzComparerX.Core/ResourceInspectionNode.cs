@@ -7,7 +7,8 @@ public sealed record ResourceInspectionNode(
     string? DisplayValue = null,
     IReadOnlyList<ResourceInspectionNode>? Children = null,
     IReadOnlyList<ResourceInspectionMetadata>? DebugMetadata = null,
-    IReadOnlyList<ResourceInspectionDiagnostic>? Diagnostics = null)
+    IReadOnlyList<ResourceInspectionDiagnostic>? Diagnostics = null,
+    ResourceInspectionIdentity? Identity = null)
 {
     public IReadOnlyList<ResourceInspectionNode> Children { get; init; } = Children ?? Array.Empty<ResourceInspectionNode>();
 }

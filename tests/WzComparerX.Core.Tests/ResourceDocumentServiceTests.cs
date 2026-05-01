@@ -330,6 +330,10 @@ public class ResourceDocumentServiceTests
             var image = Assert.Single(inspection.Root.Children, child => child.Name == "100000000.img");
             Assert.Equal("image", image.Kind);
             Assert.Equal($"{shardPath}/100000000.img", image.Path);
+            Assert.NotNull(image.Identity);
+            Assert.Equal(shardPath, image.Identity.PackagePath);
+            Assert.Equal("100000000.img", image.Identity.ImageSelector);
+            Assert.Null(image.Identity.ValuePath);
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "packageGroupCount" && Equals(item.Value, 2));
         }
         finally
@@ -382,6 +386,9 @@ public class ResourceDocumentServiceTests
                 new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
 
             Assert.Equal("Canvas.img", imageInspection.Root.Name);
+            Assert.NotNull(imageInspection.Root.Identity);
+            Assert.Equal(shardPath, imageInspection.Root.Identity.PackagePath);
+            Assert.Equal("Canvas.img", imageInspection.Root.Identity.ImageSelector);
             Assert.Contains(imageInspection.Root.Children, child => child.Name == "icon" && child.Kind == "canvas");
         }
         finally
@@ -431,6 +438,12 @@ public class ResourceDocumentServiceTests
             Assert.Contains("dataLength: 3", output);
             Assert.Contains("compressionKind: Zlib", output);
             Assert.Contains("Canvas pixel decoding is lazy and currently supports a narrow direct-zlib format slice.", output);
+
+            var icon = Assert.Single(inspection.Root.Children, child => child.Name == "icon");
+            Assert.NotNull(icon.Identity);
+            Assert.Equal(path, icon.Identity.PackagePath);
+            Assert.Equal("Canvas.img", icon.Identity.ImageSelector);
+            Assert.Equal("icon", icon.Identity.ValuePath);
         }
         finally
         {
@@ -516,7 +529,10 @@ public class ResourceDocumentServiceTests
             Assert.Contains(metadata.EnumerateArray(), item =>
                 item.GetProperty("Name").GetString() == "stringKey" &&
                 item.GetProperty("Value").GetString() == "none");
-            Assert.True(json.RootElement.GetProperty("Root").TryGetProperty("DebugMetadata", out _));
+            var root = json.RootElement.GetProperty("Root");
+            Assert.True(root.TryGetProperty("DebugMetadata", out _));
+            Assert.Equal(path, root.GetProperty("Identity").GetProperty("PackagePath").GetString());
+            Assert.Equal("Canvas.img", root.GetProperty("Identity").GetProperty("ImageSelector").GetString());
         }
         finally
         {

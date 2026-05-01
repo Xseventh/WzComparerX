@@ -27,6 +27,9 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+487d82d Add M5 parser coverage matrix
+aba5c63 Replan post-M4 roadmap
+97b584e Split Core split package resolver
 c502e80 Split Avalonia details projection
 171b99c Split Avalonia image content workflow
 ca589a9 Close M4 and split Canvas preview workflow
@@ -296,6 +299,10 @@ M4 completed:
   inspection service still composes the resource tree, but Base workspace
   fallback, same-package relative lookup, candidate de-duplication, and ancestor
   path normalization no longer sit directly in the main inspection flow.
+- Core inspection nodes now carry `ResourceInspectionIdentity` with package
+  path, image selector, and inside-IMG value path fields. Merged shard image
+  identities point to their true source shard package, while linked target
+  identity is reserved for the next M5 link-resolution slice.
 
 Local GMS smoke status:
 

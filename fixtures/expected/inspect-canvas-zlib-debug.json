@@ -56,6 +56,10 @@
         "Value": 1
       }
     ],
+    "Identity": {
+      "PackagePath": "<wz>",
+      "ImageSelector": "Canvas.img"
+    },
     "Children": [
       {
         "Name": "icon",
@@ -137,6 +141,11 @@
             "Source": "parser"
           }
         ],
+        "Identity": {
+          "PackagePath": "<wz>",
+          "ImageSelector": "Canvas.img",
+          "ValuePath": "icon"
+        },
         "Children": []
       }
     ]

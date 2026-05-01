@@ -43,9 +43,9 @@ diagnostics contracts, and App consumes Core services.
 | Area | WC reference behavior | WCX current state | Gap | Priority | Validation path |
 | --- | --- | --- | --- | --- | --- |
 | Node path | Tree nodes are navigable by stable WZ-style paths | `ResourceInspectionNode.Path` is present | Define exact semantics for package path, image selector, and value path separately | P0 | Core model tests and CLI JSON golden output |
-| Source package | Split/merged image nodes know original package | Core preserves target paths for merged shard images | Make source package explicit enough for Compare/Search/export consumers | P0 | Core package-group tests |
-| Image selector | Selected IMG can be reloaded without UI path guessing | Implemented through selector/path normalization | Document and test selector behavior across direct package, merged shard, and linked package | P0 | Core/App tests |
-| Value path | Canvas export and preview use explicit property paths | Implemented for Canvas export/preview paths | Promote value path to stable inspection metadata where useful | P0 | Export/App tests |
+| Source package | Split/merged image nodes know original package | Core nodes now carry `Identity.PackagePath`; merged shard image identities point to the source shard | Continue applying identity to later linked targets and diagnostics | P0 | Core package-group tests |
+| Image selector | Selected IMG can be reloaded without UI path guessing | Core image nodes now carry `Identity.ImageSelector` | Document and test selector behavior across more linked package shapes | P0 | Core/App tests |
+| Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath` | Promote linked value targets into `Identity.LinkedTarget` once link resolution moves into Core inspection metadata | P0 | Export/App tests |
 | Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Canvas preview can resolve selected link strings | Add Core-level linked-target metadata and unresolved-link diagnostics | P0 | Core fixtures plus App preview tests |
 | Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases | Add diagnostics for unresolved package links, unsupported link targets, and PKG2 blockers | P0 | Unit tests and CLI golden output |
 
@@ -65,9 +65,9 @@ diagnostics contracts, and App consumes Core services.
 
 ## Immediate M5 Slices
 
-1. Tighten resource identity in Core inspection output: source package, image
-   selector, value path, and linked target should be unambiguous for future
-   Compare/Search consumers.
+1. Continue tightening resource identity in Core inspection output: package
+   path, image selector, and value path are represented; linked target remains
+   the next identity field to populate.
 2. Add stable diagnostics for unresolved split-package and Canvas/link targets.
 3. Choose the first PKG2 directory parsing slice or document the exact blocker.
 4. Add representative real-client smoke notes for Map, UI, Item/Character,

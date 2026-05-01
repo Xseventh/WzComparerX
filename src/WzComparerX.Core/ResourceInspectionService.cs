@@ -156,7 +156,8 @@ public sealed class ResourceInspectionService
             rootName,
             "package",
             rootPath ?? rootName,
-            inspection.Header.Format.ToString().ToLowerInvariant());
+            inspection.Header.Format.ToString().ToLowerInvariant(),
+            new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath));
 
         foreach (var member in group.Members)
         {
@@ -178,7 +179,8 @@ public sealed class ResourceInspectionService
                     0,
                     entry.Kind.ToString().ToLowerInvariant(),
                     options.IncludeDebugMetadata ? BuildDirectoryEntryMetadata(entry, member.IsEntry ? null : member.SourcePath) : null,
-                    leafPath);
+                    leafPath,
+                    BuildDirectoryEntryIdentity(entry, member.SourcePath));
             }
         }
 
@@ -204,7 +206,11 @@ public sealed class ResourceInspectionService
             ? FormatObject(inspection.ObjectValue)
             : inspection.ObjectType;
         var children = inspection.Properties?
-            .Select(property => ProjectImageProperty(property, includeDebugMetadata))
+            .Select(property => ProjectImageProperty(
+                property,
+                inspection.Header.SourcePath,
+                inspection.Selector,
+                includeDebugMetadata))
             .ToArray() ?? Array.Empty<ResourceInspectionNode>();
         var diagnostics = includeDebugMetadata ? BuildValueDiagnostics(inspection.ObjectValue, name) : null;
 
@@ -215,16 +221,21 @@ public sealed class ResourceInspectionService
             displayValue,
             children,
             includeDebugMetadata ? BuildImageRootMetadata(inspection) : null,
-            diagnostics);
+            diagnostics,
+            new ResourceInspectionIdentity(
+                PackagePath: inspection.Header.SourcePath,
+                ImageSelector: inspection.Selector));
     }
 
     private static ResourceInspectionNode ProjectImageProperty(
         WzImagePropertyInspectionEntry property,
+        string packagePath,
+        string imageSelector,
         bool includeDebugMetadata)
     {
         var name = property.Name ?? property.Index.ToString(CultureInfo.InvariantCulture);
         var children = property.Children?
-            .Select(child => ProjectImageProperty(child, includeDebugMetadata))
+            .Select(child => ProjectImageProperty(child, packagePath, imageSelector, includeDebugMetadata))
             .ToArray() ?? Array.Empty<ResourceInspectionNode>();
         var value = property.Value is not null ? FormatObject(property.Value) : null;
         return new ResourceInspectionNode(
@@ -234,7 +245,11 @@ public sealed class ResourceInspectionService
             value,
             children,
             includeDebugMetadata ? BuildImagePropertyMetadata(property) : null,
-            includeDebugMetadata ? BuildValueDiagnostics(property.Value, property.Path) : null);
+            includeDebugMetadata ? BuildValueDiagnostics(property.Value, property.Path) : null,
+            new ResourceInspectionIdentity(
+                PackagePath: packagePath,
+                ImageSelector: imageSelector,
+                ValuePath: property.Path));
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzDirectoryInspection inspection)
@@ -276,6 +291,17 @@ public sealed class ResourceInspectionService
         AddOptional(metadata, "offset", entry.Offset);
         AddOptional(metadata, "sourcePath", sourcePath);
         return metadata;
+    }
+
+    private static ResourceInspectionIdentity BuildDirectoryEntryIdentity(
+        WzDirectoryEntryInspection entry,
+        string packagePath)
+    {
+        return new ResourceInspectionIdentity(
+            PackagePath: packagePath,
+            ImageSelector: entry.Kind == WzDirectoryEntryKind.Image
+                ? entry.Path ?? entry.Name
+                : null);
     }
 
     private static async Task AddSplitPackageLinksAsync(
@@ -553,11 +579,22 @@ public sealed class ResourceInspectionService
         private readonly List<InspectionNodeBuilder> children = [];
 
         public InspectionNodeBuilder(string name, string kind, string? path, string? displayValue = null)
+            : this(name, kind, path, displayValue, identity: null)
+        {
+        }
+
+        public InspectionNodeBuilder(
+            string name,
+            string kind,
+            string? path,
+            string? displayValue,
+            ResourceInspectionIdentity? identity)
         {
             Name = name;
             Kind = kind;
             Path = path;
             DisplayValue = displayValue;
+            Identity = identity;
         }
 
         public string Name { get; }
@@ -570,12 +607,15 @@ public sealed class ResourceInspectionService
 
         public IReadOnlyList<ResourceInspectionMetadata>? DebugMetadata { get; private set; }
 
+        public ResourceInspectionIdentity? Identity { get; private set; }
+
         public void AddPath(
             string[] parts,
             int index,
             string leafKind,
             IReadOnlyList<ResourceInspectionMetadata>? debugMetadata,
-            string? leafPath = null)
+            string? leafPath = null,
+            ResourceInspectionIdentity? identity = null)
         {
             var name = parts[index];
             var child = children.FirstOrDefault(candidate => candidate.Name == name);
@@ -593,6 +633,7 @@ public sealed class ResourceInspectionService
             {
                 child.Kind = leafKind;
                 child.DebugMetadata = debugMetadata;
+                child.Identity = identity;
                 if (leafPath is not null)
                 {
                     child.Path = leafPath;
@@ -600,7 +641,7 @@ public sealed class ResourceInspectionService
                 return;
             }
 
-            child.AddPath(parts, index + 1, leafKind, debugMetadata, leafPath);
+            child.AddPath(parts, index + 1, leafKind, debugMetadata, leafPath, identity);
         }
 
         public bool HasChildren(string[] parts)
@@ -623,7 +664,8 @@ public sealed class ResourceInspectionService
                 Path,
                 DisplayValue,
                 children.Select(child => child.ToNode()).ToArray(),
-                DebugMetadata);
+                DebugMetadata,
+                Identity: Identity);
         }
 
         private InspectionNodeBuilder? Find(string[] parts, int index)
@@ -641,7 +683,8 @@ public sealed class ResourceInspectionService
         {
             var builder = new InspectionNodeBuilder(node.Name, node.Kind, node.Path, node.DisplayValue)
             {
-                DebugMetadata = node.DebugMetadata
+                DebugMetadata = node.DebugMetadata,
+                Identity = node.Identity
             };
             foreach (var child in node.Children)
             {
