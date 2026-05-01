@@ -105,6 +105,7 @@ Canvas 相关设计见：
 Diagnostics 规则见：
 
 - `docs/diagnostics.md`
+- `docs/parser-coverage-matrix.md`
 
 ## Milestone 4 Basic Avalonia Browser
 
@@ -189,7 +190,8 @@ M4 完成后已经开始低风险架构整理：
 - 继续按测试保护拆薄 `MainWindowViewModel` 的 activity / task-progress 编排。
 - 继续复核 Core package group / split-package linking 的 tree composition 边界。
 - 按 `docs/roadmap.md` 的 WC/WCX 能力矩阵推进 Milestone 5：先补解析覆盖
-  和 resource identity，再进入 Compare、Search、媒体导出和大型功能族。
+  和 resource identity，并用 `docs/parser-coverage-matrix.md` 跟踪 M5
+  parser/resource-model 切片，再进入 Compare、Search、媒体导出和大型功能族。
 
 ## 架构分层
 

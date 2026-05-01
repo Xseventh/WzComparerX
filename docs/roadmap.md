@@ -208,7 +208,9 @@ Must support:
   - document WC support, WCX support, gap, priority, and validation method for
     package formats, IMG values, media payloads, search, compare, domain
     projections, and app features;
-  - keep the matrix current as new parser slices land.
+  - keep the matrix current as new parser slices land;
+  - use `docs/parser-coverage-matrix.md` as the working M5 parser/resource
+    identity checklist.
 - PKG1 completion pass:
   - recursive directory edge cases;
   - string-reference names;
@@ -263,6 +265,8 @@ Exit criteria:
 
 - The roadmap contains an explicit WC/WCX capability matrix that developers can
   use to choose parser and feature slices.
+- `docs/parser-coverage-matrix.md` stays current with accepted M5 parser and
+  resource-model slices.
 - PKG2 has progressed beyond header-only support or has a documented blocker.
 - The Core inspection model can represent package source, image selector, value
   path, and linked target semantics for the next compare/search milestones.

@@ -142,7 +142,9 @@ Milestones 1 through 4 are complete. The current mainline is post-M4 cleanup
 and Milestone 5 Parser Coverage And Resource Model Baseline planning. M4 reused
 Core inspection/export models and kept parser behavior out of App view models.
 The next risk is building Compare/Search/UI/export features on top of parser and
-resource-identity contracts that are still too narrow. M2 delivered real WZ
+resource-identity contracts that are still too narrow. M5 uses
+`docs/parser-coverage-matrix.md` as the working parser/resource-model checklist
+for choosing the next slices. M2 delivered real WZ
 package header detection, PKG1 directory inspection, recursive directory
 entries, string-key handling, IMG object and property metadata, Lua/text IMG
 inspection, and payload metadata for Canvas, RawData, Video, and Sound values.
@@ -321,9 +323,10 @@ AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Continue post-M4 cleanup and Milestone 5
 Parser Coverage And Resource Model Baseline planning. Reuse Core
 inspection/export models, keep parsing out of view models, use
-docs/roadmap.md's WC/WCX capability matrix to choose parser/resource-model
-slices, add focused tests where practical, run build/test, update docs/logs, and
-commit the work on the current branch.
+docs/roadmap.md's WC/WCX capability matrix plus
+docs/parser-coverage-matrix.md to choose parser/resource-model slices, add
+focused tests where practical, run build/test, update docs/logs, and commit the
+work on the current branch.
 ```
 
 ## Caution
