@@ -22,8 +22,8 @@ diagnostics contracts, and App consumes Core services.
 | PKG1 directory entries | Recursive directories, string-reference names, checksums, offsets | Implemented for current GMS smoke path; negative directory entry counts and out-of-file string-reference names now fail as explicit `InvalidDataException` cases with deterministic tests | Add more edge-case fixtures for malformed hash offsets, duplicate names, large tables | P0 | Synthetic fixtures, `inspect --debug`, local Map/UI/String packages |
 | PKG1 package groups | `Name.ini` / `LastWzIndex` plus numbered shard merge | Implemented in Core package group layer; `.ini`-declared missing or invalid shards emit `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid` warnings; optional Core GMS smoke validates `Map1.wz` merging `Map1_000.wz` image identity | Add real-client smoke notes for any package group warnings found locally | P0 | Core temp-fixture tests plus optional local `Map1.wz` smoke |
 | Base package links | Empty stubs link into sibling package folders | Implemented conservatively for Base-style workspace and same-package relative links | Clarify diagnostics for unresolved stubs and preserve true source identity | P0 | Core tests plus local `Base.wz`, `UI.wz`, `Map.wz` smoke |
-| PKG2 header | Detect PKG2 and read header hash fields | Header-only; `inspect` reports stable blocker diagnostic `wcx.package.pkg2.directoryUnsupported` | Parse at least one representative directory shape | P0 | WC reference review, synthetic fixture if possible, real-client smoke if sample exists |
-| List.wz / optional containers | WC supports older/newer container helpers | Not implemented | Decide whether current target clients require List.wz, `.ms`, or `.mn` | P1 | Local-client scan notes, no code until sample-driven |
+| PKG2 header | Detect PKG2 and read header hash fields | Header-only; `inspect` reports stable blocker diagnostic `wcx.package.pkg2.directoryUnsupported`; local GMS header scan found no PKG2 `.wz` sample among 780 WZ files | Parse at least one representative directory shape when a sample or synthetic shape is available | P0 | WC reference review, synthetic fixture if possible, real-client smoke if sample exists |
+| List.wz / optional containers | WC supports older/newer container helpers | Not implemented; local GMS scan found 10 `Data/Packs/*.ms` files, no `List.wz`, and no `.mn` files | Decide first `.ms` inspection slice from WC `Ms_File` / `Ms_FileV2` behavior; keep List.wz and `.mn` deferred until samples appear | P1 | Local-client scan notes, WC reference review, no parser code until a minimal `.ms` fixture/test plan exists |
 
 ## IMG Values
 
@@ -65,9 +65,13 @@ diagnostics contracts, and App consumes Core services.
 
 ## Immediate M5 Slices
 
-1. Keep future media export/playback diagnostics aligned with the existing
+1. Review WC `Ms_File` / `Ms_FileV2` and choose a minimal `.ms` container
+   inspection slice, because the local GMS client has `Data/Packs/*.ms`
+   samples.
+2. Keep future media export/playback diagnostics aligned with the existing
    parser payload diagnostic codes.
-2. Choose the first PKG2 directory parsing slice now that the blocker is
-   documented and user-visible.
-3. Add representative real-client smoke notes for Map, UI, Item/Character,
-   String, Mob/Npc, Skill, Sound, and Effect without committing client files.
+3. Choose the first PKG2 directory parsing slice when a representative sample or
+   synthetic shape is available; current local GMS WZ scan found only PKG1.
+4. Add representative real-client smoke notes for deeper IMG value families in
+   Map, UI, Item/Character, String, Mob/Npc, Skill, Sound, and Effect without
+   committing client files.

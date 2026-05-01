@@ -27,7 +27,9 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
-523d2d3 Guard malformed PKG1 directories
+35a8928 Record GMS container inventory
+3b7bdb0 Add optional GMS core smoke tests
+27b9a27 Guard malformed PKG1 directories
 aa093ce Document headless UI test convention
 6330ff0 Report package group shard diagnostics
 dda5994 Resolve linked target identity
@@ -354,6 +356,11 @@ Local GMS smoke status:
   points at the local GMS `Data` directory, Core tests validate representative
   package roots, `Map1.wz` package-group image identity, and
   `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved target identity.
+- A local GMS M5 inventory found 780 `.wz` files, all PKG1 by `headers` scan;
+  no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
+  `Data/Packs/*.ms` files exist. The next sample-driven container step should
+  review WC `Ms_File` / `Ms_FileV2` before implementing a minimal `.ms`
+  inspection slice.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

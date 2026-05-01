@@ -167,6 +167,14 @@ identity. Inspecting `Data/Map/Map/Map1/Map1_000.wz` selector
 selector `100000000.img` and value path `miniMap/canvas`. These tests read
 local files only and do not commit client data.
 
+A later M5 local inventory scan found 780 `.wz` files under the local GMS
+`Data` directory; `headers` did not report any `PKG2`, `unknown`, or invalid WZ
+headers in that scan. The same inventory found no `List.wz` and no `.mn` files,
+but did find 10 `.ms` pack files under `Data/Packs`, including Mob and Skill
+packs. That makes `.ms` container inspection sample-driven for this client,
+while `List.wz`, `.mn`, and PKG2 remain sample-limited on the current local GMS
+install.
+
 ## Milestone 2 Parser Coverage
 
 M2 accepted the following migrated behavior as complete:
