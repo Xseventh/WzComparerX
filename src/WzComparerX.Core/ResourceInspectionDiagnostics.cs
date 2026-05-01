@@ -205,6 +205,20 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Viewer);
     }
 
+    public static ResourceInspectionDiagnostic CanvasPreviewLinkUnresolved(
+        string valueSelector,
+        string? selector,
+        string linkKind,
+        string linkedTarget)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas preview {linkKind} target could not be resolved: {linkedTarget}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.CanvasPreviewLinkUnresolved,
+            ResourceDiagnosticSources.Viewer);
+    }
+
     public static ResourceInspectionDiagnostic CanvasPreviewValueRequired(string? selector)
     {
         return new ResourceInspectionDiagnostic(

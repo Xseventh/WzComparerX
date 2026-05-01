@@ -32,6 +32,7 @@ Use the named constants in Core:
 - `ResourceDiagnosticSources.Parser`
 - `ResourceDiagnosticSources.Inspection`
 - `ResourceDiagnosticSources.Export`
+- `ResourceDiagnosticSources.Viewer`
 
 Create diagnostics through `ResourceInspectionDiagnostics` unless a test is
 specifically exercising formatter handling of incomplete/empty fields.
@@ -67,6 +68,7 @@ Current examples:
 - `wcx.viewer.canvas.compressionUnsupported`
 - `wcx.viewer.canvas.formatUnsupported`
 - `wcx.viewer.canvas.decodeFailed`
+- `wcx.viewer.canvas.linkUnresolved`
 
 Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.

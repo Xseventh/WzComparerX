@@ -192,6 +192,9 @@ M4 完成后已经开始低风险架构整理：
   `linkKind` / `linkedTarget`。
 - split-package candidate 存在但加载失败时，Core inspection 会在对应目录
   stub 上输出稳定 warning diagnostic：`wcx.package.link.unresolved`。
+- Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
+  现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
+  不再把 link 失败混同为普通 unsupported value。
 
 后续短线工作：
 

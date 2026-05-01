@@ -21,6 +21,7 @@ public static class ResourceDiagnosticCodes
     public const string CanvasPreviewFormatUnsupported = "wcx.viewer.canvas.formatUnsupported";
     public const string CanvasPreviewScaleUnsupported = "wcx.viewer.canvas.scaleUnsupported";
     public const string CanvasPreviewDecodeFailed = "wcx.viewer.canvas.decodeFailed";
+    public const string CanvasPreviewLinkUnresolved = "wcx.viewer.canvas.linkUnresolved";
     public const string CanvasPreviewValueRequired = "wcx.viewer.canvas.valueRequired";
     public const string CanvasPreviewValueNotFound = "wcx.viewer.canvas.valueNotFound";
     public const string CanvasPreviewValueUnsupported = "wcx.viewer.canvas.valueUnsupported";

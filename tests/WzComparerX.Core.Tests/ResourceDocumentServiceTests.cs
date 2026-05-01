@@ -659,6 +659,22 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public void DiagnosticsFactory_ReturnsStableCanvasLinkDiagnostic()
+    {
+        var diagnostic = ResourceInspectionDiagnostics.CanvasPreviewLinkUnresolved(
+            "proxy/_outlink",
+            "Proxy.img",
+            "_outlink",
+            "Map/Missing/Missing.img/icon");
+
+        Assert.Equal(ResourceDiagnosticSeverities.Error, diagnostic.Severity);
+        Assert.Equal("Canvas preview _outlink target could not be resolved: Map/Missing/Missing.img/icon.", diagnostic.Message);
+        Assert.Equal("Proxy.img/proxy/_outlink", diagnostic.Path);
+        Assert.Equal(ResourceDiagnosticCodes.CanvasPreviewLinkUnresolved, diagnostic.Code);
+        Assert.Equal(ResourceDiagnosticSources.Viewer, diagnostic.Source);
+    }
+
+    [Fact]
     public async Task CanvasImageService_LoadsSelectedCanvasPixels()
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff, 0x40, 0x50, 0x60, 0xff];
@@ -738,6 +754,42 @@ public class ResourceDocumentServiceTests
             Assert.Equal("Linked.img", document.Selector);
             Assert.Equal("icon", document.ValuePath);
             Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ReportsUnresolvedOutlinkCanvasTarget()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-canvas-unresolved-outlink-");
+        var proxyDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "Proxy"));
+        var proxyPath = Path.Combine(proxyDirectory.FullName, "Proxy.wz");
+        await File.WriteAllBytesAsync(
+            proxyPath,
+            CreatePkg1ImagePackage(
+                "Proxy.img",
+                CreatePropertyImage(CreateLinkedCanvasProperty(
+                    "proxy",
+                    "_outlink",
+                    "Map\\Missing\\Missing.img\\icon"))));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var exception = await Assert.ThrowsAsync<ResourceCanvasImageException>(() =>
+                service.LoadAsync(
+                    proxyPath,
+                    "Proxy.img",
+                    "proxy/_outlink",
+                    new ResourceInspectionOptions(WzStringEncryptionKind.None)));
+
+            Assert.Equal(ResourceDiagnosticCodes.CanvasPreviewLinkUnresolved, exception.Diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Viewer, exception.Diagnostic.Source);
+            Assert.Equal("Proxy.img/proxy/_outlink", exception.Diagnostic.Path);
+            Assert.Contains("Map/Missing/Missing.img/icon", exception.Diagnostic.Message);
         }
         finally
         {

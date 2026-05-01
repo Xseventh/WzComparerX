@@ -306,8 +306,9 @@ M4 completed:
   identities point to their true source shard package.
 - Link-like IMG values (`source`, `_inlink`, `_outlink`, `link`, and UOL) now
   populate normalized `Identity.LinkedTarget` and debug `linkKind` /
-  `linkedTarget` metadata. This is representation only; diagnostics for
-  resolved external targets are still a later M5 slice.
+  `linkedTarget` metadata. Canvas preview also emits
+  `wcx.viewer.canvas.linkUnresolved` when a selected `source` / `_inlink` /
+  `_outlink` cannot be resolved to a Canvas value.
 - Failed split-package candidates now emit `wcx.package.link.unresolved` on the
   directory stub. Missing candidates remain silent so ordinary empty directory
   stubs do not become noisy diagnostics.

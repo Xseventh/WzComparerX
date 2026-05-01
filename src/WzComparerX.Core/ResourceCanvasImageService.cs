@@ -195,6 +195,7 @@ public sealed class ResourceCanvasImageService
 
         if (match.Value is string linkValue && IsCanvasLinkProperty(match))
         {
+            var normalizedTarget = NormalizePropertyPath(linkValue);
             var linkedTarget = await ResolveCanvasLinkAsync(
                 sourcePath,
                 inspection,
@@ -206,6 +207,13 @@ public sealed class ResourceCanvasImageService
             {
                 return linkedTarget;
             }
+
+            throw new ResourceCanvasImageException(
+                ResourceInspectionDiagnostics.CanvasPreviewLinkUnresolved(
+                    valueSelector,
+                    selector,
+                    match.Name ?? "link",
+                    normalizedTarget));
         }
 
         throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector));
