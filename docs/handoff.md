@@ -349,6 +349,11 @@ Local GMS smoke status:
   large Canvas auto-scaling behavior. Screenshots were saved under
   `/private/tmp/wcx-gms-ui-smoke-2026-05-01/` during the run and are not
   committed.
+- M5 optional Core GMS smoke tests are recorded in
+  `docs/logs/2026-05-02-gms-core-smoke-tests.md`. When `WCX_GMS_DATA_DIR`
+  points at the local GMS `Data` directory, Core tests validate representative
+  package roots, `Map1.wz` package-group image identity, and
+  `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved target identity.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

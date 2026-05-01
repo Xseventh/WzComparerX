@@ -277,6 +277,8 @@ App 层应调用 Core service，不应重新实现 WZ / IMG parser。
 - 小 fixture 放在 `fixtures/synthetic/`。
 - expected output 放在 `fixtures/expected/`。
 - 真实客户端文件不能提交进仓库，只能做本地 smoke 并记录路径类别和结果摘要。
+- 本地 GMS Core smoke 使用 `WCX_GMS_DATA_DIR` 指向客户端 `Data` 目录后运行
+  `ResourceInspectionGmsSmokeTests`；这些测试默认无环境变量时不读取外部文件。
 - M4 UI 行为测试放在 `WzComparerX.App.Tests`，不要塞进 Core tests。
 - UI 可视回归优先使用 Avalonia Headless 和可选截图产物。
 - 后续涉及 App/UI 或浏览器工作流的迭代，尽量额外跑 Headless 子集：

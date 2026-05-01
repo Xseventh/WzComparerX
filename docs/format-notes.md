@@ -157,6 +157,16 @@ data did not expose a direct text IMG smoke sample in the scanned WZ files.
 `Sound_DX8` values inspect as metadata including duration, sound declaration,
 payload length, and payload offset. Audio payload decoding is not implemented.
 
+M5 added optional Core smoke tests gated by `WCX_GMS_DATA_DIR`. On the local GMS
+client these tests inspect representative package roots for `Character`,
+`Effect`, `Item`, `Mob`, `Npc`, `Skill`, `Sound`, `String`, and `UI` without
+parser errors. They also validate the `Data/Map/Map/Map1/Map1.wz` package group:
+`100000000.img` is merged from `Map1_000.wz` and keeps its true source package
+identity. Inspecting `Data/Map/Map/Map1/Map1_000.wz` selector
+`100000000.img` with debug metadata resolves `miniMap/_outlink` to image
+selector `100000000.img` and value path `miniMap/canvas`. These tests read
+local files only and do not commit client data.
+
 ## Milestone 2 Parser Coverage
 
 M2 accepted the following migrated behavior as complete:
