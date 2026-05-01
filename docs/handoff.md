@@ -27,6 +27,9 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+523d2d3 Guard malformed PKG1 directories
+aa093ce Document headless UI test convention
+6330ff0 Report package group shard diagnostics
 dda5994 Resolve linked target identity
 3ce6b97 Document resource identity contract
 d426cf6 Lock media payload diagnostics
@@ -330,6 +333,9 @@ M4 completed:
 - PKG2 remains header-only, but `inspect` now returns a stable parser error
   diagnostic, `wcx.package.pkg2.directoryUnsupported`, and exits non-zero
   instead of exposing unsupported directory parsing as a raw exception.
+- PKG1 directory inspection now has deterministic malformed-table guards for
+  negative directory entry counts and `0x02` string-reference names that resolve
+  beyond the file.
 
 Local GMS smoke status:
 

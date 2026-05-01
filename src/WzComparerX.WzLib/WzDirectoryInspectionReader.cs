@@ -83,6 +83,11 @@ public sealed class WzDirectoryInspectionReader
         CancellationToken cancellationToken)
     {
         var entryCount = ReadCompressedInt32(stream);
+        if (entryCount < 0)
+        {
+            throw new InvalidDataException($"PKG1 directory entry count cannot be negative: {entryCount}.");
+        }
+
         var directoryEntries = new List<WzDirectoryEntryInspection>();
 
         for (var i = 0; i < entryCount; i++)
@@ -185,11 +190,21 @@ public sealed class WzDirectoryInspectionReader
             throw new InvalidDataException($"Cannot read a string from a negative offset: {offset}.");
         }
 
+        if (stream.CanSeek && offset >= stream.Length)
+        {
+            throw new InvalidDataException($"Cannot read a string beyond the end of the stream: {offset}.");
+        }
+
         var position = stream.Position;
-        stream.Position = offset;
-        var value = ReadString(stream);
-        stream.Position = position;
-        return value;
+        try
+        {
+            stream.Position = offset;
+            return ReadString(stream);
+        }
+        finally
+        {
+            stream.Position = position;
+        }
     }
 
     private static int GetStringReferenceOffset(WzPackageHeader header)

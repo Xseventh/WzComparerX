@@ -98,6 +98,38 @@ public class WzDirectoryInspectionReaderTests
     }
 
     [Fact]
+    public void Read_NegativeDirectoryEntryCountThrowsInvalidDataException()
+    {
+        var bytes = CreatePkg1WithNegativeDirectoryEntryCount();
+        var headerReader = new WzPackageHeaderReader();
+        var inspectionReader = new WzDirectoryInspectionReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Broken.wz");
+
+        var exception = Assert.Throws<InvalidDataException>(() => inspectionReader.Read(stream, header));
+
+        Assert.Contains("entry count cannot be negative", exception.Message);
+    }
+
+    [Fact]
+    public void Read_NodeType02ReferenceBeyondStreamThrowsInvalidDataException()
+    {
+        var bytes = CreatePkg1WithInvalidReferencedStringName();
+        var headerReader = new WzPackageHeaderReader();
+        var inspectionReader = new WzDirectoryInspectionReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Broken.wz");
+
+        var exception = Assert.Throws<InvalidDataException>(() => inspectionReader.Read(stream, header));
+
+        Assert.Contains("beyond the end of the stream", exception.Message);
+    }
+
+    [Fact]
     public void Read_ReturnsRecursiveDirectoryEntries()
     {
         var bytes = CreatePkg1WithNestedDirectoryEntries();
@@ -169,6 +201,26 @@ public class WzDirectoryInspectionReaderTests
             0x01,
             0x02, 0x0d, 0x00, 0x00, 0x00, 0x07, 0x02, 0xef, 0xcd, 0xab, 0x90,
             0xfd, 0xd8, 0xce, 0xca
+        ];
+        var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
+        return [.. header, .. encryptedVersion, .. directoryData];
+    }
+
+    private static byte[] CreatePkg1WithNegativeDirectoryEntryCount()
+    {
+        byte[] encryptedVersion = [0x7b, 0x00];
+        byte[] directoryData = [0xff];
+        var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
+        return [.. header, .. encryptedVersion, .. directoryData];
+    }
+
+    private static byte[] CreatePkg1WithInvalidReferencedStringName()
+    {
+        byte[] encryptedVersion = [0x7b, 0x00];
+        byte[] directoryData =
+        [
+            0x01,
+            0x02, 0x40, 0x00, 0x00, 0x00
         ];
         var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryData.Length);
         return [.. header, .. encryptedVersion, .. directoryData];
