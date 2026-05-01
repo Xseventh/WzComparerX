@@ -26,15 +26,14 @@ codex/wcx-modernization
 
 ## 当前进度
 
-截至 2026-05-01：
+截至 2026-05-02：
 
 - Milestone 0：项目启动，已完成。
 - Milestone 1：Headless Resource Browser，已完成。
 - Milestone 2：First Real WC Migration，已完成。
 - Milestone 3：Export And Inspect，已完成。
 - Milestone 4：Basic Avalonia Browser，已完成。
-- 当前短线：M4 后架构整理与 Milestone 5 Parser Coverage And Resource
-  Model Baseline 规划。
+- 当前主线：Milestone 5 Parser Coverage And Resource Model Baseline。
 
 项目整体已经具备：
 
@@ -202,6 +201,9 @@ M4 完成后已经开始低风险架构整理：
   `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid`。
 - PKG2 仍是 header-only 覆盖，但 `inspect` 现在会返回稳定 error
   diagnostic：`wcx.package.pkg2.directoryUnsupported`，而不是暴露裸解析异常。
+- 本地 GMS 清点确认当前样本没有 PKG2、`List.wz` 或 `.mn`，但这些仍是
+  旧客户端兼容目标；当前样本存在 `Data/Packs/*.ms`，`.ms` 已有稳定
+  blocker diagnostic：`wcx.package.ms.directoryUnsupported`。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。

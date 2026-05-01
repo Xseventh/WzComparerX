@@ -192,7 +192,7 @@ Closeout notes:
 
 ## Milestone 5: Parser Coverage And Resource Model Baseline
 
-Status: planned.
+Status: active.
 
 Goal: stabilize the parsing and resource-identity foundation before compare,
 search, export, and richer UI workflows start depending on it.
@@ -220,10 +220,14 @@ Must support:
   - directory parsing beyond header detection;
   - image offset and version/hash profile handling;
   - representative real-client smoke notes.
-- Optional container decisions:
-  - evaluate whether List.wz is still required for target samples;
-  - evaluate `.ms` / `.mn` containers against current real-client data before
-    committing to implementation.
+- Legacy / optional container coverage:
+  - support remains required for `List.wz`, `.ms`, and `.mn` compatibility,
+    especially for older clients;
+  - current local GMS data has `Data/Packs/*.ms` samples but no `List.wz` or
+    `.mn` sample, so `.ms` should proceed sample-first while `List.wz` and
+    `.mn` should be defined from WC reference behavior or older-client samples;
+  - unsupported container paths should return stable diagnostics until parser
+    coverage lands.
 - Split-package and Base.wz linking:
   - `Name.wz` plus `Name_000.wz...` package groups;
   - `.ini` `LastWzIndex` handling;
@@ -268,6 +272,8 @@ Exit criteria:
 - `docs/parser-coverage-matrix.md` stays current with accepted M5 parser and
   resource-model slices.
 - PKG2 has progressed beyond header-only support or has a documented blocker.
+- Legacy container support has at least a documented first-slice plan for
+  `List.wz`, `.ms`, and `.mn`, with stable diagnostics for unsupported paths.
 - The Core inspection model can represent package source, image selector, value
   path, and linked target semantics for the next compare/search milestones.
 - At least several representative real-client smoke notes cover different

@@ -48,19 +48,18 @@ Build order:
 
 ## Current Next Milestone
 
-Post-M4 cleanup and Milestone 5 Parser Coverage And Resource Model Baseline
-planning.
+Milestone 5 Parser Coverage And Resource Model Baseline is active.
 
 Immediate direction:
 
 - Keep the UI on Core inspection/export services.
 - Do not add parser behavior to App view models.
-- Split `MainWindowViewModel` responsibilities into small App workflow/helpers
-  when the behavior is already covered by tests.
-- Review Core package group / split-package linking boundaries before expanding
-  compare, search, export, or media workflows.
-- Use `docs/roadmap.md`'s WC/WCX capability matrix to choose the next parser and
-  resource-model slices.
+- Use `docs/parser-coverage-matrix.md` as the working M5 checklist for parser,
+  resource-model, and real-client smoke slices.
+- Keep `List.wz`, `.ms`, `.mn`, and PKG2 as compatibility targets even when the
+  current local GMS sample lacks some of them.
+- Prefer sample-driven parser slices backed by WC reference behavior,
+  deterministic tests, and `inspect` / `inspect --debug` observability.
 - Treat Compare Foundation as Milestone 6; do not start compare before the
   Milestone 5 resource identity contract is stable enough for it.
 

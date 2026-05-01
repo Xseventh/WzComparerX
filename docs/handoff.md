@@ -27,7 +27,8 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
-5c530a2 Report MS container inspection blocker
+df41527 Clarify legacy container support targets
+3d26b16 Report MS container inspection blocker
 b1226ba Record GMS container inventory
 3b7bdb0 Add optional GMS core smoke tests
 27b9a27 Guard malformed PKG1 directories
@@ -155,9 +156,9 @@ cae2482 Add Avalonia image inspection workflow
 
 ## Current State
 
-Milestones 1 through 4 are complete. The current mainline is post-M4 cleanup
-and Milestone 5 Parser Coverage And Resource Model Baseline planning. M4 reused
-Core inspection/export models and kept parser behavior out of App view models.
+Milestones 1 through 4 are complete. Milestone 5 Parser Coverage And Resource
+Model Baseline is active. M4 reused Core inspection/export models and kept
+parser behavior out of App view models.
 The next risk is building Compare/Search/UI/export features on top of parser and
 resource-identity contracts that are still too narrow. M5 uses
 `docs/parser-coverage-matrix.md` as the working parser/resource-model checklist
@@ -377,13 +378,12 @@ Use this in a new Codex project conversation:
 ```text
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
-docs/development-guidelines.md first. Continue post-M4 cleanup and Milestone 5
-Parser Coverage And Resource Model Baseline planning. Reuse Core
-inspection/export models, keep parsing out of view models, use
-docs/roadmap.md's WC/WCX capability matrix plus
-docs/parser-coverage-matrix.md to choose parser/resource-model slices, add
-focused tests where practical, run build/test, update docs/logs, and commit the
-work on the current branch.
+docs/development-guidelines.md first. Continue active Milestone 5 Parser
+Coverage And Resource Model Baseline work. Reuse Core inspection/export models,
+keep parsing out of view models, use docs/parser-coverage-matrix.md to choose
+parser/resource-model/real-client-smoke slices, add focused tests where
+practical, run build/test, update docs/logs, and commit the work on the current
+branch.
 ```
 
 ## Caution

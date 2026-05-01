@@ -171,11 +171,11 @@ A later M5 local inventory scan found 780 `.wz` files under the local GMS
 `Data` directory; `headers` did not report any `PKG2`, `unknown`, or invalid WZ
 headers in that scan. The same inventory found no `List.wz` and no `.mn` files,
 but did find 10 `.ms` pack files under `Data/Packs`, including Mob and Skill
-packs. That makes `.ms` container inspection sample-driven for this client,
-while `List.wz`, `.mn`, and PKG2 remain sample-limited on the current local GMS
-install. This does not remove `List.wz` or `.mn` from the compatibility target:
-older clients may still require them, so their first WCX slice should be driven
-by WC reference behavior or an older-client sample.
+packs. That makes `.ms` container inspection sample-driven for this client.
+`List.wz`, `.mn`, and PKG2 are not covered by the current local GMS sample, but
+this does not remove them from the compatibility target: older clients may still
+require them, so their first WCX slice should be driven by WC reference behavior
+or an older-client sample.
 
 ## Milestone 2 Parser Coverage
 
