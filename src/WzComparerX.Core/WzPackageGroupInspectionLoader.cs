@@ -14,21 +14,45 @@ internal static class WzPackageGroupInspectionLoader
         {
             new(entry, IsEntry: true)
         };
+        var diagnostics = new List<ResourceInspectionDiagnostic>();
 
         if (entry.Header.IsValid)
         {
-            foreach (var shardPath in EnumerateNumberedShardPaths(entry.Header.SourcePath))
+            foreach (var shard in EnumerateNumberedShardCandidates(entry.Header.SourcePath))
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var shard = await WzImageInspectionLoader.ReadDirectoryAsync(shardPath, stringKey, cancellationToken);
-                if (shard.Header.IsValid)
+                if (!File.Exists(shard.Path))
                 {
-                    members.Add(new WzPackageGroupMemberInspection(shard, IsEntry: false));
+                    if (shard.IsRequired)
+                    {
+                        diagnostics.Add(ResourceInspectionDiagnostics.PackageGroupShardMissing(shard.Path));
+                    }
+
+                    continue;
                 }
+
+                WzDirectoryInspection inspection;
+                try
+                {
+                    inspection = await WzImageInspectionLoader.ReadDirectoryAsync(shard.Path, stringKey, cancellationToken);
+                }
+                catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
+                {
+                    diagnostics.Add(ResourceInspectionDiagnostics.PackageGroupShardInvalid(shard.Path));
+                    continue;
+                }
+
+                if (inspection.Header.IsValid)
+                {
+                    members.Add(new WzPackageGroupMemberInspection(inspection, IsEntry: false));
+                    continue;
+                }
+
+                diagnostics.Add(ResourceInspectionDiagnostics.PackageGroupShardInvalid(shard.Path));
             }
         }
 
-        return new WzPackageGroupInspection(entry, members);
+        return new WzPackageGroupInspection(entry, members, diagnostics);
     }
 
     public static IEnumerable<string> EnumeratePackageGroupEntryPaths(string folder, string packageStem)
@@ -42,6 +66,13 @@ internal static class WzPackageGroupInspectionLoader
 
     public static IEnumerable<string> EnumerateNumberedShardPaths(string entryPath)
     {
+        return EnumerateNumberedShardCandidates(entryPath)
+            .Where(candidate => !candidate.IsRequired || File.Exists(candidate.Path))
+            .Select(candidate => candidate.Path);
+    }
+
+    private static IEnumerable<NumberedShardCandidate> EnumerateNumberedShardCandidates(string entryPath)
+    {
         var directory = Path.GetDirectoryName(entryPath);
         var stem = Path.GetFileNameWithoutExtension(entryPath);
         if (string.IsNullOrWhiteSpace(directory) || string.IsNullOrWhiteSpace(stem))
@@ -54,10 +85,7 @@ internal static class WzPackageGroupInspectionLoader
             for (var i = 0; i <= lastWzIndex; i++)
             {
                 var path = Path.Combine(directory, $"{stem}_{i:D3}.wz");
-                if (File.Exists(path))
-                {
-                    yield return path;
-                }
+                yield return new NumberedShardCandidate(path, IsRequired: true);
             }
 
             yield break;
@@ -71,7 +99,7 @@ internal static class WzPackageGroupInspectionLoader
                 yield break;
             }
 
-            yield return path;
+            yield return new NumberedShardCandidate(path, IsRequired: false);
         }
     }
 
@@ -104,7 +132,8 @@ internal static class WzPackageGroupInspectionLoader
 
 internal sealed record WzPackageGroupInspection(
     WzDirectoryInspection Entry,
-    IReadOnlyList<WzPackageGroupMemberInspection> Members);
+    IReadOnlyList<WzPackageGroupMemberInspection> Members,
+    IReadOnlyList<ResourceInspectionDiagnostic> Diagnostics);
 
 internal sealed record WzPackageGroupMemberInspection(
     WzDirectoryInspection Inspection,
@@ -112,3 +141,5 @@ internal sealed record WzPackageGroupMemberInspection(
 {
     public string SourcePath => Inspection.Header.SourcePath;
 }
+
+internal sealed record NumberedShardCandidate(string Path, bool IsRequired);

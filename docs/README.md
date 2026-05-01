@@ -197,6 +197,9 @@ M4 完成后已经开始低风险架构整理：
   `Identity.ResolvedLinkedTarget` 和 resolved-link debug metadata。
 - split-package candidate 存在但加载失败时，Core inspection 会在对应目录
   stub 上输出稳定 warning diagnostic：`wcx.package.link.unresolved`。
+- `.ini` / `LastWzIndex` 声明的 numbered shard 如果缺失或无法加载，Core
+  inspection 会在 package root 上输出稳定 warning diagnostic：
+  `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid`。
 - PKG2 仍是 header-only 覆盖，但 `inspect` 现在会返回稳定 error
   diagnostic：`wcx.package.pkg2.directoryUnsupported`，而不是暴露裸解析异常。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，

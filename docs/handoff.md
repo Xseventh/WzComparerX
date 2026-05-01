@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+dda5994 Resolve linked target identity
 3ce6b97 Document resource identity contract
 d426cf6 Lock media payload diagnostics
 4dcccee Report PKG2 inspection blocker
@@ -322,6 +323,10 @@ M4 completed:
 - Failed split-package candidates now emit `wcx.package.link.unresolved` on the
   directory stub. Missing candidates remain silent so ordinary empty directory
   stubs do not become noisy diagnostics.
+- Package groups created from `.ini` / `LastWzIndex` now report stable warning
+  diagnostics on the package root when a declared numbered shard is missing or
+  cannot be loaded: `wcx.package.group.shardMissing` and
+  `wcx.package.group.shardInvalid`.
 - PKG2 remains header-only, but `inspect` now returns a stable parser error
   diagnostic, `wcx.package.pkg2.directoryUnsupported`, and exits non-zero
   instead of exposing unsupported directory parsing as a raw exception.

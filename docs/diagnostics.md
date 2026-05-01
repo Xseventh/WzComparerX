@@ -55,6 +55,8 @@ Current examples:
 - `wcx.payload.video.unsupported`
 - `wcx.payload.audio.unsupported`
 - `wcx.package.link.unresolved`
+- `wcx.package.group.shardMissing`
+- `wcx.package.group.shardInvalid`
 - `wcx.package.pkg2.directoryUnsupported`
 - `wcx.export.lua.multipleBlocks`
 - `wcx.export.unsupported`

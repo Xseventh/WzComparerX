@@ -64,6 +64,26 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Inspection);
     }
 
+    public static ResourceInspectionDiagnostic PackageGroupShardMissing(string path)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Warning,
+            $"Package group shard is declared but missing: {path}.",
+            path,
+            ResourceDiagnosticCodes.PackageGroupShardMissing,
+            ResourceDiagnosticSources.Inspection);
+    }
+
+    public static ResourceInspectionDiagnostic PackageGroupShardInvalid(string path)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Warning,
+            $"Package group shard could not be loaded: {path}.",
+            path,
+            ResourceDiagnosticCodes.PackageGroupShardInvalid,
+            ResourceDiagnosticSources.Inspection);
+    }
+
     public static ResourceInspectionDiagnostic ExportLuaMultipleBlocks(int blockCount, string? selector)
     {
         return new ResourceInspectionDiagnostic(

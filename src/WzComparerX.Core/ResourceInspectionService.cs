@@ -164,7 +164,8 @@ public sealed class ResourceInspectionService
     {
         var group = new WzPackageGroupInspection(
             inspection,
-            [new WzPackageGroupMemberInspection(inspection, IsEntry: true)]);
+            [new WzPackageGroupMemberInspection(inspection, IsEntry: true)],
+            []);
         return await BuildPackageGroupRootAsync(
             group,
             options,
@@ -194,7 +195,8 @@ public sealed class ResourceInspectionService
             "package",
             rootPath ?? rootName,
             inspection.Header.Format.ToString().ToLowerInvariant(),
-            new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath));
+            new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath),
+            options.IncludeDebugMetadata ? group.Diagnostics : null);
 
         foreach (var member in group.Members)
         {
@@ -327,7 +329,8 @@ public sealed class ResourceInspectionService
         return BuildDirectoryDocumentMetadata(
             new WzPackageGroupInspection(
                 inspection,
-                [new WzPackageGroupMemberInspection(inspection, IsEntry: true)]));
+                [new WzPackageGroupMemberInspection(inspection, IsEntry: true)],
+                []));
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzPackageGroupInspection group)
@@ -713,13 +716,15 @@ public sealed class ResourceInspectionService
             string kind,
             string? path,
             string? displayValue,
-            ResourceInspectionIdentity? identity)
+            ResourceInspectionIdentity? identity,
+            IReadOnlyList<ResourceInspectionDiagnostic>? diagnostics = null)
         {
             Name = name;
             Kind = kind;
             Path = path;
             DisplayValue = displayValue;
             Identity = identity;
+            Diagnostics = diagnostics;
         }
 
         public string Name { get; }

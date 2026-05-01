@@ -415,6 +415,79 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDirectory_ReportsMissingNumberedShardDeclaredByIni()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-package-group-missing-shard-");
+        var mapDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map1"));
+        var entryPath = Path.Combine(mapDirectory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(mapDirectory.FullName, "Map1_000.wz");
+        var missingShardPath = Path.Combine(mapDirectory.FullName, "Map1_001.wz");
+        await File.WriteAllBytesAsync(entryPath, CreatePkg1DirectoryPackage([0x00]));
+        await File.WriteAllBytesAsync(shardPath, CreatePkg1DirectoryPackage(CreateImageDirectory("100000000.img")));
+        await File.WriteAllTextAsync(Path.Combine(mapDirectory.FullName, "Map1.ini"), "LastWzIndex|1");
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                entryPath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 1,
+                    IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
+
+            Assert.Contains(inspection.Root.Children, child => child.Name == "100000000.img" && child.Kind == "image");
+            var diagnostic = Assert.Single(inspection.Root.Diagnostics!);
+            Assert.Equal(ResourceDiagnosticSeverities.Warning, diagnostic.Severity);
+            Assert.Equal(ResourceDiagnosticCodes.PackageGroupShardMissing, diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Inspection, diagnostic.Source);
+            Assert.Equal(missingShardPath, diagnostic.Path);
+            Assert.Contains("warning [wcx.package.group.shardMissing]", output);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDirectory_ReportsInvalidNumberedShardDeclaredByIni()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-package-group-invalid-shard-");
+        var mapDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map1"));
+        var entryPath = Path.Combine(mapDirectory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(mapDirectory.FullName, "Map1_000.wz");
+        await File.WriteAllBytesAsync(entryPath, CreatePkg1DirectoryPackage([0x00]));
+        await File.WriteAllTextAsync(shardPath, "NOPE");
+        await File.WriteAllTextAsync(Path.Combine(mapDirectory.FullName, "Map1.ini"), "LastWzIndex=0");
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                entryPath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 1,
+                    IncludeDebugMetadata: true));
+
+            var diagnostic = Assert.Single(inspection.Root.Diagnostics!);
+            Assert.Equal(ResourceDiagnosticSeverities.Warning, diagnostic.Severity);
+            Assert.Equal(ResourceDiagnosticCodes.PackageGroupShardInvalid, diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Inspection, diagnostic.Source);
+            Assert.Equal(shardPath, diagnostic.Path);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDirectory_MergedImageNodeTargetCanInspectShardImage()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-package-group-target-");
@@ -849,6 +922,25 @@ public class ResourceDocumentServiceTests
         Assert.Equal("Proxy.img/proxy/_outlink", diagnostic.Path);
         Assert.Equal(ResourceDiagnosticCodes.CanvasPreviewLinkUnresolved, diagnostic.Code);
         Assert.Equal(ResourceDiagnosticSources.Viewer, diagnostic.Source);
+    }
+
+    [Fact]
+    public void DiagnosticsFactory_ReturnsStablePackageGroupDiagnostics()
+    {
+        var missing = ResourceInspectionDiagnostics.PackageGroupShardMissing("Map1_001.wz");
+        var invalid = ResourceInspectionDiagnostics.PackageGroupShardInvalid("Map1_000.wz");
+
+        Assert.Equal(ResourceDiagnosticSeverities.Warning, missing.Severity);
+        Assert.Equal("Package group shard is declared but missing: Map1_001.wz.", missing.Message);
+        Assert.Equal("Map1_001.wz", missing.Path);
+        Assert.Equal(ResourceDiagnosticCodes.PackageGroupShardMissing, missing.Code);
+        Assert.Equal(ResourceDiagnosticSources.Inspection, missing.Source);
+
+        Assert.Equal(ResourceDiagnosticSeverities.Warning, invalid.Severity);
+        Assert.Equal("Package group shard could not be loaded: Map1_000.wz.", invalid.Message);
+        Assert.Equal("Map1_000.wz", invalid.Path);
+        Assert.Equal(ResourceDiagnosticCodes.PackageGroupShardInvalid, invalid.Code);
+        Assert.Equal(ResourceDiagnosticSources.Inspection, invalid.Source);
     }
 
     [Fact]
