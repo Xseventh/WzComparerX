@@ -361,7 +361,8 @@ Local GMS smoke status:
   no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
   `Data/Packs/*.ms` files exist. The next sample-driven container step should
   review WC `Ms_File` / `Ms_FileV2` before implementing a minimal `.ms`
-  inspection slice.
+  inspection slice. `List.wz` and `.mn` remain compatibility targets for older
+  clients even though the current local GMS install lacks samples.
 - `.ms` paths now return a stable inspection error diagnostic
   `wcx.package.ms.directoryUnsupported` instead of falling through to a generic
   invalid WZ error. Actual `.ms` header/entry parsing is still pending.

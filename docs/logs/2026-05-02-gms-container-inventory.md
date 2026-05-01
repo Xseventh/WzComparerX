@@ -19,7 +19,9 @@
 
 - PKG2 remains an important WC compatibility item, but the current local GMS
   client does not provide a direct PKG2 WZ sample.
-- `List.wz` and `.mn` should stay deferred until a real sample appears.
+- `List.wz` and `.mn` remain compatibility targets for older clients even
+  though this local GMS install does not provide samples. Their first WCX slice
+  should be driven by WC reference behavior or an older-client sample.
 - `.ms` is now sample-driven for the current local client. The next parser
   slice should review WC `Ms_File` / `Ms_FileV2` and define the smallest
   inspection behavior before adding code.
