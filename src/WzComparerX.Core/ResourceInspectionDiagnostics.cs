@@ -44,6 +44,16 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Parser);
     }
 
+    public static ResourceInspectionDiagnostic SplitPackageLinkUnresolved(string path)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Warning,
+            $"Split-package link could not be resolved for directory stub: {path}.",
+            path,
+            ResourceDiagnosticCodes.SplitPackageLinkUnresolved,
+            ResourceDiagnosticSources.Inspection);
+    }
+
     public static ResourceInspectionDiagnostic ExportLuaMultipleBlocks(int blockCount, string? selector)
     {
         return new ResourceInspectionDiagnostic(

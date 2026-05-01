@@ -190,6 +190,8 @@ M4 完成后已经开始低风险架构整理：
 - IMG 内部 `source`、`_inlink`、`_outlink`、`link` 字符串和 UOL 节点现在会把
   normalized linked target 写进 Core identity，并在 `inspect --debug` 中暴露
   `linkKind` / `linkedTarget`。
+- split-package candidate 存在但加载失败时，Core inspection 会在对应目录
+  stub 上输出稳定 warning diagnostic：`wcx.package.link.unresolved`。
 
 后续短线工作：
 

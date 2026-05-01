@@ -47,13 +47,13 @@ diagnostics contracts, and App consumes Core services.
 | Image selector | Selected IMG can be reloaded without UI path guessing | Core image nodes now carry `Identity.ImageSelector` | Document and test selector behavior across more linked package shapes | P0 | Core/App tests |
 | Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath` | Promote linked value targets into `Identity.LinkedTarget` once link resolution moves into Core inspection metadata | P0 | Export/App tests |
 | Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Core link-like value nodes now carry normalized `Identity.LinkedTarget` | Add resolved-target diagnostics and richer package/value identity for resolvable links | P0 | Core fixtures plus App preview tests |
-| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases | Add diagnostics for unresolved package links, unsupported link targets, and PKG2 blockers | P0 | Unit tests and CLI golden output |
+| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates now emit `wcx.package.link.unresolved` | Add diagnostics for unresolved Canvas/link targets and PKG2 blockers | P0 | Unit tests and CLI golden output |
 
 ## Real-Client Smoke Matrix
 
 | Package family | Current coverage | Next M5 validation |
 | --- | --- | --- |
-| Base | Header, top-level directory, Base-style package links | Record unresolved-stub diagnostics once implemented |
+| Base | Header, top-level directory, Base-style package links | Smoke unresolved-stub diagnostics when a failed local candidate is available |
 | Map | M4 UI smoke covers `Map1.wz` group merge and linked Canvas preview | Add CLI/Core smoke note for package group resource identity |
 | UI | Directory and Canvas metadata smoke exists | Add link diagnostics smoke for `_Canvas` packages |
 | Item / Character / Skill | Basic browse coverage only through Base links if opened manually | Add representative `inspect --debug` notes for IMG value families |

@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+777a090 Add Core link target identity
 03a9199 Add Core resource inspection identity
 487d82d Add M5 parser coverage matrix
 aba5c63 Replan post-M4 roadmap
@@ -306,7 +307,10 @@ M4 completed:
 - Link-like IMG values (`source`, `_inlink`, `_outlink`, `link`, and UOL) now
   populate normalized `Identity.LinkedTarget` and debug `linkKind` /
   `linkedTarget` metadata. This is representation only; diagnostics for
-  unresolved or resolved external targets are still the next M5 slice.
+  resolved external targets are still a later M5 slice.
+- Failed split-package candidates now emit `wcx.package.link.unresolved` on the
+  directory stub. Missing candidates remain silent so ordinary empty directory
+  stubs do not become noisy diagnostics.
 
 Local GMS smoke status:
 

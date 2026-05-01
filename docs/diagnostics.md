@@ -30,6 +30,7 @@ Use the named constants in Core:
 - `ResourceDiagnosticSeverities.Warning`
 - `ResourceDiagnosticSeverities.Error`
 - `ResourceDiagnosticSources.Parser`
+- `ResourceDiagnosticSources.Inspection`
 - `ResourceDiagnosticSources.Export`
 
 Create diagnostics through `ResourceInspectionDiagnostics` unless a test is
@@ -52,6 +53,7 @@ Current examples:
 - `wcx.payload.rawData.unsupported`
 - `wcx.payload.video.unsupported`
 - `wcx.payload.audio.unsupported`
+- `wcx.package.link.unresolved`
 - `wcx.export.lua.multipleBlocks`
 - `wcx.export.unsupported`
 - `wcx.export.canvas.compressionUnsupported`
@@ -86,6 +88,8 @@ or debug surface before exposing volatile implementation details.
 ## Sources
 
 - `parser`: WZ/IMG inspection, payload metadata, or decode limitations.
+- `inspection`: Core inspection composition, resource identity, workspace
+  linking, or package-group status.
 - `export`: export selection, content production, or export-specific status.
 - `viewer`: UI/viewer content production, such as a Canvas preview decode
   request.

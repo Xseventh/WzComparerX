@@ -326,9 +326,12 @@ public sealed class ResourceInspectionService
                 continue;
             }
 
+            var resolvedAny = false;
+            var candidateCount = 0;
             foreach (var packagePath in WzSplitPackageLinkResolver.ResolvePaths(inspection.Header.SourcePath, entryPath))
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                candidateCount++;
                 var linkedNode = await TryBuildLinkedPackageNodeAsync(
                     packagePath,
                     options,
@@ -336,10 +339,18 @@ public sealed class ResourceInspectionService
                     splitPackageAncestors);
                 if (linkedNode is not null)
                 {
+                    resolvedAny = true;
                     builder.AddLinkedChild(
                         entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries),
                         linkedNode);
                 }
+            }
+
+            if (!resolvedAny && candidateCount > 0 && options.IncludeDebugMetadata)
+            {
+                builder.AddDiagnostic(
+                    entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries),
+                    ResourceInspectionDiagnostics.SplitPackageLinkUnresolved(entryPath));
             }
         }
     }
@@ -644,6 +655,8 @@ public sealed class ResourceInspectionService
 
         public ResourceInspectionIdentity? Identity { get; private set; }
 
+        public IReadOnlyList<ResourceInspectionDiagnostic>? Diagnostics { get; private set; }
+
         public void AddPath(
             string[] parts,
             int index,
@@ -691,6 +704,19 @@ public sealed class ResourceInspectionService
             node?.children.Add(FromNode(child));
         }
 
+        public void AddDiagnostic(string[] parts, ResourceInspectionDiagnostic diagnostic)
+        {
+            var node = Find(parts, 0);
+            if (node is null)
+            {
+                return;
+            }
+
+            var diagnostics = node.Diagnostics?.ToList() ?? [];
+            diagnostics.Add(diagnostic);
+            node.Diagnostics = diagnostics;
+        }
+
         public ResourceInspectionNode ToNode()
         {
             return new ResourceInspectionNode(
@@ -700,6 +726,7 @@ public sealed class ResourceInspectionService
                 DisplayValue,
                 children.Select(child => child.ToNode()).ToArray(),
                 DebugMetadata,
+                Diagnostics,
                 Identity: Identity);
         }
 
@@ -719,7 +746,8 @@ public sealed class ResourceInspectionService
             var builder = new InspectionNodeBuilder(node.Name, node.Kind, node.Path, node.DisplayValue)
             {
                 DebugMetadata = node.DebugMetadata,
-                Identity = node.Identity
+                Identity = node.Identity,
+                Diagnostics = node.Diagnostics
             };
             foreach (var child in node.Children)
             {

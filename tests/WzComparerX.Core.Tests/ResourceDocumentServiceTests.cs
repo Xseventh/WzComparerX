@@ -202,6 +202,44 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDirectory_ReportsUnresolvedSplitPackageCandidate()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-unresolved-split-package-");
+        var baseDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Base"));
+        var effectDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Effect"));
+        var basePath = Path.Combine(baseDirectory.FullName, "Base.wz");
+        var effectPath = Path.Combine(effectDirectory.FullName, "Effect.wz");
+        await File.WriteAllBytesAsync(basePath, CreatePkg1DirectoryPackage(CreateDirectoryStub("Effect")));
+        await File.WriteAllTextAsync(effectPath, "NOPE");
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                basePath,
+                selector: null,
+                new ResourceInspectionOptions(
+                    WzStringEncryptionKind.None,
+                    MaxPropertyDepth: 1,
+                    IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
+
+            var effect = Assert.Single(inspection.Root.Children, child => child.Name == "Effect");
+            var diagnostic = Assert.Single(effect.Diagnostics!);
+            Assert.Equal(ResourceDiagnosticSeverities.Warning, diagnostic.Severity);
+            Assert.Equal(ResourceDiagnosticCodes.SplitPackageLinkUnresolved, diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Inspection, diagnostic.Source);
+            Assert.Equal("Effect", diagnostic.Path);
+            Assert.Contains("warning [wcx.package.link.unresolved]", output);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDirectory_LinksSplitPackagesWhenPropertyDepthIsZero()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-split-package-depth-zero-");
