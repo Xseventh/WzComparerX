@@ -124,6 +124,14 @@ structure, binding smoke checks, and future screenshot-assisted layout
 verification. Keep Core tests focused on Core services, CLI behavior, and
 parser-facing models.
 
+For future iterations that touch App/UI behavior or browser-facing workflows,
+prefer running the Avalonia Headless subset in addition to the standard
+solution build/test. A useful targeted command is:
+
+```bash
+dotnet test tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj --no-build -m:1 --filter FullyQualifiedName~Headless
+```
+
 ## Git Workflow
 
 - Work on feature branches, not `master`.

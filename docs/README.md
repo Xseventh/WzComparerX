@@ -279,6 +279,8 @@ App 层应调用 Core service，不应重新实现 WZ / IMG parser。
 - 真实客户端文件不能提交进仓库，只能做本地 smoke 并记录路径类别和结果摘要。
 - M4 UI 行为测试放在 `WzComparerX.App.Tests`，不要塞进 Core tests。
 - UI 可视回归优先使用 Avalonia Headless 和可选截图产物。
+- 后续涉及 App/UI 或浏览器工作流的迭代，尽量额外跑 Headless 子集：
+  `dotnet test tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj --no-build -m:1 --filter FullyQualifiedName~Headless`。
 
 ## 常用命令
 
