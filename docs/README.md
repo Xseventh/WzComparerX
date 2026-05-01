@@ -107,6 +107,10 @@ Diagnostics 规则见：
 - `docs/diagnostics.md`
 - `docs/parser-coverage-matrix.md`
 
+Resource identity 规则见：
+
+- `docs/resource-identity.md`
+
 ## Milestone 4 Basic Avalonia Browser
 
 M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模型，而不是在 App 层重新实现解析逻辑。

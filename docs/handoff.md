@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+d426cf6 Lock media payload diagnostics
 4dcccee Report PKG2 inspection blocker
 f21ec65 Report unresolved Canvas preview links
 38452b2 Report unresolved split package links
@@ -306,7 +307,8 @@ M4 completed:
   path normalization no longer sit directly in the main inspection flow.
 - Core inspection nodes now carry `ResourceInspectionIdentity` with package
   path, image selector, and inside-IMG value path fields. Merged shard image
-  identities point to their true source shard package.
+  identities point to their true source shard package. The current identity
+  contract is documented in `docs/resource-identity.md`.
 - Link-like IMG values (`source`, `_inlink`, `_outlink`, `link`, and UOL) now
   populate normalized `Identity.LinkedTarget` and debug `linkKind` /
   `linkedTarget` metadata. Canvas preview also emits

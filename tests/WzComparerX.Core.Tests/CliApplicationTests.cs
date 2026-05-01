@@ -438,6 +438,50 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugImageJson_IncludesIdentityContract()
+    {
+        var imageBytes = CreatePropertyImage(CreateLinkedCanvasProperty(
+            "proxy",
+            "_outlink",
+            "Map\\CanvasSource\\Linked.img\\icon"));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--json", "--key", "none", "--depth", "2", path, "Canvas.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+
+            using var json = JsonDocument.Parse(NormalizePath(result.Output, path, "<wz>"));
+            var root = json.RootElement.GetProperty("Root");
+            var rootIdentity = root.GetProperty("Identity");
+
+            Assert.Equal("<wz>", rootIdentity.GetProperty("PackagePath").GetString());
+            Assert.Equal("Canvas.img", rootIdentity.GetProperty("ImageSelector").GetString());
+            Assert.False(rootIdentity.TryGetProperty("ValuePath", out _));
+
+            var proxy = Assert.Single(root.GetProperty("Children").EnumerateArray());
+            var proxyIdentity = proxy.GetProperty("Identity");
+            Assert.Equal("<wz>", proxyIdentity.GetProperty("PackagePath").GetString());
+            Assert.Equal("Canvas.img", proxyIdentity.GetProperty("ImageSelector").GetString());
+            Assert.Equal("proxy", proxyIdentity.GetProperty("ValuePath").GetString());
+            Assert.False(proxyIdentity.TryGetProperty("LinkedTarget", out _));
+
+            var outlink = Assert.Single(proxy.GetProperty("Children").EnumerateArray());
+            var outlinkIdentity = outlink.GetProperty("Identity");
+            Assert.Equal("<wz>", outlinkIdentity.GetProperty("PackagePath").GetString());
+            Assert.Equal("Canvas.img", outlinkIdentity.GetProperty("ImageSelector").GetString());
+            Assert.Equal("proxy/_outlink", outlinkIdentity.GetProperty("ValuePath").GetString());
+            Assert.Equal("Map/CanvasSource/Linked.img/icon", outlinkIdentity.GetProperty("LinkedTarget").GetString());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugCanvasZlibFixture_MatchesGoldenOutput()
     {
         var path = MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
@@ -1012,6 +1056,34 @@ public class CliApplicationTests
                 (byte)0x00,
                 BitConverter.GetBytes(payload.Length),
                 payload)));
+    }
+
+    private static byte[] CreateLinkedCanvasProperty(string name, string linkName, string linkValue)
+    {
+        byte[] pixels = [0x00, 0x00, 0x00, 0x00];
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString(linkName),
+                0x08,
+                CreateImageString(linkValue),
+                1,
+                1,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload));
     }
 
     private static byte[] CreateRawDataProperty()
