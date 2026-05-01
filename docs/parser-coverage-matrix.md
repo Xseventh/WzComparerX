@@ -22,7 +22,7 @@ diagnostics contracts, and App consumes Core services.
 | PKG1 directory entries | Recursive directories, string-reference names, checksums, offsets | Implemented for current GMS smoke path | Add more edge-case fixtures for malformed offsets, duplicate names, large tables | P0 | Synthetic fixtures, `inspect --debug`, local Map/UI/String packages |
 | PKG1 package groups | `Name.ini` / `LastWzIndex` plus numbered shard merge | Implemented in Core package group layer | Add stable diagnostics for missing or inconsistent shard links | P0 | Core temp-fixture tests plus local `Map1.wz` smoke |
 | Base package links | Empty stubs link into sibling package folders | Implemented conservatively for Base-style workspace and same-package relative links | Clarify diagnostics for unresolved stubs and preserve true source identity | P0 | Core tests plus local `Base.wz`, `UI.wz`, `Map.wz` smoke |
-| PKG2 header | Detect PKG2 and read header hash fields | Header-only | Parse at least one representative directory shape or document blocker | P0 | WC reference review, synthetic fixture if possible, real-client smoke if sample exists |
+| PKG2 header | Detect PKG2 and read header hash fields | Header-only; `inspect` reports stable blocker diagnostic `wcx.package.pkg2.directoryUnsupported` | Parse at least one representative directory shape | P0 | WC reference review, synthetic fixture if possible, real-client smoke if sample exists |
 | List.wz / optional containers | WC supports older/newer container helpers | Not implemented | Decide whether current target clients require List.wz, `.ms`, or `.mn` | P1 | Local-client scan notes, no code until sample-driven |
 
 ## IMG Values
@@ -47,7 +47,7 @@ diagnostics contracts, and App consumes Core services.
 | Image selector | Selected IMG can be reloaded without UI path guessing | Core image nodes now carry `Identity.ImageSelector` | Document and test selector behavior across more linked package shapes | P0 | Core/App tests |
 | Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath` | Promote linked value targets into `Identity.LinkedTarget` once link resolution moves into Core inspection metadata | P0 | Export/App tests |
 | Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Core link-like value nodes now carry normalized `Identity.LinkedTarget` | Add resolved-target diagnostics and richer package/value identity for resolvable links | P0 | Core fixtures plus App preview tests |
-| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Add diagnostics for PKG2 blockers and future media payload failures | P0 | Unit tests and CLI golden output |
+| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, PKG2 directory inspection emits `wcx.package.pkg2.directoryUnsupported`, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Add diagnostics for future media payload failures | P0 | Unit tests and CLI golden output |
 
 ## Real-Client Smoke Matrix
 
@@ -68,7 +68,8 @@ diagnostics contracts, and App consumes Core services.
 1. Continue tightening resource identity in Core inspection output: package
    path, image selector, value path, and raw linked target are represented;
    resolved link identity remains the next field to enrich.
-2. Add stable diagnostics for PKG2 blockers and future media payload failures.
-3. Choose the first PKG2 directory parsing slice or document the exact blocker.
+2. Add stable diagnostics for future media payload failures.
+3. Choose the first PKG2 directory parsing slice now that the blocker is
+   documented and user-visible.
 4. Add representative real-client smoke notes for Map, UI, Item/Character,
    String, Mob/Npc, Skill, Sound, and Effect without committing client files.

@@ -164,6 +164,43 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugPkg2Directory_ReturnsUnsupportedDiagnostic()
+    {
+        var path = WriteTemporaryPkg2File();
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", path);
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(
+                """
+                source: <wz>
+                format: pkg2
+                debug:
+                  signature: PKG2
+                  valid: True
+                  headerSize: 25
+                  dataSize: 1
+                  fileSize: 34
+                  directoryStartPosition: 33
+                  hash1: 287454020
+                  hash2: 2864434397
+                diagnostics:
+                  error [wcx.package.pkg2.directoryUnsupported]: PKG2 directory inspection is not implemented yet; only header detection is currently supported. (<wz>)
+                <wz> [package] : pkg2
+
+                """.ReplaceLineEndings(),
+                NormalizePath(result.Output, path, "<wz>"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectNoopKey_SelectsNoOpDirectoryStringMode()
     {
         var path = WriteTemporaryPkg1DirectoryFile();
@@ -829,6 +866,22 @@ public class CliApplicationTests
         var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-image-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, [.. header, .. directoryData, .. imageBytes]);
         return path;
+    }
+
+    private static string WriteTemporaryPkg2File()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-pkg2-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, CreatePkg2("Copyright", hash1: 0x11223344, hash2: 0xaabbccdd));
+        return path;
+    }
+
+    private static byte[] CreatePkg2(string copyright, uint hash1, uint hash2)
+    {
+        var header = CreateHeader("PKG2", copyright, dataSize: 1);
+        var hashBytes = new byte[8];
+        BinaryPrimitives.WriteUInt32LittleEndian(hashBytes.AsSpan(0, sizeof(uint)), hash1);
+        BinaryPrimitives.WriteUInt32LittleEndian(hashBytes.AsSpan(sizeof(uint), sizeof(uint)), hash2);
+        return [.. header, .. hashBytes, 0x00];
     }
 
     private static byte[] CreateDirectoryDataForImage(string name, int imageSize)

@@ -192,7 +192,7 @@ public static class CliApplication
                 output.Write(json
                     ? new ResourceInspectionJsonFormatter().Format(inspection)
                     : new ResourceInspectionFormatter().Format(inspection));
-                return 0;
+                return HasErrorDiagnostics(inspection) ? 1 : 0;
             }
 
             if (string.Equals(command, "export", StringComparison.OrdinalIgnoreCase))
@@ -227,6 +227,11 @@ public static class CliApplication
             WriteDiagnostics([ex.Diagnostic], error);
             return 1;
         }
+        catch (ResourceInspectionException ex)
+        {
+            WriteDiagnostics([ex.Diagnostic], error);
+            return 1;
+        }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             error.WriteLine(ex.Message);
@@ -257,6 +262,22 @@ public static class CliApplication
         {
             error.WriteLine(ResourceInspectionDiagnosticFormatter.Format(diagnostic));
         }
+    }
+
+    private static bool HasErrorDiagnostics(ResourceInspectionDocument document)
+    {
+        return HasErrorDiagnostics(document.Diagnostics) || HasErrorDiagnostics(document.Root);
+    }
+
+    private static bool HasErrorDiagnostics(ResourceInspectionNode node)
+    {
+        return HasErrorDiagnostics(node.Diagnostics) || node.Children.Any(HasErrorDiagnostics);
+    }
+
+    private static bool HasErrorDiagnostics(IReadOnlyList<ResourceInspectionDiagnostic>? diagnostics)
+    {
+        return diagnostics?.Any(diagnostic =>
+            string.Equals(diagnostic.Severity, ResourceDiagnosticSeverities.Error, StringComparison.Ordinal)) == true;
     }
 
     private static bool TryParseStringKey(string value, out WzStringEncryptionKind? kind)

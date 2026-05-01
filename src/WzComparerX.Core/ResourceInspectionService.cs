@@ -59,6 +59,12 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
+        var header = await new WzPackageHeaderReader().ReadAsync(path, cancellationToken);
+        if (header is { IsValid: true, Format: WzPackageFormat.Pkg2 })
+        {
+            return BuildUnsupportedPkg2Document(header, options);
+        }
+
         var group = await WzPackageGroupInspectionLoader.LoadAsync(path, options.StringKey, cancellationToken);
         var inspection = group.Entry;
         if (!inspection.Header.IsValid)
@@ -85,6 +91,12 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
+        var header = await new WzPackageHeaderReader().ReadAsync(path, cancellationToken);
+        if (header is { IsValid: true, Format: WzPackageFormat.Pkg2 })
+        {
+            throw new ResourceInspectionException(ResourceInspectionDiagnostics.Pkg2DirectoryInspectionUnsupported(header.SourcePath));
+        }
+
         var context = await WzImageInspectionLoader.LoadAsync(
             path,
             selector,
@@ -101,6 +113,31 @@ public sealed class ResourceInspectionService
             root,
             options.IncludeDebugMetadata ? BuildImageDocumentMetadata(directoryInspection, inspection, context.StringKey) : null,
             root.Diagnostics);
+    }
+
+    private static ResourceInspectionDocument BuildUnsupportedPkg2Document(
+        WzPackageHeader header,
+        ResourceInspectionOptions options)
+    {
+        var rootName = Path.GetFileName(header.SourcePath);
+        if (string.IsNullOrWhiteSpace(rootName))
+        {
+            rootName = header.SourcePath;
+        }
+
+        var diagnostic = ResourceInspectionDiagnostics.Pkg2DirectoryInspectionUnsupported(header.SourcePath);
+        var root = new ResourceInspectionNode(
+            rootName,
+            "package",
+            rootName,
+            header.Format.ToString().ToLowerInvariant(),
+            Identity: new ResourceInspectionIdentity(PackagePath: header.SourcePath));
+        return new ResourceInspectionDocument(
+            header.SourcePath,
+            header.Format.ToString().ToLowerInvariant(),
+            root,
+            options.IncludeDebugMetadata ? BuildPackageHeaderMetadata(header) : null,
+            [diagnostic]);
     }
 
     private static ResourceInspectionNode ProjectRawNode(RawResourceNode node, string? parentPath)
@@ -273,6 +310,22 @@ public sealed class ResourceInspectionService
         AddOptional(metadata, "stringKey", inspection.StringEncryptionKind?.ToString().ToLowerInvariant());
         AddOptional(metadata, "wzVersion", inspection.WzVersion);
         AddOptional(metadata, "hashVersion", inspection.HashVersion);
+        return metadata;
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildPackageHeaderMetadata(WzPackageHeader header)
+    {
+        var metadata = new List<ResourceInspectionMetadata>
+        {
+            new("signature", header.Signature),
+            new("valid", header.IsValid),
+            new("headerSize", header.HeaderSize),
+            new("dataSize", header.DataSize),
+            new("fileSize", header.FileSize),
+            new("directoryStartPosition", header.DirectoryStartPosition)
+        };
+        AddOptional(metadata, "hash1", header.Hash1);
+        AddOptional(metadata, "hash2", header.Hash2);
         return metadata;
     }
 

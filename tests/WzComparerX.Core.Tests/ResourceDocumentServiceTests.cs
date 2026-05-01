@@ -117,6 +117,40 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectPkg2Directory_ReturnsUnsupportedDiagnosticDocument()
+    {
+        var path = WriteTemporaryPkg2File();
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("pkg2", inspection.Format);
+            Assert.Equal(Path.GetFileName(path), inspection.Root.Name);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.Equal("pkg2", inspection.Root.DisplayValue);
+            Assert.NotNull(inspection.Root.Identity);
+            Assert.Equal(path, inspection.Root.Identity.PackagePath);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "hash1" && Equals(item.Value, 0x11223344u));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "hash2" && Equals(item.Value, 0xaabbccddu));
+
+            var diagnostic = Assert.Single(inspection.Diagnostics!);
+            Assert.Equal(ResourceDiagnosticSeverities.Error, diagnostic.Severity);
+            Assert.Equal(ResourceDiagnosticCodes.Pkg2DirectoryInspectionUnsupported, diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
+            Assert.Equal(path, diagnostic.Path);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDirectory_LinksSiblingSplitPackagesForEmptyTopLevelDirectories()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-split-package-");
@@ -902,6 +936,22 @@ public class ResourceDocumentServiceTests
         var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-image-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, [.. header, .. directoryData, .. imageBytes]);
         return path;
+    }
+
+    private static string WriteTemporaryPkg2File()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-pkg2-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, CreatePkg2("Copyright", hash1: 0x11223344, hash2: 0xaabbccdd));
+        return path;
+    }
+
+    private static byte[] CreatePkg2(string copyright, uint hash1, uint hash2)
+    {
+        var header = CreateHeader("PKG2", copyright, dataSize: 1);
+        var hashBytes = new byte[8];
+        BinaryPrimitives.WriteUInt32LittleEndian(hashBytes.AsSpan(0, sizeof(uint)), hash1);
+        BinaryPrimitives.WriteUInt32LittleEndian(hashBytes.AsSpan(sizeof(uint), sizeof(uint)), hash2);
+        return [.. header, .. hashBytes, 0x00];
     }
 
     private static byte[] CreateDirectoryDataForImage(string name, int imageSize)

@@ -27,6 +27,8 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+f21ec65 Report unresolved Canvas preview links
+38452b2 Report unresolved split package links
 777a090 Add Core link target identity
 03a9199 Add Core resource inspection identity
 487d82d Add M5 parser coverage matrix
@@ -312,6 +314,9 @@ M4 completed:
 - Failed split-package candidates now emit `wcx.package.link.unresolved` on the
   directory stub. Missing candidates remain silent so ordinary empty directory
   stubs do not become noisy diagnostics.
+- PKG2 remains header-only, but `inspect` now returns a stable parser error
+  diagnostic, `wcx.package.pkg2.directoryUnsupported`, and exits non-zero
+  instead of exposing unsupported directory parsing as a raw exception.
 
 Local GMS smoke status:
 

@@ -192,6 +192,8 @@ M4 完成后已经开始低风险架构整理：
   `linkKind` / `linkedTarget`。
 - split-package candidate 存在但加载失败时，Core inspection 会在对应目录
   stub 上输出稳定 warning diagnostic：`wcx.package.link.unresolved`。
+- PKG2 仍是 header-only 覆盖，但 `inspect` 现在会返回稳定 error
+  diagnostic：`wcx.package.pkg2.directoryUnsupported`，而不是暴露裸解析异常。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。

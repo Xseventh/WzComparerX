@@ -44,6 +44,16 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Parser);
     }
 
+    public static ResourceInspectionDiagnostic Pkg2DirectoryInspectionUnsupported(string path)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            "PKG2 directory inspection is not implemented yet; only header detection is currently supported.",
+            path,
+            ResourceDiagnosticCodes.Pkg2DirectoryInspectionUnsupported,
+            ResourceDiagnosticSources.Parser);
+    }
+
     public static ResourceInspectionDiagnostic SplitPackageLinkUnresolved(string path)
     {
         return new ResourceInspectionDiagnostic(
