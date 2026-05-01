@@ -151,6 +151,40 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectMsContainer_ReturnsUnsupportedDiagnosticDocument()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-ms-{Guid.NewGuid():N}.ms");
+        await File.WriteAllBytesAsync(path, [0x4d, 0x53, 0x00]);
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Equal(Path.GetFileName(path), inspection.Root.Name);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.Equal("ms", inspection.Root.DisplayValue);
+            Assert.NotNull(inspection.Root.Identity);
+            Assert.Equal(path, inspection.Root.Identity.PackagePath);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "containerKind" && Equals(item.Value, "ms"));
+
+            var diagnostic = Assert.Single(inspection.Diagnostics!);
+            Assert.Equal(ResourceDiagnosticSeverities.Error, diagnostic.Severity);
+            Assert.Equal(ResourceDiagnosticCodes.MsContainerInspectionUnsupported, diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
+            Assert.Equal(path, diagnostic.Path);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDirectory_LinksSiblingSplitPackagesForEmptyTopLevelDirectories()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-split-package-");

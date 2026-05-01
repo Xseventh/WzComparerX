@@ -54,6 +54,16 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Parser);
     }
 
+    public static ResourceInspectionDiagnostic MsContainerInspectionUnsupported(string path)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            "MS container inspection is not implemented yet; WCX currently supports WZ package inspection for this path.",
+            path,
+            ResourceDiagnosticCodes.MsContainerInspectionUnsupported,
+            ResourceDiagnosticSources.Parser);
+    }
+
     public static ResourceInspectionDiagnostic SplitPackageLinkUnresolved(string path)
     {
         return new ResourceInspectionDiagnostic(

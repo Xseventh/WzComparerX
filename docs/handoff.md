@@ -27,7 +27,8 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
-35a8928 Record GMS container inventory
+5c530a2 Report MS container inspection blocker
+b1226ba Record GMS container inventory
 3b7bdb0 Add optional GMS core smoke tests
 27b9a27 Guard malformed PKG1 directories
 aa093ce Document headless UI test convention
@@ -361,6 +362,9 @@ Local GMS smoke status:
   `Data/Packs/*.ms` files exist. The next sample-driven container step should
   review WC `Ms_File` / `Ms_FileV2` before implementing a minimal `.ms`
   inspection slice.
+- `.ms` paths now return a stable inspection error diagnostic
+  `wcx.package.ms.directoryUnsupported` instead of falling through to a generic
+  invalid WZ error. Actual `.ms` header/entry parsing is still pending.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

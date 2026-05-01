@@ -28,14 +28,19 @@ public sealed class ResourceInspectionService
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(options);
 
-        if (selector is not null)
-        {
-            return await InspectImageAsync(path, selector, options, cancellationToken);
-        }
-
         if (string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase))
         {
             return await InspectSyntheticAsync(path, options, cancellationToken);
+        }
+
+        if (IsMsContainerPath(path))
+        {
+            return BuildUnsupportedMsContainerDocument(path, options);
+        }
+
+        if (selector is not null)
+        {
+            return await InspectImageAsync(path, selector, options, cancellationToken);
         }
 
         return await InspectDirectoryAsync(path, options, cancellationToken);
@@ -138,6 +143,37 @@ public sealed class ResourceInspectionService
             root,
             options.IncludeDebugMetadata ? BuildPackageHeaderMetadata(header) : null,
             [diagnostic]);
+    }
+
+    private static ResourceInspectionDocument BuildUnsupportedMsContainerDocument(
+        string path,
+        ResourceInspectionOptions options)
+    {
+        var fullPath = Path.GetFullPath(path);
+        var rootName = Path.GetFileName(fullPath);
+        if (string.IsNullOrWhiteSpace(rootName))
+        {
+            rootName = fullPath;
+        }
+
+        var diagnostic = ResourceInspectionDiagnostics.MsContainerInspectionUnsupported(fullPath);
+        var root = new ResourceInspectionNode(
+            rootName,
+            "package",
+            rootName,
+            "ms",
+            Identity: new ResourceInspectionIdentity(PackagePath: fullPath));
+        return new ResourceInspectionDocument(
+            fullPath,
+            "ms",
+            root,
+            options.IncludeDebugMetadata ? [new ResourceInspectionMetadata("containerKind", "ms")] : null,
+            [diagnostic]);
+    }
+
+    private static bool IsMsContainerPath(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".ms", StringComparison.OrdinalIgnoreCase);
     }
 
     private static ResourceInspectionNode ProjectRawNode(RawResourceNode node, string? parentPath)

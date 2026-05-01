@@ -201,6 +201,37 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugMsContainer_ReturnsUnsupportedDiagnostic()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-ms-{Guid.NewGuid():N}.ms");
+        await File.WriteAllBytesAsync(path, [0x4d, 0x53, 0x00]);
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", path);
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(
+                """
+                source: <ms>
+                format: ms
+                debug:
+                  containerKind: ms
+                diagnostics:
+                  error [wcx.package.ms.directoryUnsupported]: MS container inspection is not implemented yet; WCX currently supports WZ package inspection for this path. (<ms>)
+                <ms> [package] : ms
+
+                """.ReplaceLineEndings(),
+                NormalizePath(result.Output, path, "<ms>"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectNoopKey_SelectsNoOpDirectoryStringMode()
     {
         var path = WriteTemporaryPkg1DirectoryFile();
