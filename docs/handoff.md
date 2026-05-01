@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+c502e80 Split Avalonia details projection
 171b99c Split Avalonia image content workflow
 ca589a9 Close M4 and split Canvas preview workflow
 bb67eff Record M4 GMS UI smoke
@@ -288,6 +289,10 @@ M4 completed:
 - Resource detail projection for document metadata, selected-node metadata, and
   selected diagnostics now lives in a small ViewModel helper, keeping panel
   formatting rules out of the main window orchestration.
+- Core split-package link path resolution now lives in a dedicated helper. The
+  inspection service still composes the resource tree, but Base workspace
+  fallback, same-package relative lookup, candidate de-duplication, and ancestor
+  path normalization no longer sit directly in the main inspection flow.
 
 Local GMS smoke status:
 

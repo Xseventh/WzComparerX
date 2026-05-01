@@ -180,11 +180,13 @@ M4 完成后已经开始低风险架构整理：
   App workflow helper，ViewModel 继续只负责可见状态和请求排序。
 - Document / Selection / Diagnostics 面板的展示投影被拆到 ViewModel projection
   helper，方便后续复用同一套资源详情展示规则。
+- Core split-package linking 的路径解析策略被拆到独立 helper，`ResourceInspectionService`
+  继续负责 inspection tree 组合，不直接承载 workspace/package 路径推导细节。
 
 后续短线工作：
 
 - 继续按测试保护拆薄 `MainWindowViewModel` 的 activity / task-progress 编排。
-- 复核 Core package group / split-package linking 边界，必要时提取 helper。
+- 继续复核 Core package group / split-package linking 的 tree composition 边界。
 - 为 Milestone 5 Compare Foundation 设计最小 CLI / Core / fixture 切片。
 
 ## 架构分层

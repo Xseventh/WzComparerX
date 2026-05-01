@@ -186,7 +186,9 @@ Closeout notes:
 - Direct-zlib Canvas preview formats `1` / `2` are accepted as the M4 image
   preview slice; broader decode and PNG export stay later.
 - Post-M4 cleanup has started by extracting Canvas Preview and IMG Content
-  workflow logic plus resource detail projection out of `MainWindowViewModel`.
+  workflow logic plus resource detail projection out of `MainWindowViewModel`;
+  Core split-package link path resolution has also been split from the main
+  inspection service.
 
 ## Milestone 5: Compare Foundation
 
