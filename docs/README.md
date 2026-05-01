@@ -178,10 +178,12 @@ M4 完成后已经开始低风险架构整理：
   更新。
 - IMG Content 的 selector 解析、重复 target 判断和 Core inspect 调用也被拆到
   App workflow helper，ViewModel 继续只负责可见状态和请求排序。
+- Document / Selection / Diagnostics 面板的展示投影被拆到 ViewModel projection
+  helper，方便后续复用同一套资源详情展示规则。
 
 后续短线工作：
 
-- 继续按测试保护拆薄 `MainWindowViewModel` 的 selection / activity 编排。
+- 继续按测试保护拆薄 `MainWindowViewModel` 的 activity / task-progress 编排。
 - 复核 Core package group / split-package linking 边界，必要时提取 helper。
 - 为 Milestone 5 Compare Foundation 设计最小 CLI / Core / fixture 切片。
 

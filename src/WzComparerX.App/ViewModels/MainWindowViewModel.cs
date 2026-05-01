@@ -415,44 +415,17 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void SetDocumentMetadata(ResourceInspectionDocument document)
     {
-        DocumentMetadata.Clear();
-        DocumentMetadata.Add(new ResourceMetadataItemViewModel("source", document.SourcePath));
-        DocumentMetadata.Add(new ResourceMetadataItemViewModel("format", document.Format));
-        foreach (var item in document.DebugMetadata ?? [])
-        {
-            DocumentMetadata.Add(ResourceMetadataItemViewModel.FromMetadata(item));
-        }
+        ReplaceCollection(DocumentMetadata, ResourceDetailsProjection.CreateDocumentMetadata(document));
     }
 
     private void SetSelectedMetadata(ResourceInspectionNodeViewModel? node)
     {
-        SelectedMetadata.Clear();
-        if (node is null)
-        {
-            return;
-        }
-
-        SelectedMetadata.Add(new ResourceMetadataItemViewModel("name", node.Name));
-        SelectedMetadata.Add(new ResourceMetadataItemViewModel("kind", node.Kind));
-        AddOptional("path", node.Path);
-        AddOptional("value", node.DisplayValue);
-        foreach (var item in node.DebugMetadata)
-        {
-            SelectedMetadata.Add(item);
-        }
+        ReplaceCollection(SelectedMetadata, ResourceDetailsProjection.CreateSelectionMetadata(node));
     }
 
     private void SetSelectedDiagnostics(ResourceInspectionNodeViewModel? node)
     {
-        SelectedDiagnostics.Clear();
-        if (node is not null)
-        {
-            foreach (var diagnostic in node.Diagnostics)
-            {
-                SelectedDiagnostics.Add(diagnostic);
-            }
-        }
-
+        ReplaceCollection(SelectedDiagnostics, ResourceDetailsProjection.CreateSelectionDiagnostics(node));
         OnPropertyChanged(nameof(HasDiagnostics));
     }
 
@@ -601,14 +574,6 @@ public partial class MainWindowViewModel : ViewModelBase
         CanvasPreviewStatus = status;
     }
 
-    private void AddOptional(string name, string? value)
-    {
-        if (!string.IsNullOrWhiteSpace(value))
-        {
-            SelectedMetadata.Add(new ResourceMetadataItemViewModel(name, value));
-        }
-    }
-
     private bool TryCreateInspectionOptions(out ResourceInspectionOptions options)
     {
         options = new ResourceInspectionOptions(IncludeDebugMetadata: true);
@@ -640,6 +605,15 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         {
             return string.Equals(left, right, StringComparison.Ordinal);
+        }
+    }
+
+    private static void ReplaceCollection<T>(ObservableCollection<T> collection, IEnumerable<T> items)
+    {
+        collection.Clear();
+        foreach (var item in items)
+        {
+            collection.Add(item);
         }
     }
 }
