@@ -32,7 +32,7 @@ diagnostics contracts, and App consumes Core services.
 | IMG root object | Lazy extract selected IMG, then full object tree | Implemented for supported object families | Keep App lazy/full flow aligned with Core inspection defaults | P0 | App tests and local GMS UI smoke |
 | Property traversal | Nested property tree with scalar values | Implemented with caller depth; UI uses full inspection | Add more deterministic fixtures for unusual scalar encodings and empty properties | P0 | WzLib/Core fixtures, CLI golden output |
 | Vector / Convex2D | Decode geometry values and nested components | Metadata/value inspection implemented | Validate real-client cases beyond UI/Map samples | P1 | `inspect --debug` smoke notes |
-| UOL / link strings | Resolve links where possible; display unresolved links | Link-like values now carry `Identity.LinkedTarget` plus debug `linkKind`/`linkedTarget`; Canvas string links partially resolve in App/Core preview path, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Promote resolved package/value identity where practical and expand real-client link smoke | P0 | Core link fixtures, App preview tests, local Map/UI smoke |
+| UOL / link strings | Resolve links where possible; display unresolved links | Link-like values now carry `Identity.LinkedTarget`; `inspect --debug` can populate `Identity.ResolvedLinkedTarget` for local `_inlink`, relative UOL, and logical `source` / `_outlink` / `link` targets with `.img` segments; Canvas preview uses the same resolver and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Expand real-client link smoke and add diagnostics for non-viewer unresolved targets only when consumers need them | P0 | Core link fixtures, App preview tests, local Map/UI smoke |
 | Canvas metadata | Width, height, format, scale, payload metadata | Implemented | Add unsupported-format diagnostics where payload metadata is insufficient | P0 | Synthetic Canvas fixtures and local UI/Map smoke |
 | Sound / Video / RawData | Metadata plus payload extraction/playback/export in WC | Metadata only, with stable parser diagnostics for unsupported payload decode | Add export/playback only after selector and payload contracts are ready | P1 | Local Sound/UI smoke and export diagnostics tests |
 | Lua IMG | Lua-specific stream decode and script export | Synthetic fixture support; no direct local real-sample entry yet | Find real sample or keep documented as fixture-only | P1 | Fixture tests, future local smoke |
@@ -45,8 +45,8 @@ diagnostics contracts, and App consumes Core services.
 | Node path | Tree nodes are navigable by stable WZ-style paths | `ResourceInspectionNode.Path` is present; identity semantics documented in `docs/resource-identity.md` | Add more cross-package examples as compare/search requirements appear | P0 | Core model tests and CLI JSON golden output |
 | Source package | Split/merged image nodes know original package | Core nodes now carry `Identity.PackagePath`; merged shard image identities point to the source shard | Continue applying identity to later linked targets and diagnostics | P0 | Core package-group tests |
 | Image selector | Selected IMG can be reloaded without UI path guessing | Core image nodes now carry `Identity.ImageSelector`; CLI debug JSON covers image/value/link identity | Test selector behavior across more linked package shapes | P0 | Core/App tests |
-| Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath` | Promote linked value targets into `Identity.LinkedTarget` once link resolution moves into Core inspection metadata | P0 | Export/App tests |
-| Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Core link-like value nodes now carry normalized `Identity.LinkedTarget` | Add resolved-target diagnostics and richer package/value identity for resolvable links | P0 | Core fixtures plus App preview tests |
+| Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath`, and debug link resolution can report linked value paths | Add more cross-package examples as compare/search requirements appear | P0 | Export/App tests |
+| Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Core link-like value nodes carry normalized `Identity.LinkedTarget`; `inspect --debug` can include `Identity.ResolvedLinkedTarget` and resolved-link debug metadata for deterministic targets | Add richer unresolved-target diagnostics and real-client smoke for link-heavy packages | P0 | Core fixtures plus App preview tests |
 | Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, PKG2 directory inspection emits `wcx.package.pkg2.directoryUnsupported`, RawData/Video/Sound metadata emit unsupported payload diagnostics, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Keep future export/playback diagnostics aligned with the same codes/sources | P0 | Unit tests and CLI golden output |
 
 ## Real-Client Smoke Matrix
@@ -65,12 +65,9 @@ diagnostics contracts, and App consumes Core services.
 
 ## Immediate M5 Slices
 
-1. Continue tightening resource identity in Core inspection output: package
-   path, image selector, value path, and raw linked target are represented;
-   resolved link identity remains the next field to enrich.
-2. Keep future media export/playback diagnostics aligned with the existing
+1. Keep future media export/playback diagnostics aligned with the existing
    parser payload diagnostic codes.
-3. Choose the first PKG2 directory parsing slice now that the blocker is
+2. Choose the first PKG2 directory parsing slice now that the blocker is
    documented and user-visible.
-4. Add representative real-client smoke notes for Map, UI, Item/Character,
+3. Add representative real-client smoke notes for Map, UI, Item/Character,
    String, Mob/Npc, Skill, Sound, and Effect without committing client files.

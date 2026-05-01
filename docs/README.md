@@ -193,7 +193,8 @@ M4 完成后已经开始低风险架构整理：
   提供不依赖 UI 字符串猜测的资源身份地基。
 - IMG 内部 `source`、`_inlink`、`_outlink`、`link` 字符串和 UOL 节点现在会把
   normalized linked target 写进 Core identity，并在 `inspect --debug` 中暴露
-  `linkKind` / `linkedTarget`。
+  `linkKind` / `linkedTarget`；可确定解析的目标会额外写入
+  `Identity.ResolvedLinkedTarget` 和 resolved-link debug metadata。
 - split-package candidate 存在但加载失败时，Core inspection 会在对应目录
   stub 上输出稳定 warning diagnostic：`wcx.package.link.unresolved`。
 - PKG2 仍是 header-only 覆盖，但 `inspect` 现在会返回稳定 error

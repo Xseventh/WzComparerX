@@ -195,12 +195,10 @@ public sealed class ResourceCanvasImageService
 
         if (match.Value is string linkValue && IsCanvasLinkProperty(match))
         {
-            var normalizedTarget = NormalizePropertyPath(linkValue);
             var linkedTarget = await ResolveCanvasLinkAsync(
                 sourcePath,
                 inspection,
                 match,
-                linkValue,
                 options,
                 cancellationToken);
             if (linkedTarget is not null)
@@ -213,7 +211,7 @@ public sealed class ResourceCanvasImageService
                     valueSelector,
                     selector,
                     match.Name ?? "link",
-                    normalizedTarget));
+                    ResourceInspectionLinkResolver.NormalizeLinkTarget(linkValue) ?? string.Empty));
         }
 
         throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector));
@@ -223,149 +221,61 @@ public sealed class ResourceCanvasImageService
         string sourcePath,
         WzImageInspection inspection,
         WzImagePropertyInspectionEntry linkProperty,
-        string linkValue,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
-        var normalizedValue = NormalizePropertyPath(linkValue);
-        if (string.IsNullOrWhiteSpace(normalizedValue))
+        var resolvedTarget = await ResourceInspectionLinkResolver.ResolveAsync(
+            sourcePath,
+            inspection,
+            linkProperty,
+            options.StringKey,
+            cancellationToken);
+        if (resolvedTarget is null)
         {
             return null;
         }
 
-        if (string.Equals(linkProperty.Name, "_inlink", StringComparison.Ordinal))
+        if (string.Equals(resolvedTarget.PackagePath, sourcePath, StringComparison.Ordinal) &&
+            string.Equals(resolvedTarget.ImageSelector, inspection.Selector, StringComparison.Ordinal))
         {
-            var inlinkCanvas = FindCanvasProperty(inspection, normalizedValue);
-            return inlinkCanvas?.Value is WzImageCanvasInspection canvas
-                ? new CanvasImageTarget(sourcePath, inspection.Selector, canvas, inlinkCanvas.Path ?? normalizedValue)
+            if (string.IsNullOrWhiteSpace(resolvedTarget.ValuePath))
+            {
+                return inspection.ObjectValue is WzImageCanvasInspection localRootCanvas
+                    ? new CanvasImageTarget(sourcePath, inspection.Selector, localRootCanvas, null)
+                    : null;
+            }
+
+            var localCanvas = FindCanvasProperty(inspection, resolvedTarget.ValuePath);
+            return localCanvas?.Value is WzImageCanvasInspection canvas
+                ? new CanvasImageTarget(sourcePath, inspection.Selector, canvas, localCanvas.Path ?? resolvedTarget.ValuePath)
                 : null;
         }
 
-        var logicalTarget = await ResolveLogicalImageValueAsync(
-            sourcePath,
-            normalizedValue,
-            options.StringKey,
-            cancellationToken);
-        if (logicalTarget is null)
-        {
-            return null;
-        }
-
         var context = await WzImageInspectionLoader.LoadAsync(
-            logicalTarget.PackagePath,
-            logicalTarget.Selector,
+            resolvedTarget.PackagePath,
+            resolvedTarget.ImageSelector,
             options.StringKey,
             options.MaxPropertyDepth,
             cancellationToken);
-        var linkedCanvasProperty = string.IsNullOrWhiteSpace(logicalTarget.ValuePath)
+        var linkedCanvasProperty = string.IsNullOrWhiteSpace(resolvedTarget.ValuePath)
             ? null
-            : FindCanvasProperty(context.ImageInspection, logicalTarget.ValuePath);
+            : FindCanvasProperty(context.ImageInspection, resolvedTarget.ValuePath);
         if (linkedCanvasProperty?.Value is WzImageCanvasInspection linkedCanvas)
         {
             return new CanvasImageTarget(
-                logicalTarget.PackagePath,
-                logicalTarget.Selector,
+                resolvedTarget.PackagePath,
+                resolvedTarget.ImageSelector,
                 linkedCanvas,
-                linkedCanvasProperty.Path ?? logicalTarget.ValuePath);
+                linkedCanvasProperty.Path ?? resolvedTarget.ValuePath);
         }
 
-        if (string.IsNullOrWhiteSpace(logicalTarget.ValuePath) &&
-            context.ImageInspection.ObjectValue is WzImageCanvasInspection rootCanvas)
+        if (string.IsNullOrWhiteSpace(resolvedTarget.ValuePath) &&
+            context.ImageInspection.ObjectValue is WzImageCanvasInspection linkedRootCanvas)
         {
-            return new CanvasImageTarget(logicalTarget.PackagePath, logicalTarget.Selector, rootCanvas, null);
+            return new CanvasImageTarget(resolvedTarget.PackagePath, resolvedTarget.ImageSelector, linkedRootCanvas, null);
         }
 
         return null;
-    }
-
-    private static async Task<LogicalImageValueTarget?> ResolveLogicalImageValueAsync(
-        string currentPackagePath,
-        string logicalPath,
-        WzStringEncryptionKind? stringKey,
-        CancellationToken cancellationToken)
-    {
-        var normalized = NormalizePropertyPath(logicalPath);
-        var parts = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var imageIndex = Array.FindIndex(parts, part => part.EndsWith(".img", StringComparison.OrdinalIgnoreCase));
-        if (imageIndex < 0)
-        {
-            return null;
-        }
-
-        var dataRoot = FindDataRoot(currentPackagePath);
-        if (dataRoot is null)
-        {
-            return null;
-        }
-
-        var imageName = parts[imageIndex];
-        var valuePath = imageIndex + 1 < parts.Length ? string.Join('/', parts[(imageIndex + 1)..]) : null;
-        var packageSegments = parts[..imageIndex];
-        foreach (var candidate in EnumerateLogicalPackageCandidates(dataRoot, packageSegments, imageName))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var target = await TryResolveImageInPackageGroupAsync(
-                candidate.PackagePath,
-                candidate.Selector,
-                valuePath,
-                stringKey,
-                cancellationToken);
-            if (target is not null)
-            {
-                return target;
-            }
-        }
-
-        return null;
-    }
-
-    private static async Task<LogicalImageValueTarget?> TryResolveImageInPackageGroupAsync(
-        string packagePath,
-        string selector,
-        string? valuePath,
-        WzStringEncryptionKind? stringKey,
-        CancellationToken cancellationToken)
-    {
-        if (!File.Exists(packagePath))
-        {
-            return null;
-        }
-
-        try
-        {
-            var group = await WzPackageGroupInspectionLoader.LoadAsync(packagePath, stringKey, cancellationToken);
-            foreach (var member in group.Members)
-            {
-                if (WzImageInspectionLoader.TryFindImageEntry(member.Inspection, selector) is not null)
-                {
-                    return new LogicalImageValueTarget(member.SourcePath, selector, valuePath);
-                }
-            }
-        }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-
-        return null;
-    }
-
-    private static IEnumerable<LogicalPackageCandidate> EnumerateLogicalPackageCandidates(
-        string dataRoot,
-        string[] packageSegments,
-        string imageName)
-    {
-        if (packageSegments.Length > 0)
-        {
-            var firstSegment = packageSegments[0];
-            var rootPackagePath = Path.Combine(dataRoot, firstSegment, firstSegment + ".wz");
-            var rootSelectorParts = packageSegments.Skip(1).Append(imageName).ToArray();
-            yield return new LogicalPackageCandidate(rootPackagePath, string.Join('/', rootSelectorParts));
-
-            var folder = Path.Combine([dataRoot, .. packageSegments]);
-            var folderPackagePath = Path.Combine(folder, packageSegments[^1] + ".wz");
-            yield return new LogicalPackageCandidate(folderPackagePath, imageName);
-        }
     }
 
     private static WzImagePropertyInspectionEntry? FindCanvasProperty(WzImageInspection inspection, string valuePath)
@@ -383,27 +293,6 @@ public sealed class ResourceCanvasImageService
             (string.Equals(property.Name, "source", StringComparison.Ordinal) ||
              string.Equals(property.Name, "_inlink", StringComparison.Ordinal) ||
              string.Equals(property.Name, "_outlink", StringComparison.Ordinal));
-    }
-
-    private static string NormalizePropertyPath(string value)
-    {
-        return value.Trim().Replace('\\', '/').Trim('/');
-    }
-
-    private static string? FindDataRoot(string path)
-    {
-        var directory = Path.GetDirectoryName(path);
-        while (!string.IsNullOrWhiteSpace(directory))
-        {
-            if (string.Equals(Path.GetFileName(directory), "Data", StringComparison.OrdinalIgnoreCase))
-            {
-                return directory;
-            }
-
-            directory = Directory.GetParent(directory)?.FullName;
-        }
-
-        return null;
     }
 
     private static IEnumerable<WzImagePropertyInspectionEntry> Flatten(WzImagePropertyInspectionEntry property)
@@ -426,7 +315,4 @@ public sealed class ResourceCanvasImageService
         WzImageCanvasInspection Value,
         string? Path);
 
-    private sealed record LogicalPackageCandidate(string PackagePath, string Selector);
-
-    private sealed record LogicalImageValueTarget(string PackagePath, string Selector, string? ValuePath);
 }

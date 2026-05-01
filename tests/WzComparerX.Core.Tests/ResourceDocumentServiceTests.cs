@@ -613,12 +613,72 @@ public class ResourceDocumentServiceTests
             Assert.Equal("uol", uol.Kind);
             Assert.NotNull(uol.Identity);
             Assert.Equal("../info/source", uol.Identity.LinkedTarget);
+            Assert.NotNull(uol.Identity.ResolvedLinkedTarget);
+            Assert.Equal(path, uol.Identity.ResolvedLinkedTarget.PackagePath);
+            Assert.Equal("Canvas.img", uol.Identity.ResolvedLinkedTarget.ImageSelector);
+            Assert.Equal("info/source", uol.Identity.ResolvedLinkedTarget.ValuePath);
             Assert.Contains("linkKind: uol", output);
             Assert.Contains("linkedTarget: ../info/source", output);
+            Assert.Contains("resolvedLinkedValuePath: info/source", output);
         }
         finally
         {
             File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugImage_ResolvesOutlinkIdentityAcrossDataPackages()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-inspect-resolved-outlink-");
+        var sourceDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "CanvasSource"));
+        var proxyDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "Proxy"));
+        var sourcePath = Path.Combine(sourceDirectory.FullName, "CanvasSource.wz");
+        var proxyPath = Path.Combine(proxyDirectory.FullName, "Proxy.wz");
+        await File.WriteAllBytesAsync(sourcePath, CreatePkg1ImagePackage("Linked.img", CreatePropertyImage()));
+        await File.WriteAllBytesAsync(
+            proxyPath,
+            CreatePkg1ImagePackage(
+                "Proxy.img",
+                CreatePropertyImage(CreateLinkedCanvasProperty(
+                    "proxy",
+                    "_outlink",
+                    "Map\\CanvasSource\\Linked.img\\icon"))));
+        var service = new ResourceInspectionService();
+        var formatter = new ResourceInspectionFormatter();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                proxyPath,
+                selector: "Proxy.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
+            var output = formatter.Format(inspection);
+
+            var proxy = Assert.Single(inspection.Root.Children, child => child.Name == "proxy");
+            var outlink = Assert.Single(proxy.Children, child => child.Name == "_outlink");
+            Assert.NotNull(outlink.Identity);
+            Assert.Equal("Map/CanvasSource/Linked.img/icon", outlink.Identity.LinkedTarget);
+            Assert.NotNull(outlink.Identity.ResolvedLinkedTarget);
+            Assert.Equal(sourcePath, outlink.Identity.ResolvedLinkedTarget.PackagePath);
+            Assert.Equal("Linked.img", outlink.Identity.ResolvedLinkedTarget.ImageSelector);
+            Assert.Equal("icon", outlink.Identity.ResolvedLinkedTarget.ValuePath);
+            Assert.Contains("resolvedLinkedPackagePath:", output);
+            Assert.Contains("resolvedLinkedImageSelector: Linked.img", output);
+            Assert.Contains("resolvedLinkedValuePath: icon", output);
+
+            var jsonOutput = new ResourceInspectionJsonFormatter().Format(inspection);
+            using var json = JsonDocument.Parse(jsonOutput);
+            var jsonProxy = Assert.Single(json.RootElement.GetProperty("Root").GetProperty("Children").EnumerateArray());
+            var jsonOutlink = Assert.Single(jsonProxy.GetProperty("Children").EnumerateArray());
+            var resolved = jsonOutlink.GetProperty("Identity").GetProperty("ResolvedLinkedTarget");
+            Assert.Equal(sourcePath, resolved.GetProperty("PackagePath").GetString());
+            Assert.Equal("Linked.img", resolved.GetProperty("ImageSelector").GetString());
+            Assert.Equal("icon", resolved.GetProperty("ValuePath").GetString());
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
         }
     }
 

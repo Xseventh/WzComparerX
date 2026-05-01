@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+3ce6b97 Document resource identity contract
 d426cf6 Lock media payload diagnostics
 4dcccee Report PKG2 inspection blocker
 f21ec65 Report unresolved Canvas preview links
@@ -311,9 +312,13 @@ M4 completed:
   contract is documented in `docs/resource-identity.md`.
 - Link-like IMG values (`source`, `_inlink`, `_outlink`, `link`, and UOL) now
   populate normalized `Identity.LinkedTarget` and debug `linkKind` /
-  `linkedTarget` metadata. Canvas preview also emits
-  `wcx.viewer.canvas.linkUnresolved` when a selected `source` / `_inlink` /
-  `_outlink` cannot be resolved to a Canvas value.
+  `linkedTarget` metadata. `inspect --debug` can also populate
+  `Identity.ResolvedLinkedTarget` plus resolved-link debug metadata for local
+  `_inlink`, relative UOL, and logical `source` / `_outlink` / `link` targets
+  that can be resolved through the current `Data` workspace. Canvas preview
+  uses the same resolver and emits `wcx.viewer.canvas.linkUnresolved` when a
+  selected `source` / `_inlink` / `_outlink` cannot be resolved to a Canvas
+  value.
 - Failed split-package candidates now emit `wcx.package.link.unresolved` on the
   directory stub. Missing candidates remain silent so ordinary empty directory
   stubs do not become noisy diagnostics.

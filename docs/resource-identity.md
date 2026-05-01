@@ -37,20 +37,29 @@ non-resource helper nodes may not have a backing WZ target.
   such as `source`, `_inlink`, `_outlink`, `link`, and UOL. Backslashes are
   normalized to `/`. This field records the target text; it does not guarantee
   that the target has been resolved to an existing package/value.
+- `ResolvedLinkedTarget`: optional resolved package/image/value identity for
+  link-like IMG values. It is populated by `inspect --debug` when the target is
+  cheap and deterministic to resolve:
+  - `_inlink` resolves inside the current IMG.
+  - UOL resolves as a relative path inside the current IMG.
+  - `source`, `_outlink`, and `link` resolve through the current `Data`
+    workspace when the logical target contains an `.img` segment and the target
+    image entry exists in a package group.
 
 ## Resolution Boundary
 
-Core inspection records raw identity and normalized link targets. It does not
-currently rewrite link-like nodes to a resolved target identity during ordinary
-inspection.
+Core inspection records raw identity and normalized link targets for ordinary
+inspection. `inspect --debug` may perform the additional read-only package group
+lookups needed to fill `ResolvedLinkedTarget`; normal `inspect` avoids that
+extra cross-package work.
 
-Canvas preview performs a narrower resolution pass when a selected Canvas link
-needs to be displayed. Failed viewer resolution is reported as
-`wcx.viewer.canvas.linkUnresolved`.
+Canvas preview and debug inspection share the same logical link resolver for
+package/image/value identity. Preview still validates that the resolved value is
+a supported Canvas before displaying pixels. Failed viewer resolution is
+reported as `wcx.viewer.canvas.linkUnresolved`.
 
-Future search/compare work should extend the model with resolved target
-identity only when that behavior is shared by multiple workflows and covered by
-tests.
+Future search/compare work should extend this model only when new target shapes
+are shared by multiple workflows and covered by tests.
 
 ## CLI JSON
 

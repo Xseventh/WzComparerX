@@ -106,7 +106,7 @@ public sealed class ResourceInspectionService
         var directoryInspection = context.DirectoryInspection;
         var inspection = context.ImageInspection;
 
-        var root = ProjectImageInspection(inspection, options.IncludeDebugMetadata);
+        var root = await ProjectImageInspectionAsync(inspection, options, cancellationToken);
         return new ResourceInspectionDocument(
             inspection.Header.SourcePath,
             inspection.Header.Format.ToString().ToLowerInvariant(),
@@ -234,7 +234,10 @@ public sealed class ResourceInspectionService
         return builder.ToNode();
     }
 
-    private static ResourceInspectionNode ProjectImageInspection(WzImageInspection inspection, bool includeDebugMetadata)
+    private static async Task<ResourceInspectionNode> ProjectImageInspectionAsync(
+        WzImageInspection inspection,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
     {
         var name = inspection.Entry?.Path ?? inspection.Entry?.Name ?? inspection.Selector;
         var displayValue = inspection.ObjectValue is WzImageTextInspection
@@ -242,14 +245,20 @@ public sealed class ResourceInspectionService
             : inspection.ObjectValue is not null
             ? FormatObject(inspection.ObjectValue)
             : inspection.ObjectType;
-        var children = inspection.Properties?
-            .Select(property => ProjectImageProperty(
+        var children = new List<ResourceInspectionNode>();
+        foreach (var property in inspection.Properties ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            children.Add(await ProjectImagePropertyAsync(
                 property,
+                inspection,
                 inspection.Header.SourcePath,
                 inspection.Selector,
-                includeDebugMetadata))
-            .ToArray() ?? Array.Empty<ResourceInspectionNode>();
-        var diagnostics = includeDebugMetadata ? BuildValueDiagnostics(inspection.ObjectValue, name) : null;
+                options,
+                cancellationToken));
+        }
+
+        var diagnostics = options.IncludeDebugMetadata ? BuildValueDiagnostics(inspection.ObjectValue, name) : null;
 
         return new ResourceInspectionNode(
             name,
@@ -257,37 +266,60 @@ public sealed class ResourceInspectionService
             name,
             displayValue,
             children,
-            includeDebugMetadata ? BuildImageRootMetadata(inspection) : null,
+            options.IncludeDebugMetadata ? BuildImageRootMetadata(inspection) : null,
             diagnostics,
             new ResourceInspectionIdentity(
                 PackagePath: inspection.Header.SourcePath,
                 ImageSelector: inspection.Selector));
     }
 
-    private static ResourceInspectionNode ProjectImageProperty(
+    private static async Task<ResourceInspectionNode> ProjectImagePropertyAsync(
         WzImagePropertyInspectionEntry property,
+        WzImageInspection inspection,
         string packagePath,
         string imageSelector,
-        bool includeDebugMetadata)
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
     {
         var name = property.Name ?? property.Index.ToString(CultureInfo.InvariantCulture);
-        var children = property.Children?
-            .Select(child => ProjectImageProperty(child, packagePath, imageSelector, includeDebugMetadata))
-            .ToArray() ?? Array.Empty<ResourceInspectionNode>();
+        var children = new List<ResourceInspectionNode>();
+        foreach (var child in property.Children ?? [])
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            children.Add(await ProjectImagePropertyAsync(
+                child,
+                inspection,
+                packagePath,
+                imageSelector,
+                options,
+                cancellationToken));
+        }
+
         var value = property.Value is not null ? FormatObject(property.Value) : null;
+        var linkedTarget = ResourceInspectionLinkResolver.GetLinkedTarget(property);
+        var resolvedLinkedTarget = options.IncludeDebugMetadata && linkedTarget is not null
+            ? await ResourceInspectionLinkResolver.ResolveAsync(
+                packagePath,
+                inspection,
+                property,
+                options.StringKey,
+                cancellationToken)
+            : null;
+
         return new ResourceInspectionNode(
             name,
             property.Kind,
             property.Path,
             value,
             children,
-            includeDebugMetadata ? BuildImagePropertyMetadata(property) : null,
-            includeDebugMetadata ? BuildValueDiagnostics(property.Value, property.Path) : null,
+            options.IncludeDebugMetadata ? BuildImagePropertyMetadata(property, resolvedLinkedTarget) : null,
+            options.IncludeDebugMetadata ? BuildValueDiagnostics(property.Value, property.Path) : null,
             new ResourceInspectionIdentity(
                 PackagePath: packagePath,
                 ImageSelector: imageSelector,
                 ValuePath: property.Path,
-                LinkedTarget: GetLinkedTarget(property)));
+                LinkedTarget: linkedTarget,
+                ResolvedLinkedTarget: resolvedLinkedTarget));
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryDocumentMetadata(WzDirectoryInspection inspection)
@@ -485,7 +517,8 @@ public sealed class ResourceInspectionService
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildImagePropertyMetadata(
-        WzImagePropertyInspectionEntry property)
+        WzImagePropertyInspectionEntry property,
+        ResourceInspectionResolvedLinkTarget? resolvedLinkedTarget)
     {
         var metadata = new List<ResourceInspectionMetadata>
         {
@@ -496,6 +529,7 @@ public sealed class ResourceInspectionService
         AddOptional(metadata, "childCount", property.ChildCount);
         AddOptional(metadata, "linkKind", GetLinkKind(property));
         AddOptional(metadata, "linkedTarget", GetLinkedTarget(property));
+        AddResolvedLinkMetadata(metadata, resolvedLinkedTarget);
         AddValueMetadata(metadata, property.Value);
         return metadata;
     }
@@ -588,6 +622,20 @@ public sealed class ResourceInspectionService
         }
     }
 
+    private static void AddResolvedLinkMetadata(
+        List<ResourceInspectionMetadata> metadata,
+        ResourceInspectionResolvedLinkTarget? resolvedLinkedTarget)
+    {
+        if (resolvedLinkedTarget is null)
+        {
+            return;
+        }
+
+        metadata.Add(new ResourceInspectionMetadata("resolvedLinkedPackagePath", resolvedLinkedTarget.PackagePath));
+        metadata.Add(new ResourceInspectionMetadata("resolvedLinkedImageSelector", resolvedLinkedTarget.ImageSelector));
+        AddOptional(metadata, "resolvedLinkedValuePath", resolvedLinkedTarget.ValuePath);
+    }
+
     private static IReadOnlyList<ResourceInspectionDiagnostic>? BuildValueDiagnostics(object? value, string? path)
     {
         var diagnostic = value switch
@@ -606,34 +654,12 @@ public sealed class ResourceInspectionService
 
     private static string? GetLinkKind(WzImagePropertyInspectionEntry property)
     {
-        if (property.Kind == "uol")
-        {
-            return "uol";
-        }
-
-        if (property.Kind != "string")
-        {
-            return null;
-        }
-
-        return property.Name switch
-        {
-            "source" or "_inlink" or "_outlink" or "link" => property.Name,
-            _ => null
-        };
+        return ResourceInspectionLinkResolver.GetLinkKind(property);
     }
 
     private static string? GetLinkedTarget(WzImagePropertyInspectionEntry property)
     {
-        return GetLinkKind(property) is not null && property.Value is string value
-            ? NormalizeLinkTarget(value)
-            : null;
-    }
-
-    private static string? NormalizeLinkTarget(string value)
-    {
-        var normalized = value.Trim().Replace('\\', '/').Trim('/');
-        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+        return ResourceInspectionLinkResolver.GetLinkedTarget(property);
     }
 
     private static void AddOptional(List<ResourceInspectionMetadata> metadata, string name, object? value)
