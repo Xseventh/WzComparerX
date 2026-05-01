@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+ca589a9 Close M4 and split Canvas preview workflow
 bb67eff Record M4 GMS UI smoke
 8d5e68d Align inspection defaults with full IMG browsing
 251ddcc Simplify Avalonia IMG controls
@@ -279,6 +280,10 @@ M4 completed:
   Canvas image service calls now live in an App workflow helper. The view model
   still owns visible state, request ordering, diagnostics projection, and
   activity messages.
+- IMG Content workflow logic has also started moving out of
+  `MainWindowViewModel`: selected/manual selector resolution, current-target
+  checks, and Core inspect calls now live in an App workflow helper. The view
+  model still owns visible tree state, request ordering, and activity messages.
 
 Local GMS smoke status:
 

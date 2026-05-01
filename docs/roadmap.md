@@ -185,8 +185,8 @@ Closeout notes:
   WC-style package group merge are covered by App tests and local GMS smoke.
 - Direct-zlib Canvas preview formats `1` / `2` are accepted as the M4 image
   preview slice; broader decode and PNG export stay later.
-- Post-M4 cleanup has started by extracting Canvas Preview workflow logic out of
-  `MainWindowViewModel`.
+- Post-M4 cleanup has started by extracting Canvas Preview and IMG Content
+  workflow logic out of `MainWindowViewModel`.
 
 ## Milestone 5: Compare Foundation
 

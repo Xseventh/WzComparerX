@@ -10,6 +10,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly ResourceInspectionService inspectionService;
     private readonly ResourceFolderInspectionService folderInspectionService;
+    private readonly ResourceImageContentWorkflow imageContentWorkflow;
     private readonly ResourceCanvasPreviewWorkflow canvasPreviewWorkflow;
     private readonly Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel> canvasPreviewFactory;
     private int canvasPreviewRequestId;
@@ -75,12 +76,14 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(
         ResourceInspectionService inspectionService,
         ResourceFolderInspectionService? folderInspectionService = null,
+        ResourceImageContentWorkflow? imageContentWorkflow = null,
         ResourceCanvasImageService? canvasImageService = null,
         ResourceCanvasPreviewWorkflow? canvasPreviewWorkflow = null,
         Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel>? canvasPreviewFactory = null)
     {
         this.inspectionService = inspectionService;
         this.folderInspectionService = folderInspectionService ?? new ResourceFolderInspectionService();
+        this.imageContentWorkflow = imageContentWorkflow ?? new ResourceImageContentWorkflow(inspectionService);
         this.canvasPreviewWorkflow = canvasPreviewWorkflow ?? new ResourceCanvasPreviewWorkflow(canvasImageService);
         this.canvasPreviewFactory = canvasPreviewFactory ?? CreateCanvasPreview;
     }
@@ -165,7 +168,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
 
             var imageTarget = !string.Equals(Path.GetExtension(path), ".json", StringComparison.OrdinalIgnoreCase)
-                ? ResourceImageSelector.Resolve(path, SelectorText)
+                ? imageContentWorkflow.ResolveManualTarget(path, SelectorText)
                 : null;
             if (imageTarget is not null && !PathsEqual(imageTarget.PackagePath, path))
             {
@@ -241,7 +244,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return false;
         }
 
-        return ResolveSelectedImageTarget() is not null;
+        return imageContentWorkflow.CanLoadSelectedImage(PathText, CurrentFormat, IsBusy, SelectedNode);
     }
 
     private bool CanLoadImage()
@@ -251,17 +254,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private bool CanInspectManualSelector()
     {
-        if (IsBusy ||
-            string.IsNullOrWhiteSpace(PathText) ||
-            Directory.Exists(PathText.Trim()) ||
-            string.Equals(CurrentFormat, "synthetic", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        var target = ResolveManualImageTarget();
-        return target is not null &&
-            !string.Equals(Path.GetExtension(PathText.Trim()), ".json", StringComparison.OrdinalIgnoreCase);
+        return imageContentWorkflow.CanLoadManualImage(PathText, CurrentFormat, IsBusy, SelectorText);
     }
 
     private bool CanOpenSelectedPackageNode()
@@ -316,9 +309,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var target = ResolveSelectedImageTarget();
         if (target is null ||
-            currentImageContentTarget is not null &&
-            PathsEqual(currentImageContentTarget.PackagePath, target.PackagePath) &&
-            string.Equals(currentImageContentTarget.Selector, target.Selector, StringComparison.Ordinal))
+            imageContentWorkflow.IsCurrentTarget(currentImageContentTarget, target))
         {
             return;
         }
@@ -362,10 +353,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             ImageContentStatus = $"Loading IMG: {target.Selector}";
-            var document = await inspectionService.InspectAsync(
-                target.PackagePath,
-                target.Selector,
-                options);
+            var document = await imageContentWorkflow.LoadAsync(target, options);
             if (requestId != imageContentRequestId)
             {
                 return;
@@ -582,14 +570,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private ResourceImageSelectorTarget? ResolveSelectedImageTarget()
     {
-        return SelectedNode?.Kind == "image"
-            ? ResourceImageSelector.Resolve(PathText.Trim(), SelectedNode.Path ?? SelectedNode.Name)
-            : null;
+        return imageContentWorkflow.ResolveSelectedTarget(PathText, SelectedNode);
     }
 
     private ResourceImageSelectorTarget? ResolveManualImageTarget()
     {
-        return ResourceImageSelector.Resolve(PathText.Trim(), SelectorText);
+        return imageContentWorkflow.ResolveManualTarget(PathText, SelectorText);
     }
 
     private ResourceImageSelectorTarget? ResolveCanvasPreviewImageTarget(ResourceInspectionNodeViewModel? node)
