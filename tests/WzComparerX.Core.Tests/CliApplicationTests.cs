@@ -298,6 +298,41 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugImage_EmitsMediaPayloadDiagnostics()
+    {
+        var imageBytes = CreatePropertyImage(
+            CreateRawDataProperty(),
+            CreateVideoProperty(),
+            CreateSoundProperty());
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", "--depth", "2", path, "Canvas.img");
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("raw [rawData]", output);
+            Assert.Contains("valueType: rawData", output);
+            Assert.Contains("info [wcx.payload.rawData.unsupported]: RawData payload decoding is not implemented. (raw)", output);
+            Assert.Contains("clip [video]", output);
+            Assert.Contains("valueType: video", output);
+            Assert.Contains("unknown: 5", output);
+            Assert.Contains("info [wcx.payload.video.unsupported]: Video payload decoding is not implemented. (clip)", output);
+            Assert.Contains("sound [sound]", output);
+            Assert.Contains("valueType: sound", output);
+            Assert.Contains("duration: 60", output);
+            Assert.Contains("soundDeclaration: 2", output);
+            Assert.Contains("info [wcx.payload.audio.unsupported]: Audio payload decoding is not implemented. (sound)", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugImage_DepthLimitKeepsMiniPropertyMetadataCompact()
     {
         var imageBytes = CreatePropertyImage(CreateObjectProperty(
@@ -888,7 +923,7 @@ public class CliApplicationTests
     {
         var bytes = new List<byte> { 0x01, 0x04 };
         AddWzString(bytes, name);
-        bytes.Add((byte)imageSize);
+        AddCompressedInt32(bytes, imageSize);
         bytes.Add(0x00);
         var hashOffsetPosition = bytes.Count + 16;
         var imageOffset = 16 + bytes.Count + sizeof(uint) + 4;
@@ -979,6 +1014,57 @@ public class CliApplicationTests
                 payload)));
     }
 
+    private static byte[] CreateRawDataProperty()
+    {
+        return CreateObjectProperty(
+            "raw",
+            CreateObjectValue(
+                "RawData",
+                0,
+                3,
+                0x01,
+                0x02,
+                0x03));
+    }
+
+    private static byte[] CreateVideoProperty()
+    {
+        return CreateObjectProperty(
+            "clip",
+            CreateObjectValue(
+                "Canvas#Video",
+                0x00,
+                0x00,
+                5,
+                4,
+                0x01,
+                0x02,
+                0x03,
+                0x04));
+    }
+
+    private static byte[] CreateSoundProperty()
+    {
+        return CreateObjectProperty(
+            "sound",
+            CreateObjectValue(
+                "Sound_DX8",
+                0,
+                3,
+                60,
+                2,
+                CreateBytes(0x00, 16),
+                CreateBytes(0x01, 16),
+                0x01,
+                0x00,
+                CreateBytes(0x02, 16),
+                4,
+                CreateBytes(0x03, 4),
+                0x10,
+                0x11,
+                0x12));
+    }
+
     private static string TemporaryOutputPath()
     {
         return Path.Combine(Path.GetTempPath(), $"wcx-export-{Guid.NewGuid():N}.bin");
@@ -1048,6 +1134,23 @@ public class CliApplicationTests
                     throw new ArgumentException($"Unsupported payload part type: {part.GetType()}.");
             }
         }
+    }
+
+    private static byte[] CreateBytes(byte value, int count)
+    {
+        return Enumerable.Repeat(value, count).ToArray();
+    }
+
+    private static void AddCompressedInt32(List<byte> bytes, int value)
+    {
+        if (value > sbyte.MinValue && value <= sbyte.MaxValue)
+        {
+            bytes.Add(unchecked((byte)(sbyte)value));
+            return;
+        }
+
+        bytes.Add(0x80);
+        bytes.AddRange(BitConverter.GetBytes(value));
     }
 
     private static void AddImageObjectName(List<byte> bytes, string value)

@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+4dcccee Report PKG2 inspection blocker
 f21ec65 Report unresolved Canvas preview links
 38452b2 Report unresolved split package links
 777a090 Add Core link target identity

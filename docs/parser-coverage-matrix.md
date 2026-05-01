@@ -34,7 +34,7 @@ diagnostics contracts, and App consumes Core services.
 | Vector / Convex2D | Decode geometry values and nested components | Metadata/value inspection implemented | Validate real-client cases beyond UI/Map samples | P1 | `inspect --debug` smoke notes |
 | UOL / link strings | Resolve links where possible; display unresolved links | Link-like values now carry `Identity.LinkedTarget` plus debug `linkKind`/`linkedTarget`; Canvas string links partially resolve in App/Core preview path, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Promote resolved package/value identity where practical and expand real-client link smoke | P0 | Core link fixtures, App preview tests, local Map/UI smoke |
 | Canvas metadata | Width, height, format, scale, payload metadata | Implemented | Add unsupported-format diagnostics where payload metadata is insufficient | P0 | Synthetic Canvas fixtures and local UI/Map smoke |
-| Sound / Video / RawData | Metadata plus payload extraction/playback/export in WC | Metadata only | Preserve payload offsets/lengths and stable unsupported diagnostics before media export | P1 | Local Sound/UI smoke and export diagnostics tests |
+| Sound / Video / RawData | Metadata plus payload extraction/playback/export in WC | Metadata only, with stable parser diagnostics for unsupported payload decode | Add export/playback only after selector and payload contracts are ready | P1 | Local Sound/UI smoke and export diagnostics tests |
 | Lua IMG | Lua-specific stream decode and script export | Synthetic fixture support; no direct local real-sample entry yet | Find real sample or keep documented as fixture-only | P1 | Fixture tests, future local smoke |
 | Text-format IMG | WC text IMG v1/v2 parse/export | Synthetic fixture support; no direct local real-sample entry yet | Find real sample; add multiline v2 behavior if needed | P1 | Fixture tests, future local smoke |
 
@@ -47,7 +47,7 @@ diagnostics contracts, and App consumes Core services.
 | Image selector | Selected IMG can be reloaded without UI path guessing | Core image nodes now carry `Identity.ImageSelector` | Document and test selector behavior across more linked package shapes | P0 | Core/App tests |
 | Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath` | Promote linked value targets into `Identity.LinkedTarget` once link resolution moves into Core inspection metadata | P0 | Export/App tests |
 | Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Core link-like value nodes now carry normalized `Identity.LinkedTarget` | Add resolved-target diagnostics and richer package/value identity for resolvable links | P0 | Core fixtures plus App preview tests |
-| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, PKG2 directory inspection emits `wcx.package.pkg2.directoryUnsupported`, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Add diagnostics for future media payload failures | P0 | Unit tests and CLI golden output |
+| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, PKG2 directory inspection emits `wcx.package.pkg2.directoryUnsupported`, RawData/Video/Sound metadata emit unsupported payload diagnostics, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Keep future export/playback diagnostics aligned with the same codes/sources | P0 | Unit tests and CLI golden output |
 
 ## Real-Client Smoke Matrix
 
@@ -68,7 +68,8 @@ diagnostics contracts, and App consumes Core services.
 1. Continue tightening resource identity in Core inspection output: package
    path, image selector, value path, and raw linked target are represented;
    resolved link identity remains the next field to enrich.
-2. Add stable diagnostics for future media payload failures.
+2. Keep future media export/playback diagnostics aligned with the existing
+   parser payload diagnostic codes.
 3. Choose the first PKG2 directory parsing slice now that the blocker is
    documented and user-visible.
 4. Add representative real-client smoke notes for Map, UI, Item/Character,

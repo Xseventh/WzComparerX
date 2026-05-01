@@ -524,6 +524,63 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectDebugImage_IncludesMediaPayloadDiagnostics()
+    {
+        var imageBytes = CreatePropertyImage(
+            CreateRawDataProperty(),
+            CreateVideoProperty(),
+            CreateSoundProperty());
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
+
+            var raw = Assert.Single(inspection.Root.Children, child => child.Name == "raw");
+            Assert.Equal("rawData", raw.Kind);
+            Assert.Contains(raw.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "rawData"));
+            Assert.Contains(raw.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 0));
+            Assert.Contains(raw.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 3));
+            Assert.Contains(raw.Diagnostics ?? [], diagnostic =>
+                diagnostic.Code == ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported &&
+                diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
+                diagnostic.Source == ResourceDiagnosticSources.Parser &&
+                diagnostic.Path == "raw");
+
+            var clip = Assert.Single(inspection.Root.Children, child => child.Name == "clip");
+            Assert.Equal("video", clip.Kind);
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "video"));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "unknown" && Equals(item.Value, 5));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 4));
+            Assert.Contains(clip.Diagnostics ?? [], diagnostic =>
+                diagnostic.Code == ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported &&
+                diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
+                diagnostic.Source == ResourceDiagnosticSources.Parser &&
+                diagnostic.Path == "clip");
+
+            var sound = Assert.Single(inspection.Root.Children, child => child.Name == "sound");
+            Assert.Equal("sound", sound.Kind);
+            Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "sound"));
+            Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "duration" && Equals(item.Value, 60));
+            Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "soundDeclaration" && Equals(item.Value, 2));
+            Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 3));
+            Assert.Contains(sound.Diagnostics ?? [], diagnostic =>
+                diagnostic.Code == ResourceDiagnosticCodes.AudioPayloadDecodingUnsupported &&
+                diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
+                diagnostic.Source == ResourceDiagnosticSources.Parser &&
+                diagnostic.Path == "sound");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugImage_IncludesLinkIdentityAndMetadata()
     {
         var imageBytes = CreatePropertyImage(
@@ -690,6 +747,32 @@ public class ResourceDocumentServiceTests
         Assert.Equal("icon", diagnostic.Path);
         Assert.Equal(ResourceDiagnosticCodes.CanvasPixelDecodingPartial, diagnostic.Code);
         Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
+    }
+
+    [Fact]
+    public void DiagnosticsFactory_ReturnsStableMediaPayloadDiagnostics()
+    {
+        var rawData = ResourceInspectionDiagnostics.RawDataPayloadDecodingUnsupported("raw");
+        var video = ResourceInspectionDiagnostics.VideoPayloadDecodingUnsupported("clip");
+        var audio = ResourceInspectionDiagnostics.AudioPayloadDecodingUnsupported("sound");
+
+        Assert.Equal(ResourceDiagnosticSeverities.Info, rawData.Severity);
+        Assert.Equal("RawData payload decoding is not implemented.", rawData.Message);
+        Assert.Equal("raw", rawData.Path);
+        Assert.Equal(ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported, rawData.Code);
+        Assert.Equal(ResourceDiagnosticSources.Parser, rawData.Source);
+
+        Assert.Equal(ResourceDiagnosticSeverities.Info, video.Severity);
+        Assert.Equal("Video payload decoding is not implemented.", video.Message);
+        Assert.Equal("clip", video.Path);
+        Assert.Equal(ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported, video.Code);
+        Assert.Equal(ResourceDiagnosticSources.Parser, video.Source);
+
+        Assert.Equal(ResourceDiagnosticSeverities.Info, audio.Severity);
+        Assert.Equal("Audio payload decoding is not implemented.", audio.Message);
+        Assert.Equal("sound", audio.Path);
+        Assert.Equal(ResourceDiagnosticCodes.AudioPayloadDecodingUnsupported, audio.Code);
+        Assert.Equal(ResourceDiagnosticSources.Parser, audio.Source);
     }
 
     [Fact]
@@ -1118,6 +1201,57 @@ public class ResourceDocumentServiceTests
                 payload));
     }
 
+    private static byte[] CreateRawDataProperty()
+    {
+        return CreateObjectProperty(
+            "raw",
+            CreateObjectValue(
+                "RawData",
+                0,
+                3,
+                0x01,
+                0x02,
+                0x03));
+    }
+
+    private static byte[] CreateVideoProperty()
+    {
+        return CreateObjectProperty(
+            "clip",
+            CreateObjectValue(
+                "Canvas#Video",
+                0x00,
+                0x00,
+                5,
+                4,
+                0x01,
+                0x02,
+                0x03,
+                0x04));
+    }
+
+    private static byte[] CreateSoundProperty()
+    {
+        return CreateObjectProperty(
+            "sound",
+            CreateObjectValue(
+                "Sound_DX8",
+                0,
+                3,
+                60,
+                2,
+                CreateBytes(0x00, 16),
+                CreateBytes(0x01, 16),
+                0x01,
+                0x00,
+                CreateBytes(0x02, 16),
+                4,
+                CreateBytes(0x03, 4),
+                0x10,
+                0x11,
+                0x12));
+    }
+
     private static byte[] CreateDirectZlibPayload(byte[] pixels)
     {
         using var output = new MemoryStream();
@@ -1191,6 +1325,11 @@ public class ResourceDocumentServiceTests
                     throw new ArgumentException($"Unsupported payload part type: {part.GetType()}.");
             }
         }
+    }
+
+    private static byte[] CreateBytes(byte value, int count)
+    {
+        return Enumerable.Repeat(value, count).ToArray();
     }
 
     private static void AddCompressedInt32(List<byte> bytes, int value)
