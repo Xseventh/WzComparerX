@@ -33,7 +33,8 @@ codex/wcx-modernization
 - Milestone 2：First Real WC Migration，已完成。
 - Milestone 3：Export And Inspect，已完成。
 - Milestone 4：Basic Avalonia Browser，已完成。
-- 当前短线：M4 后架构整理与 Milestone 5 Compare Foundation 规划。
+- 当前短线：M4 后架构整理与 Milestone 5 Parser Coverage And Resource
+  Model Baseline 规划。
 
 项目整体已经具备：
 
@@ -187,7 +188,8 @@ M4 完成后已经开始低风险架构整理：
 
 - 继续按测试保护拆薄 `MainWindowViewModel` 的 activity / task-progress 编排。
 - 继续复核 Core package group / split-package linking 的 tree composition 边界。
-- 为 Milestone 5 Compare Foundation 设计最小 CLI / Core / fixture 切片。
+- 按 `docs/roadmap.md` 的 WC/WCX 能力矩阵推进 Milestone 5：先补解析覆盖
+  和 resource identity，再进入 Compare、Search、媒体导出和大型功能族。
 
 ## 架构分层
 

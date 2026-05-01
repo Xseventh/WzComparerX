@@ -48,7 +48,8 @@ Build order:
 
 ## Current Next Milestone
 
-Post-M4 cleanup and Milestone 5 planning.
+Post-M4 cleanup and Milestone 5 Parser Coverage And Resource Model Baseline
+planning.
 
 Immediate direction:
 
@@ -57,8 +58,11 @@ Immediate direction:
 - Split `MainWindowViewModel` responsibilities into small App workflow/helpers
   when the behavior is already covered by tests.
 - Review Core package group / split-package linking boundaries before expanding
-  compare or search workflows.
-- Prepare Milestone 5 Compare Foundation with a narrow CLI/test-first plan.
+  compare, search, export, or media workflows.
+- Use `docs/roadmap.md`'s WC/WCX capability matrix to choose the next parser and
+  resource-model slices.
+- Treat Compare Foundation as Milestone 6; do not start compare before the
+  Milestone 5 resource identity contract is stable enough for it.
 
 ## Commands
 

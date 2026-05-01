@@ -190,101 +190,341 @@ Closeout notes:
   Core split-package link path resolution has also been split from the main
   inspection service.
 
-## Milestone 5: Compare Foundation
+## Milestone 5: Parser Coverage And Resource Model Baseline
 
-Status: not started.
+Status: planned.
 
-Goal: restore WC's central comparison value in a cleaner shape.
+Goal: stabilize the parsing and resource-identity foundation before compare,
+search, export, and richer UI workflows start depending on it.
 
-Tasks:
+This milestone intentionally comes before Compare Foundation. M4 proved the
+Avalonia browser can consume Core inspection services, but WCX still needs
+broader real-client parser coverage and a more explicit resource identity
+contract before higher-level WC-compatible features are safe to build.
 
-- Define compare model.
-- Add CLI compare command.
-- Add JSON report.
-- Add filters.
-- Later: HTML or UI report.
+Must support:
+
+- Parser coverage matrix:
+  - document WC support, WCX support, gap, priority, and validation method for
+    package formats, IMG values, media payloads, search, compare, domain
+    projections, and app features;
+  - keep the matrix current as new parser slices land.
+- PKG1 completion pass:
+  - recursive directory edge cases;
+  - string-reference names;
+  - hash version, hash offset, checksum, and image offset boundaries;
+  - large directory behavior and stable diagnostics.
+- PKG2 foundation:
+  - directory parsing beyond header detection;
+  - image offset and version/hash profile handling;
+  - representative real-client smoke notes.
+- Optional container decisions:
+  - evaluate whether List.wz is still required for target samples;
+  - evaluate `.ms` / `.mn` containers against current real-client data before
+    committing to implementation.
+- Split-package and Base.wz linking:
+  - `Name.wz` plus `Name_000.wz...` package groups;
+  - `.ini` `LastWzIndex` handling;
+  - `Base/Base.wz` links into child packages;
+  - linked image nodes preserve their true source package and value path;
+  - failed link resolution emits stable diagnostics.
+- IMG/resource values:
+  - scalar values and nested `Property` traversal;
+  - `Vector`, `Convex2D`, `UOL`, `Canvas`, `Sound_DX8`, `RawData`,
+    `Canvas#Video`, Lua, and text-format IMG coverage;
+  - useful metadata for payload offsets, lengths, compression, and texture
+    formats.
+- Link semantics:
+  - UOL, `link`, `_inlink`, `_outlink`, and `source` resolution;
+  - resolved target paths represented in Core inspection metadata;
+  - unresolved links represented as diagnostics, not silent omissions.
+- Resource model contract:
+  - stable node identity, full path, package source, image selector, value
+    path, linked target, metadata, and diagnostics code semantics;
+  - Core inspection model remains the shared surface for CLI, UI, export,
+    search, and compare.
+- Validation:
+  - extend `inspect --debug` where low-level fields are useful beyond one
+    migration session;
+  - add CLI batch/smoke workflows if needed for local client scans;
+  - record real-client smoke notes for Map, UI, Item, Character, String, Skill,
+    Mob/Npc, Sound, and Effect-style packages without committing client files.
+
+Deferred:
+
+- Compare reports and UI compare views.
+- Full StringLinker/search UX.
+- Complete Canvas pixel matrix and PNG export unless a small parser slice needs
+  them to validate resource identity.
+- Sound playback and video playback.
+- CharaSim, Avatar, and MapRender.
 
 Exit criteria:
 
-- Two fixture trees can be compared deterministically.
+- The roadmap contains an explicit WC/WCX capability matrix that developers can
+  use to choose parser and feature slices.
+- PKG2 has progressed beyond header-only support or has a documented blocker.
+- The Core inspection model can represent package source, image selector, value
+  path, and linked target semantics for the next compare/search milestones.
+- At least several representative real-client smoke notes cover different
+  package families.
+- Build and tests pass after the accepted parser/model slices.
 
-## WC Feature Compatibility Backlog
+## Milestone 6: Compare Foundation
 
-WCX is a successor to WC, but it should not copy every WC feature as-is. The
-feature backlog below separates the capabilities that should be preserved from
-features that need redesign or may be replaced by modern project workflows.
+Status: planned.
 
-### Features WCX Should Eventually Support
+Goal: restore WC's central comparison value in a cleaner, testable shape after
+the resource model baseline is stable.
 
-- Core resource browsing:
-  - open WZ packages, standalone IMG files, and folders;
-  - keep WC-style lazy image extraction;
-  - support node details, metadata, diagnostics, history, copy path, and
-    useful context actions.
-- Parser coverage:
-  - complete PKG1 coverage;
-  - full PKG2 directory parsing and image offset/version profiles;
-  - List.wz handling if it remains needed for target client samples;
-  - `.ms` / `.mn` container support if current client data still depends on
-    them;
-  - split-package and Base.wz linking behavior.
-- IMG/resource values:
-  - full scalar/property traversal;
-  - UOL, link, `_inlink`, `_outlink`, and `source` resolution;
-  - Canvas, Sound, RawData, Video, Lua, and text-format IMG coverage.
-- Image and animation workflows:
-  - broader Canvas pixel format decode matrix;
-  - PNG export;
-  - raw payload export;
-  - animation frame extraction;
-  - GIF/APNG/video export after the rendering/export model is stable.
-- Sound and video workflows:
-  - Sound_DX8 payload extraction;
-  - mp3/wav/pcm export;
-  - playback can come later than deterministic export;
-  - Canvas#Video / VPX video decode should be evaluated after image export.
-- Search and linking:
-  - node search by name, value, image node, and full path;
-  - StringLinker indexing for equipment, items, maps, mobs, NPCs, and skills;
-  - search-result navigation back into the resource browser.
-- Compare:
-  - deterministic Core compare model;
-  - CLI compare and JSON report first;
-  - filters and PNG/link-aware comparisons;
-  - HTML/UI report later.
-- Domain projections:
-  - item, gear, skill, recipe, mob, NPC, familiar, damage-skin, set-item, and
-    similar typed models;
-  - tooltip data projection before pixel-perfect tooltip rendering.
-- User-facing export:
-  - metadata, JSON, WC text IMG, Lua, Canvas, PNG, sound, and compare reports;
-  - database/CSV-style export only if there is a concrete downstream workflow.
-- App settings:
-  - string key / encoding choices;
-  - split-package detection options;
-  - export and preview defaults;
-  - persisted recent paths and user preferences.
+Must support:
 
-### Large-Refactor Feature Families
+- Core compare model.
+- CLI `compare` command.
+- JSON report.
+- Compact text summary.
+- Add, remove, and change classifications.
+- Node kind, metadata, and scalar value differences.
+- Path filters and kind filters.
+- `only-added`, `only-removed`, and `only-changed` style report filters.
+- Deterministic fixture-based tests.
 
-These WC modules are important, but should not be ported directly. When the
-project reaches them, write a dedicated design plan before implementation.
+Deferred:
 
+- HTML report.
+- Avalonia compare viewer.
+- Image-aware pixel comparisons.
+- Link-aware comparison beyond what M5 already exposes in Core metadata.
+- Custom report colors and CSS.
+
+Exit criteria:
+
+- Two fixture or sample inspection trees can be compared deterministically.
+- CLI text and JSON outputs have golden coverage.
+- The compare implementation depends on Core inspection/resource contracts, not
+  App view models or WzLib-only DTOs.
+
+## Milestone 7: Search And StringLinker Foundation
+
+Status: planned.
+
+Goal: rebuild WC's resource search and StringLinker value in a headless-first
+form.
+
+Must support:
+
+- SearchWzNode-style search:
+  - node name search;
+  - image node search;
+  - image value search;
+  - full path search;
+  - kind/type filters;
+  - stable result paths for UI navigation.
+- StringLinker-style indexes:
+  - Eqp;
+  - Item;
+  - Map;
+  - Mob;
+  - NPC;
+  - Skill;
+  - additional categories such as Quest, Recipe, SetItem, Familiar, or Damage
+    Skin only after sample-driven validation.
+- CLI search surface.
+- Core search index model.
+- Missing or unresolved string diagnostics.
+
+Deferred:
+
+- Advanced fuzzy search.
+- Full UI search panel polish.
+- Domain-specific tooltips.
+
+Exit criteria:
+
+- Search can run without the Avalonia app.
+- Search results can navigate back to resource paths.
+- StringLinker indexes have fixture or real-sample smoke coverage.
+
+## Milestone 8: Image And Media Decode / Export Expansion
+
+Status: planned.
+
+Goal: move beyond the narrow M4 Canvas preview slice toward practical image,
+animation, sound, and video export workflows.
+
+Must support:
+
+- Broader Canvas pixel format decode matrix.
+- PNG export.
+- Raw Canvas payload export.
+- Batch image export.
+- Animation frame extraction.
+- Sound_DX8 payload extraction.
+- MP3/WAV/PCM export where the source payload supports it.
+- Stable unsupported-format diagnostics.
+
+Deferred:
+
+- GIF/APNG/video export until the frame model is stable.
+- Sound playback until deterministic export is reliable.
+- Canvas#Video / VPX preview until image export is mature enough to justify the
+  extra decoder surface.
+- FFmpeg configuration UI.
+
+Exit criteria:
+
+- Common real-client Canvas images can be exported as PNG.
+- At least one sound export path works through CLI and tests/smoke notes.
+- Unsupported payloads fail with stable diagnostics instead of raw exceptions.
+
+## Milestone 9: App Browser Maturity
+
+Status: planned.
+
+Goal: turn the M4 basic Avalonia browser into a practical daily resource
+browser while keeping parser/domain behavior in Core.
+
+Must support:
+
+- Recent files and recent folders.
+- App settings for string key, split-package detection, preview scale, export
+  defaults, and user preferences.
+- Tree search and filtering.
+- Context menus for copy path, copy value, copy diagnostics, inspect, export,
+  and open linked target.
+- History navigation.
+- Progress and cancellation for slow loads.
+- Large WZ responsiveness.
+- Diagnostics panel polish.
+- Export UI for supported Core exporters.
+- Separate image, sound, text, and metadata preview workflows as those Core
+  capabilities land.
+
+Deferred:
+
+- Compare UI until M6 is stable.
+- Search UI polish until M7 is stable.
+- Heavy renderer/game-loop features.
+
+Exit criteria:
+
+- The UI remains a consumer of Core services.
+- Common browser tasks are available without using the CLI.
+- Avalonia Headless and ViewModel tests cover the primary workflows.
+
+## Milestone 10: Domain Projection Foundation
+
+Status: planned.
+
+Goal: prepare the data layer needed for QuickView, tooltip, CharaSim, Avatar,
+and MapRender without porting old WinForms-era coupling.
+
+Must support:
+
+- Item model.
+- Equip model.
+- Skill model.
+- Mob model.
+- NPC model.
+- Map model.
+- Recipe model.
+- Set item model.
+- Familiar model.
+- Damage skin model.
+- Tooltip data projection.
+- Domain model tests.
+- StringLinker integration where names and categories are required.
+
+Deferred:
+
+- Pixel-perfect tooltip rendering.
+- CharaSim UI.
+- Avatar rendering/export.
+- MapRender scene playback.
+
+Exit criteria:
+
+- Domain projections are testable without UI.
+- Tooltip and simulator features can consume explicit typed models instead of
+  raw resource nodes.
+
+## Milestone 11+: Large Feature Families
+
+Status: future design required.
+
+These WC modules are important, but should not be ported directly. Each family
+needs a dedicated design note before implementation starts.
+
+- QuickView / Tooltip:
+  - data projection first;
+  - renderer second;
+  - UI integration last.
 - CharaSim:
-  - requires a clean domain model split from tooltip rendering and WinForms
-    controls;
-  - should start with typed data projection and headless tests before UI.
+  - inventory;
+  - equipment slots;
+  - character stats;
+  - set effects;
+  - simulator workflows;
+  - tooltip integration.
 - Avatar:
-  - requires a modern composition/rendering model for body parts, actions,
-    emotions, taming, frame layers, and export;
-  - should share rendering/export primitives with other animation workflows.
+  - body part composition;
+  - action and emotion selection;
+  - taming/mount support;
+  - layer ordering;
+  - code import;
+  - PNG/GIF export;
+  - shared rendering/export primitives.
 - MapRender:
-  - requires a renderer-independent map scene model before any Avalonia or
-    game-loop UI;
-  - map data, resources, particles, lights, minimap, portals, footholds, life
-    objects, and BGM should be migrated in slices.
+  - renderer-independent map scene model first;
+  - layers;
+  - objects;
+  - footholds;
+  - portals;
+  - life objects;
+  - particles;
+  - lights;
+  - minimap;
+  - BGM;
+  - renderer adapter after the scene model is stable.
+- Patcher:
+  - keep as a separate later tool;
+  - do not let patching block parser, browser, compare, search, or media
+    milestones.
+- Plugin SDK:
+  - useful long-term;
+  - wait until Core/App/Rendering boundaries are stable.
 
-### Features To Reconsider Or Replace
+## WC/WCX Capability Matrix
+
+This matrix is intentionally high level. It should be refined as M5 adds real
+parser coverage and smoke notes.
+
+| Capability | WC support | WCX current state | Approximate coverage | Roadmap owner |
+| --- | --- | --- | --- | --- |
+| Basic resource browsing | WZ/IMG/MS/MN open, three-tree browsing, details, context menus, history | WZ/file/folder/fixture open, Resources + IMG Content + Preview | ~40% | M9 |
+| Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 header only; no `.ms`/`.mn`/List.wz | ~35% | M5 |
+| IMG property parsing | Property, Vector, Convex, UOL, Canvas, Sound, RawData, Video, Lua, text IMG | Most have inspection metadata; payload behavior is shallow | ~50% | M5 |
+| Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | Direct-zlib format `1`/`2` narrow preview/export slice | ~15-20% | M8 |
+| Animation/GIF/APNG/video export | Frame extraction, GIF/APNG, FFmpeg settings | No complete animation export | ~0-5% | M8 |
+| Sound playback/export | Sound_DX8 extract, play, pause, loop, save mp3/wav/pcm | Sound metadata only | ~5% | M8 |
+| Canvas#Video/video | VPX/video load and preview paths | Video metadata only | ~0-5% | M8 |
+| SearchWzNode | Search by node name, image node, image value, full path | No formal search feature | 0% | M7 |
+| StringLinker/SearchString | Eqp/Item/Map/Mob/Npc/Skill string indexes, search, jump to resource | No StringLinker | 0% | M7 |
+| Compare | EasyCompare, HTML report, CSS/colors, PNG output, link resolution | Not started | 0% | M6 |
+| Database/CSV export | Skill and SkillOption CSV export | None | 0% | M10 or later |
+| QuickView/Tooltip | Gear, Item, Skill, Recipe, Mob, NPC, Familiar, DamageSkin tooltips | No Domain/Tooltip UI | 0% | M10/M11 |
+| CharaSim | Inventory, equipment, stats, set effects, character simulator UI | None | 0% | M11+ |
+| Avatar/paper doll | Avatar plugin, parts, actions, emotions, mounts, code import, GIF/PNG save | None | 0% | M11+ |
+| MapRender | Map simulator, layers, objects, footholds, portals, life, particles, lights, minimap, BGM | None | 0% | M11+ |
+| Patcher | Manual patch, reverse patcher, patch checks, added/deleted/PNG output | None | 0% | M11+ separate tool |
+| LuaConsole | Script open/save/run/stop, WZ-bound scripting environment | None | 0% | Optional later |
+| Network | Chat/log/server connection plugin | None | 0%; likely not worth migrating | Reconsider |
+| Auto updater | Custom updater project and restart flow | None | 0%; prefer modern release tooling | Replace |
+| Plugin system | PluginBase, plugin loading, Ribbon/Tab injection, WzOpened/SelectedNode events | None | 0% | Late M11+ |
+| Settings/config | Encoding, extension packages, IMG checksum skip, QuickView/GIF/Compare/MapRender settings | Minimal UI inputs | ~5-10% | M9 |
+| Tests/automation | Traditional desktop code with weak tests | CLI/Core/UI tests are stronger than WC | WCX advantage | Continuous |
+
+## Features To Reconsider Or Replace
 
 - Network chat:
   - likely not core to WCX and should be skipped unless a real user workflow
@@ -293,7 +533,8 @@ project reaches them, write a dedicated design plan before implementation.
   - prefer GitHub releases, package managers, or platform update tooling before
     rebuilding WC's custom updater.
 - Plugin SDK:
-  - useful long-term, but should wait until Core/App boundaries are stable.
+  - useful long-term, but should wait until Core/App/Rendering boundaries are
+    stable.
 - Patcher:
   - keep as a possible separate tool; do not let it block browser, compare,
     parser, or rendering milestones.
@@ -301,24 +542,11 @@ project reaches them, write a dedicated design plan before implementation.
   - keep as optional and later; scripts should use stable Core APIs instead of
     global UI state.
 
-## Later Milestones
-
-- Image rendering/export.
-- String search and StringLinker.
-- CharaSim domain model.
-- Tooltip data projection.
-- Avatar model and export.
-- Map data model.
-- Rendering backends.
-- Plugin SDK.
-
 ## Backlog Notes
 
 - Keep WCX useful before it is complete.
-- Avoid making MapRender block core browser progress.
 - Prefer CLI and tests for every feature before UI polish.
-- Full PKG2 directory parsing.
-- PNG export and a broader Canvas pixel decode matrix.
-- Audio and video payload decoding.
-- UI browsing beyond the current Avalonia shell.
-- XML dump, if a concrete downstream workflow needs it.
+- Treat WC as a format and workflow reference, not a UI architecture target.
+- Avoid making MapRender, Avatar, or CharaSim block parser/browser progress.
+- Revisit the capability matrix during weekly progress reviews.
+- XML dump remains optional unless a concrete downstream workflow needs it.

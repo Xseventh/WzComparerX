@@ -139,10 +139,11 @@ cae2482 Add Avalonia image inspection workflow
 ## Current State
 
 Milestones 1 through 4 are complete. The current mainline is post-M4 cleanup
-and Milestone 5 Compare Foundation planning. M4 reused Core inspection/export
-models and kept parser behavior out of App view models. The main risk has moved
-from UI viability to keeping the next feature slices narrow. M2 delivered real
-WZ package header detection, PKG1 directory inspection, recursive directory
+and Milestone 5 Parser Coverage And Resource Model Baseline planning. M4 reused
+Core inspection/export models and kept parser behavior out of App view models.
+The next risk is building Compare/Search/UI/export features on top of parser and
+resource-identity contracts that are still too narrow. M2 delivered real WZ
+package header detection, PKG1 directory inspection, recursive directory
 entries, string-key handling, IMG object and property metadata, Lua/text IMG
 inspection, and payload metadata for Canvas, RawData, Video, and Sound values.
 
@@ -318,9 +319,11 @@ Use this in a new Codex project conversation:
 We are continuing the WCX modernization project in this repository. Please read
 AGENTS.md, docs/README.md, docs/handoff.md, docs/roadmap.md, and
 docs/development-guidelines.md first. Continue post-M4 cleanup and Milestone 5
-planning. Reuse Core inspection/export models, keep parsing out of view models,
-add focused UI/view-model tests where practical, run build/test, update
-docs/logs, and commit the work on the current branch.
+Parser Coverage And Resource Model Baseline planning. Reuse Core
+inspection/export models, keep parsing out of view models, use
+docs/roadmap.md's WC/WCX capability matrix to choose parser/resource-model
+slices, add focused tests where practical, run build/test, update docs/logs, and
+commit the work on the current branch.
 ```
 
 ## Caution
