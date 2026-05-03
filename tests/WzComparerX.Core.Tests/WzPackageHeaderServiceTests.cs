@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 using WzComparerX.Core;
+using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.Core.Tests;
@@ -139,6 +140,63 @@ public class WzPackageHeaderServiceTests
             Assert.Equal(path, package.Path);
             Assert.Equal("pkg1", package.DisplayValue);
             Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "valid" && (bool)item.Value!);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task InspectFolder_ProjectsMsAndMnContainersAsPackages()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-folder-ms-inspection-");
+        var wzPath = Path.Combine(directory.FullName, "Base.wz");
+        var msPath = Path.Combine(directory.FullName, "Skill_00002.ms");
+        var mnPath = Path.Combine(directory.FullName, "Quest_00001.mn");
+        File.WriteAllBytes(wzPath, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+        await File.WriteAllBytesAsync(
+            msPath,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(msPath),
+                new MsContainerFixture.Entry("Skill/1000.img", 0, 12, 1024)));
+        await File.WriteAllBytesAsync(
+            mnPath,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(mnPath),
+                new MsContainerFixture.Entry("Quest/1000.img", 0, 21, 1024)));
+        var service = new ResourceFolderInspectionService();
+
+        try
+        {
+            var document = await service.InspectAsync(directory.FullName);
+
+            Assert.Equal("folder", document.Format);
+            Assert.Equal("3 packages", document.Root.DisplayValue);
+            Assert.Contains(document.DebugMetadata ?? [], item => item.Name == "packageCount" && (int)item.Value! == 3);
+            Assert.Collection(
+                document.Root.Children,
+                package =>
+                {
+                    Assert.Equal("Base.wz", package.Name);
+                    Assert.Equal("pkg1", package.DisplayValue);
+                },
+                package =>
+                {
+                    Assert.Equal("Quest_00001.mn", package.Name);
+                    Assert.Equal("ms", package.DisplayValue);
+                    Assert.Equal(mnPath, package.Identity?.PackagePath);
+                    Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
+                    Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 1));
+                },
+                package =>
+                {
+                    Assert.Equal("Skill_00002.ms", package.Name);
+                    Assert.Equal("ms", package.DisplayValue);
+                    Assert.Equal(msPath, package.Identity?.PackagePath);
+                    Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
+                    Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 1));
+                });
         }
         finally
         {

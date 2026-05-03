@@ -229,6 +229,50 @@ public class MainWindowHeadlessTests
     }
 
     [AvaloniaFact]
+    public async Task MainWindow_ShowsFolderOpenStateWithMsContainer()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-app-headless-folder-ms-");
+        var wzPath = Path.Combine(directory.FullName, "Base.wz");
+        var msPath = Path.Combine(directory.FullName, "Skill_00002.ms");
+        File.WriteAllBytes(wzPath, AppTestFixtures.CreatePkg1());
+        File.WriteAllBytes(msPath, [0x4d, 0x53, 0x00]);
+        var viewModel = new MainWindowViewModel();
+
+        try
+        {
+            await viewModel.OpenPathAsync(directory.FullName);
+            var window = CreateWindow(viewModel);
+
+            try
+            {
+                var folderRoot = Assert.Single(viewModel.RootNodes);
+                Assert.Equal("2 packages", folderRoot.DisplayValue);
+                var msPackage = Assert.Single(folderRoot.Children, child => child.Name == "Skill_00002.ms");
+                var tree = window.FindControl<TreeView>("ResourcesTree");
+                Assert.NotNull(tree);
+                tree.SelectedItem = msPackage;
+                using var frame = CaptureFrame(window);
+
+                Assert.Equal("package", msPackage.Kind);
+                Assert.Equal(msPath, msPackage.Path);
+                Assert.Equal("invalid", msPackage.DisplayValue);
+                AssertStatusText(window, $"Loaded folder: {directory.Name}");
+                Assert.Contains(viewModel.SelectedDiagnostics, diagnostic => diagnostic.Code == "wcx.package.ms.directoryUnsupported");
+                AssertButtonEnabled(window, "LoadImageButton", expected: false);
+                AssertPngCanBeSaved(frame);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [AvaloniaFact]
     public async Task MainWindow_ShowsPackageOpenStateInHeadless()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-app-headless-package-");

@@ -132,8 +132,8 @@ Tasks:
 
 - Open file/folder command. Started with one `Browse` entry containing
   WC-aligned `Open Package...` and folder picker choices. `Load` automatically
-  handles file paths or folder paths. Folder inspection lists discovered WZ
-  packages, and selected packages can be opened from the tree.
+  handles file paths or folder paths. Folder inspection lists discovered WZ,
+  MS, and MN packages, and selected packages can be opened from the tree.
 - Node tree view. Started with a path-based load command bound to Core
   inspection; selected image nodes are extracted into a separate IMG Content
   tree through the same inspect path,

@@ -5,10 +5,14 @@ namespace WzComparerX.Core;
 public sealed class ResourceFolderInspectionService
 {
     private readonly WzPackageHeaderScanService headerScanService;
+    private readonly WzMsContainerInspectionReader msContainerReader;
 
-    public ResourceFolderInspectionService(WzPackageHeaderScanService? headerScanService = null)
+    public ResourceFolderInspectionService(
+        WzPackageHeaderScanService? headerScanService = null,
+        WzMsContainerInspectionReader? msContainerReader = null)
     {
         this.headerScanService = headerScanService ?? new WzPackageHeaderScanService();
+        this.msContainerReader = msContainerReader ?? new WzMsContainerInspectionReader();
     }
 
     public async Task<ResourceInspectionDocument> InspectAsync(
@@ -23,7 +27,13 @@ public sealed class ResourceFolderInspectionService
             throw new DirectoryNotFoundException($"Directory not found: {fullPath}");
         }
 
-        var headers = await headerScanService.ScanAsync(fullPath, cancellationToken);
+        var packages = new List<ResourceInspectionNode>();
+        foreach (var packagePath in EnumerateResourcePackagePaths(fullPath))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            packages.Add(await InspectPackageAsync(packagePath, cancellationToken));
+        }
+
         var rootName = Path.GetFileName(Path.TrimEndingDirectorySeparator(fullPath));
         if (string.IsNullOrWhiteSpace(rootName))
         {
@@ -34,8 +44,8 @@ public sealed class ResourceFolderInspectionService
             rootName,
             "folder",
             fullPath,
-            $"{headers.Count} packages",
-            headers.Select(ProjectPackage).ToArray());
+            $"{packages.Count} packages",
+            packages);
 
         return new ResourceInspectionDocument(
             fullPath,
@@ -43,11 +53,59 @@ public sealed class ResourceFolderInspectionService
             root,
             [
                 new ResourceInspectionMetadata("sourceKind", "folder"),
-                new ResourceInspectionMetadata("packageCount", headers.Count)
+                new ResourceInspectionMetadata("packageCount", packages.Count)
             ]);
     }
 
-    private static ResourceInspectionNode ProjectPackage(WzPackageHeader header)
+    private async Task<ResourceInspectionNode> InspectPackageAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        if (IsWzPath(path))
+        {
+            var header = (await headerScanService.ScanAsync(path, cancellationToken))[0];
+            return ProjectWzPackage(header);
+        }
+
+        return await InspectMsPackageAsync(path, cancellationToken);
+    }
+
+    private async Task<ResourceInspectionNode> InspectMsPackageAsync(
+        string path,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var inspection = await msContainerReader.ReadAsync(path, cancellationToken);
+            return new ResourceInspectionNode(
+                Path.GetFileName(inspection.Header.SourcePath),
+                "package",
+                inspection.Header.SourcePath,
+                "ms",
+                DebugMetadata: BuildMsPackageMetadata(inspection),
+                Identity: new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath));
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
+        {
+            var fullPath = Path.GetFullPath(path);
+            var diagnostic = ResourceInspectionDiagnostics.MsContainerInspectionUnsupported(fullPath);
+            return new ResourceInspectionNode(
+                Path.GetFileName(fullPath),
+                "package",
+                fullPath,
+                "invalid",
+                DebugMetadata:
+                [
+                    new ResourceInspectionMetadata("valid", false),
+                    new ResourceInspectionMetadata("format", "ms"),
+                    new ResourceInspectionMetadata("containerKind", "ms")
+                ],
+                Diagnostics: [diagnostic],
+                Identity: new ResourceInspectionIdentity(PackagePath: fullPath));
+        }
+    }
+
+    private static ResourceInspectionNode ProjectWzPackage(WzPackageHeader header)
     {
         var format = header.Format.ToString().ToLowerInvariant();
         var displayValue = header.IsValid ? format : "invalid";
@@ -57,6 +115,32 @@ public sealed class ResourceFolderInspectionService
             header.SourcePath,
             displayValue,
             DebugMetadata: BuildPackageMetadata(header));
+    }
+
+    private static IEnumerable<string> EnumerateResourcePackagePaths(string path)
+    {
+        return Directory
+            .EnumerateFiles(path, "*", SearchOption.AllDirectories)
+            .Where(IsResourcePackagePath)
+            .Order(StringComparer.Ordinal)
+            .Select(Path.GetFullPath);
+    }
+
+    private static bool IsResourcePackagePath(string path)
+    {
+        return IsWzPath(path) || IsMsContainerPath(path);
+    }
+
+    private static bool IsWzPath(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".wz", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsMsContainerPath(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildPackageMetadata(WzPackageHeader header)
@@ -69,6 +153,22 @@ public sealed class ResourceFolderInspectionService
             new ResourceInspectionMetadata("fileSize", header.FileSize),
             new ResourceInspectionMetadata("directoryStartPosition", header.DirectoryStartPosition),
             new ResourceInspectionMetadata("encryptedVersion", header.EncryptedVersion)
+        ];
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildMsPackageMetadata(
+        WzMsContainerInspection inspection)
+    {
+        return
+        [
+            new ResourceInspectionMetadata("valid", true),
+            new ResourceInspectionMetadata("format", "ms"),
+            new ResourceInspectionMetadata("containerKind", "ms"),
+            new ResourceInspectionMetadata("version", inspection.Header.Version),
+            new ResourceInspectionMetadata("entryCount", inspection.Header.EntryCount),
+            new ResourceInspectionMetadata("fileSize", inspection.Header.FileSize),
+            new ResourceInspectionMetadata("entryStartPosition", inspection.Header.EntryStartPosition),
+            new ResourceInspectionMetadata("dataStartPosition", inspection.Header.DataStartPosition)
         ];
     }
 }

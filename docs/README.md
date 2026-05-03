@@ -118,7 +118,7 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 
 - 路径输入和 `Load`。
 - 单一 `Browse` 入口，包含 `Open Package...` 和 `Open Folder...`。
-- folder inspection：扫描目录中的 `.wz` package。
+- folder inspection：扫描目录中的 `.wz` / `.ms` / `.mn` package。
 - package node open：在资源树中打开 package。
 - IMG selector 输入。
 - Resources tree 和 IMG Content tree 分离：选中 image node 会按 WC 的
