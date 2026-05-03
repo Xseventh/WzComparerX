@@ -27,7 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
-0372a9d Inspect MS container directory tables
+e86f706 Inspect MS container directory tables
 df41527 Clarify legacy container support targets
 3d26b16 Report MS container inspection blocker
 b1226ba Record GMS container inventory
