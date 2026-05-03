@@ -192,6 +192,62 @@ For each migrated feature, record:
   - Implemented in `WzComparerX.WzLib` and Core CLI services only; no UI
     dependency.
 
+### MS Container Directory Inspection
+
+- WC source files referenced:
+  - `WzComparerR2.WzLib/Wz_Structure.cs`
+  - `WzComparerR2.WzLib/Ms_File.cs`
+  - `WzComparerR2.WzLib/Ms_FileV2.cs`
+  - `WzComparerR2.WzLib/Ms_Header.cs`
+  - `WzComparerR2.WzLib/Ms_Entry.cs`
+  - `WzComparerR2.WzLib/Ms_Image.cs`
+  - `WzComparerR2.WzLib/Ms_ImageV2.cs`
+  - `WzComparerR2.WzLib/Cryptography/Snow2CryptoTransform.cs`
+  - `WzComparerR2.WzLib/Cryptography/ChaCha20CryptoTransform.cs`
+  - `WzComparerR2/MainForm.cs`
+- WC behavior preserved:
+  - Open `.ms` and `.mn` paths through the MS loader path.
+  - Try the Snow-based `Ms_File` reader first, then the ChaCha20-based
+    `Ms_FileV2` reader when the first shape does not match.
+  - Derive the random-byte prefix length from the lowercase file name.
+  - Decode the v2/Snow salt, header hash, version, entry count, entry table
+    start position, and aligned data start position.
+  - Decode the v4/ChaCha20 salt, header hash, entry count, entry table start
+    position, and aligned data start position.
+  - Read entry table fields: name, checksum, flags, relative block, size,
+    aligned size, unknown fields, and per-entry key bytes.
+  - Convert entry relative blocks into absolute offsets from the aligned data
+    start position.
+  - Project slash-separated entry names into a directory tree.
+- Fixture or sample used:
+  - Synthetic v2/Snow and v4/ChaCha20 `.ms` streams generated in
+    `tests/TestSupport/MsContainerFixture.cs`.
+  - Synthetic `.mn` stream generated with the same fixture to lock WC's shared
+    MS loader path for both extensions.
+  - Optional local MapleStoryNA `Data/Packs/*.ms` smoke files gated by
+    `WCX_GMS_DATA_DIR`.
+- Test coverage added:
+  - WzLib tests for v2/Snow header and entry table inspection.
+  - WzLib tests for v4/ChaCha20 header and entry table inspection.
+  - Core tests for projecting `.ms` entries into the shared inspection model.
+  - Core and CLI tests for projecting synthetic `.mn` entries through the same
+    inspection model.
+  - CLI test for debug output on a synthetic `.ms` container.
+  - Optional GMS smoke that reads all local `Data/Packs/*.ms` directory tables.
+- Known unsupported cases:
+  - `.ms` and `.mn` entry payload extraction is not implemented yet.
+  - Selecting an `.ms` or `.mn` image returns
+    `wcx.package.ms.imageUnsupported`.
+  - Unsupported `.ms` or `.mn` container shapes return
+    `wcx.package.ms.directoryUnsupported`.
+  - The per-entry key bytes are currently consumed to keep the entry stream
+    aligned, but not exposed in inspection metadata.
+  - v2 checksum validation is implemented for the header; v4 hash validation
+    remains aligned with WC's current TODO.
+- UI dependency removed or isolated:
+  - Implemented in `WzComparerX.WzLib` and Core inspection services only; no UI
+    dependency.
+
 ## Suggested Migration Order
 
 1. Repository and solution skeleton.

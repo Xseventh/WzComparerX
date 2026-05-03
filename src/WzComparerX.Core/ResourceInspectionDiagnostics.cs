@@ -58,7 +58,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            "MS container inspection currently supports only version 4 directory tables; this path is not supported yet.",
+            "MS/MN container inspection currently supports only implemented v2/v4 directory tables; this container shape is unsupported.",
             path,
             ResourceDiagnosticCodes.MsContainerInspectionUnsupported,
             ResourceDiagnosticSources.Parser);
@@ -68,7 +68,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            "MS image extraction is not implemented yet; WCX currently supports MS container directory inspection only.",
+            "MS/MN image extraction is not implemented yet; WCX currently supports MS/MN container directory inspection only.",
             path,
             ResourceDiagnosticCodes.MsImageInspectionUnsupported,
             ResourceDiagnosticSources.Parser);

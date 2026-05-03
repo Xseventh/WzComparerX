@@ -174,18 +174,20 @@ but did find 10 `.ms` pack files under `Data/Packs`, including Mob and Skill
 packs. That makes `.ms` container inspection sample-driven for this client.
 `List.wz`, `.mn`, and PKG2 are not covered by the current local GMS sample, but
 this does not remove them from the compatibility target: older clients may still
-require them, so their first WCX slice should be driven by WC reference behavior
-or an older-client sample.
+require them, so `.mn` keeps synthetic coverage through WC's shared MS loader
+path while `List.wz` and PKG2 still need WC reference behavior or older-client
+samples before parser behavior is accepted.
 
-WCX now inspects `.ms` v2/Snow and v4/ChaCha20 container directory tables
-through the normal `inspect` path. The first slice reads header metadata,
-entry names, checksums, flags, relative blocks, absolute offsets, sizes, and
-unknown fields, then projects slash-separated entry names into the Core
-inspection tree as image nodes. It does not yet decrypt or inspect the entry
-payload as a WZ IMG; selecting an `.ms` image reports
+WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
+tables through the normal `inspect` path. The first slice reads header
+metadata, entry names, checksums, flags, relative blocks, absolute offsets,
+sizes, and unknown fields, then projects slash-separated entry names into the
+Core inspection tree as image nodes. It does not yet decrypt or inspect the
+entry payload as a WZ IMG; selecting an `.ms` or `.mn` image reports
 `wcx.package.ms.imageUnsupported`. A local GMS smoke run verified all 10
 `Data/Packs/*.ms` files inspect successfully as directory tables without
-committing client data.
+committing client data; `.mn` is currently fixture-covered only because the
+local client has no `.mn` sample.
 
 ## Milestone 2 Parser Coverage
 

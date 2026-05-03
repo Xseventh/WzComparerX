@@ -220,7 +220,7 @@ public class CliApplicationTests
                 debug:
                   containerKind: ms
                 diagnostics:
-                  error [wcx.package.ms.directoryUnsupported]: MS container inspection currently supports only version 4 directory tables; this path is not supported yet. (<ms>)
+                  error [wcx.package.ms.directoryUnsupported]: MS/MN container inspection currently supports only implemented v2/v4 directory tables; this container shape is unsupported. (<ms>)
                 <ms> [package] : ms
 
                 """.ReplaceLineEndings(),
@@ -254,6 +254,36 @@ public class CliApplicationTests
             Assert.Contains("1000.img [image]", result.Output);
             Assert.Contains("flags: 7", result.Output);
             Assert.Contains("size: 12", result.Output);
+            Assert.DoesNotContain("wcx.package.ms.directoryUnsupported", result.Output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugMnVersion4Container_ReturnsEntryTree()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Quest_00001-{Guid.NewGuid():N}.mn");
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry("Quest/1000.img", 0, 21, 1024, Flags: 4)));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", path);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("format: ms", result.Output);
+            Assert.Contains("version: 4", result.Output);
+            Assert.Contains("entryCount: 1", result.Output);
+            Assert.Contains("1000.img [image]", result.Output);
+            Assert.Contains("flags: 4", result.Output);
+            Assert.Contains("size: 21", result.Output);
             Assert.DoesNotContain("wcx.package.ms.directoryUnsupported", result.Output);
         }
         finally

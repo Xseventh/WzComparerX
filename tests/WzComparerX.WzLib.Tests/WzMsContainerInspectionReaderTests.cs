@@ -103,6 +103,25 @@ public class WzMsContainerInspectionReaderTests
     }
 
     [Fact]
+    public void Read_Version4MnContainerReturnsHeaderAndEntries()
+    {
+        var bytes = MsContainerFixture.CreateV4(
+            "Quest_00001.mn",
+            new MsContainerFixture.Entry("Quest/1000.img", 0, 21, 1024, Flags: 4));
+        using var stream = new MemoryStream(bytes);
+
+        var inspection = new WzMsContainerInspectionReader()
+            .Read(stream, "/tmp/Quest_00001.mn");
+
+        Assert.Equal(4, inspection.Header.Version);
+        Assert.Equal(1, inspection.Header.EntryCount);
+        var entry = Assert.Single(inspection.Entries);
+        Assert.Equal("1000.img", entry.Name);
+        Assert.Equal("Quest/1000.img", entry.Path);
+        Assert.Equal(21, entry.Size);
+    }
+
+    [Fact]
     public void Read_NonVersion4ContainerThrowsNotSupportedException()
     {
         var bytes = MsContainerFixture.CreateV4(

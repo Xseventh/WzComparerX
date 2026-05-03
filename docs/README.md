@@ -117,7 +117,7 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 当前 Avalonia UI 已具备：
 
 - 路径输入和 `Load`。
-- 单一 `Browse` 入口，包含 `Open Wz...` 和 `Open Folder...`。
+- 单一 `Browse` 入口，包含 `Open Package...` 和 `Open Folder...`。
 - folder inspection：扫描目录中的 `.wz` package。
 - package node open：在资源树中打开 package。
 - IMG selector 输入。
@@ -202,9 +202,10 @@ M4 完成后已经开始低风险架构整理：
 - PKG2 仍是 header-only 覆盖，但 `inspect` 现在会返回稳定 error
   diagnostic：`wcx.package.pkg2.directoryUnsupported`，而不是暴露裸解析异常。
 - 本地 GMS 清点确认当前样本没有 PKG2、`List.wz` 或 `.mn`，但这些仍是
-  旧客户端兼容目标；当前样本存在 `Data/Packs/*.ms`，`.ms` v2/Snow 和
-  v4/ChaCha20 container directory inspection 已经接入 `inspect`，但 `.ms`
-  image payload extraction 仍未实现并会报告 `wcx.package.ms.imageUnsupported`。
+  旧客户端兼容目标；当前样本存在 `Data/Packs/*.ms`，`.ms` / `.mn` v2/Snow
+  和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，其中
+  `.mn` 目前由 synthetic fixture 覆盖；image payload extraction 仍未实现并
+  会报告 `wcx.package.ms.imageUnsupported`。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。

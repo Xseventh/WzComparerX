@@ -21,9 +21,9 @@ public partial class MainWindow : Window
             AllowMultiple = false,
             FileTypeFilter =
             [
-                new FilePickerFileType("WZ packages and fixtures")
+                new FilePickerFileType("Resource packages and fixtures")
                 {
-                    Patterns = ["*.wz", "*.json"],
+                    Patterns = ["*.wz", "*.ms", "*.mn", "*.json"],
                     MimeTypes = ["application/octet-stream", "application/json"],
                     AppleUniformTypeIdentifiers = ["public.data", "public.json"]
                 },

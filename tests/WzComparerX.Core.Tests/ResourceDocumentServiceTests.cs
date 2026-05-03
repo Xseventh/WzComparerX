@@ -242,6 +242,48 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectMnVersion4Container_ReturnsEntryTree()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Quest_00001-{Guid.NewGuid():N}.mn");
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry("Quest/1000.img", 0, 21, 1024, Flags: 4)));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal(Path.GetFileName(path), inspection.Root.Name);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.Equal("ms", inspection.Root.DisplayValue);
+            Assert.Equal(path, inspection.Root.Identity?.PackagePath);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 1));
+
+            var quest = Assert.Single(inspection.Root.Children);
+            Assert.Equal("Quest", quest.Name);
+            var image = Assert.Single(quest.Children);
+            Assert.Equal("1000.img", image.Name);
+            Assert.Equal("image", image.Kind);
+            Assert.Equal("Quest/1000.img", image.Identity?.ImageSelector);
+            Assert.Contains(image.DebugMetadata!, item => item.Name == "flags" && Equals(item.Value, 4));
+            Assert.Contains(image.DebugMetadata!, item => item.Name == "size" && Equals(item.Value, 21));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectMsVersion4Image_ReturnsUnsupportedImageDiagnostic()
     {
         var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");

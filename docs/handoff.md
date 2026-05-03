@@ -364,14 +364,15 @@ Local GMS smoke status:
   smoke now also validates local `Data/Packs/*.ms` directory tables.
 - A local GMS M5 inventory found 780 `.wz` files, all PKG1 by `headers` scan;
   no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
-  `Data/Packs/*.ms` files exist. `.ms` v2/Snow and v4/ChaCha20 container
-  directory tables now inspect through Core, and optional GMS smoke covers all
-  local `Data/Packs/*.ms` files. `List.wz` and `.mn` remain compatibility
-  targets for older clients even though the current local GMS install lacks
-  samples.
-- `.ms` entry payload extraction is still pending. Selecting an `.ms` image now
-  returns the stable parser diagnostic `wcx.package.ms.imageUnsupported`;
-  unsupported `.ms` container shapes still return
+  `Data/Packs/*.ms` files exist. `.ms` / `.mn` v2/Snow and v4/ChaCha20
+  container directory tables now inspect through Core; optional GMS smoke
+  covers all local `Data/Packs/*.ms` files, and synthetic `.mn` fixtures lock
+  the same WC loader path while real `.mn` smoke waits for an older-client
+  sample. `List.wz` remains a compatibility target for older clients even
+  though the current local GMS install lacks a sample.
+- `.ms` / `.mn` entry payload extraction is still pending. Selecting an image
+  from either container family now returns the stable parser diagnostic
+  `wcx.package.ms.imageUnsupported`; unsupported container shapes still return
   `wcx.package.ms.directoryUnsupported`.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local

@@ -131,7 +131,7 @@ Goal: UI can browse the same workspace model as CLI.
 Tasks:
 
 - Open file/folder command. Started with one `Browse` entry containing
-  WC-aligned `Open Wz...` and folder picker choices. `Load` automatically
+  WC-aligned `Open Package...` and folder picker choices. `Load` automatically
   handles file paths or folder paths. Folder inspection lists discovered WZ
   packages, and selected packages can be opened from the tree.
 - Node tree view. Started with a path-based load command bound to Core
@@ -224,8 +224,9 @@ Must support:
   - support remains required for `List.wz`, `.ms`, and `.mn` compatibility,
     especially for older clients;
   - current local GMS data has `Data/Packs/*.ms` samples but no `List.wz` or
-    `.mn` sample, so `.ms` should proceed sample-first while `List.wz` and
-    `.mn` should be defined from WC reference behavior or older-client samples;
+    `.mn` sample, so `.ms` should proceed sample-first while `.mn` keeps
+    synthetic coverage through the same WC MS loader path and `List.wz` should
+    be defined from WC reference behavior or older-client samples;
   - unsupported container paths should return stable diagnostics until parser
     coverage lands.
 - Split-package and Base.wz linking:
@@ -512,7 +513,7 @@ parser coverage and smoke notes.
 | Capability | WC support | WCX current state | Approximate coverage | Roadmap owner |
 | --- | --- | --- | --- | --- |
 | Basic resource browsing | WZ/IMG/MS/MN open, three-tree browsing, details, context menus, history | WZ/file/folder/fixture open, Resources + IMG Content + Preview | ~40% | M9 |
-| Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 header only; no `.ms`/`.mn`/List.wz | ~35% | M5 |
+| Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 header only; `.ms`/`.mn` directory tables only; no List.wz | ~40% | M5 |
 | IMG property parsing | Property, Vector, Convex, UOL, Canvas, Sound, RawData, Video, Lua, text IMG | Most have inspection metadata; payload behavior is shallow | ~50% | M5 |
 | Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | Direct-zlib format `1`/`2` narrow preview/export slice | ~15-20% | M8 |
 | Animation/GIF/APNG/video export | Frame extraction, GIF/APNG, FFmpeg settings | No complete animation export | ~0-5% | M8 |

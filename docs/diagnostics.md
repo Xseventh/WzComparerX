@@ -77,6 +77,8 @@ Current examples:
 
 Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.
+The `wcx.package.ms.*` codes cover the WC MS-loader container family, including
+both `.ms` and `.mn` files.
 
 ## Severities
 

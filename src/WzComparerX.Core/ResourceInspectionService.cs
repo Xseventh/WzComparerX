@@ -273,7 +273,9 @@ public sealed class ResourceInspectionService
 
     private static bool IsMsContainerPath(string path)
     {
-        return string.Equals(Path.GetExtension(path), ".ms", StringComparison.OrdinalIgnoreCase);
+        var extension = Path.GetExtension(path);
+        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
     }
 
     private static ResourceInspectionNode ProjectRawNode(RawResourceNode node, string? parentPath)

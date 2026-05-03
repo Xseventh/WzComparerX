@@ -35,11 +35,11 @@
             <TextBox Grid.Column="1"
                      x:Name="PathTextBox"
                      Text="{Binding PathText}"
-                     PlaceholderText="WZ file, folder, or synthetic fixture"/>
+                     PlaceholderText="WZ/MS/MN file, folder, or synthetic fixture"/>
             <Button Grid.Column="2" x:Name="BrowseButton" Content="Browse">
                 <Button.Flyout>
                     <MenuFlyout>
-                        <MenuItem Header="Open Wz..." Click="OpenResourceFileMenuItem_OnClick"/>
+                        <MenuItem Header="Open Package..." Click="OpenResourceFileMenuItem_OnClick"/>
                         <MenuItem Header="Open Folder..." Click="OpenResourceFolderMenuItem_OnClick"/>
                     </MenuFlyout>
                 </Button.Flyout>
