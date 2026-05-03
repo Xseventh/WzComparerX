@@ -47,15 +47,13 @@ public sealed class ResourceCanvasImageService
         ArgumentException.ThrowIfNullOrWhiteSpace(selector);
 
         options ??= new ResourceInspectionOptions();
-        var context = await WzImageInspectionLoader.LoadAsync(
+        await using var context = await CanvasImageInspectionContext.LoadAsync(
             path,
             selector,
-            options.StringKey,
-            options.MaxPropertyDepth,
+            options,
             cancellationToken);
         var target = await SelectCanvasAsync(
-            path,
-            context.ImageInspection,
+            context,
             selector,
             valueSelector,
             useFirstCanvasFallback,
@@ -64,27 +62,29 @@ public sealed class ResourceCanvasImageService
         ValidateCanvas(target.Value, target.Path);
 
         cancellationToken.ThrowIfCancellationRequested();
-        await using var stream = File.OpenRead(target.SourcePath);
-        WzImageCanvasBitmap bitmap;
-        try
+        await using (target)
         {
-            bitmap = new WzImageCanvasPayloadDecoder().Decode(stream, target.Value);
-        }
-        catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or NotSupportedException)
-        {
-            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(target.Path));
-        }
+            WzImageCanvasBitmap bitmap;
+            try
+            {
+                bitmap = new WzImageCanvasPayloadDecoder().Decode(target.SourceStream, target.Value);
+            }
+            catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or NotSupportedException)
+            {
+                throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(target.Path));
+            }
 
-        var pixels = ConvertToBgra8888(bitmap, target.Path);
-        return new ResourceCanvasImageDocument(
-            target.SourcePath,
-            target.Selector,
-            target.Path,
-            bitmap.Width,
-            bitmap.Height,
-            bitmap.Format,
-            "bgra8888",
-            pixels);
+            var pixels = ConvertToBgra8888(bitmap, target.Path);
+            return new ResourceCanvasImageDocument(
+                target.SourcePath,
+                target.Selector,
+                target.Path,
+                bitmap.Width,
+                bitmap.Height,
+                bitmap.Format,
+                "bgra8888",
+                pixels);
+        }
     }
 
     private static void ValidateCanvas(WzImageCanvasInspection canvas, string? path)
@@ -143,8 +143,7 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget> SelectCanvasAsync(
-        string sourcePath,
-        WzImageInspection inspection,
+        CanvasImageInspectionContext context,
         string? selector,
         string? valueSelector,
         bool useFirstCanvasFallback,
@@ -153,26 +152,26 @@ public sealed class ResourceCanvasImageService
     {
         if (string.IsNullOrWhiteSpace(valueSelector))
         {
-            if (inspection.ObjectValue is WzImageCanvasInspection rootCanvas)
+            if (context.ImageInspection.ObjectValue is WzImageCanvasInspection rootCanvas)
             {
-                return new CanvasImageTarget(sourcePath, inspection.Selector, rootCanvas, null);
+                return CanvasImageTarget.Local(context, rootCanvas, null);
             }
 
             if (useFirstCanvasFallback)
             {
-                var firstCanvas = inspection.Properties?
+                var firstCanvas = context.ImageInspection.Properties?
                     .SelectMany(Flatten)
                     .FirstOrDefault(property => property.Value is WzImageCanvasInspection);
                 if (firstCanvas?.Value is WzImageCanvasInspection firstCanvasValue)
                 {
-                    return new CanvasImageTarget(sourcePath, inspection.Selector, firstCanvasValue, firstCanvas.Path);
+                    return CanvasImageTarget.Local(context, firstCanvasValue, firstCanvas.Path);
                 }
             }
 
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueRequired(selector));
         }
 
-        var matches = inspection.Properties?
+        var matches = context.ImageInspection.Properties?
             .SelectMany(Flatten)
             .Where(property => string.Equals(property.Path, valueSelector, StringComparison.Ordinal))
             .ToArray() ?? [];
@@ -190,14 +189,13 @@ public sealed class ResourceCanvasImageService
         var match = matches[0];
         if (match.Value is WzImageCanvasInspection canvas)
         {
-            return new CanvasImageTarget(sourcePath, inspection.Selector, canvas, match.Path ?? valueSelector);
+            return CanvasImageTarget.Local(context, canvas, match.Path ?? valueSelector);
         }
 
         if (match.Value is string linkValue && IsCanvasLinkProperty(match))
         {
             var linkedTarget = await ResolveCanvasLinkAsync(
-                sourcePath,
-                inspection,
+                context,
                 match,
                 options,
                 cancellationToken);
@@ -218,15 +216,14 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget?> ResolveCanvasLinkAsync(
-        string sourcePath,
-        WzImageInspection inspection,
+        CanvasImageInspectionContext context,
         WzImagePropertyInspectionEntry linkProperty,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
         var resolvedTarget = await ResourceInspectionLinkResolver.ResolveAsync(
-            sourcePath,
-            inspection,
+            context.SourcePath,
+            context.ImageInspection,
             linkProperty,
             options.StringKey,
             cancellationToken);
@@ -235,46 +232,45 @@ public sealed class ResourceCanvasImageService
             return null;
         }
 
-        if (string.Equals(resolvedTarget.PackagePath, sourcePath, StringComparison.Ordinal) &&
-            string.Equals(resolvedTarget.ImageSelector, inspection.Selector, StringComparison.Ordinal))
+        if (string.Equals(resolvedTarget.PackagePath, context.SourcePath, StringComparison.Ordinal) &&
+            string.Equals(resolvedTarget.ImageSelector, context.ImageInspection.Selector, StringComparison.Ordinal))
         {
             if (string.IsNullOrWhiteSpace(resolvedTarget.ValuePath))
             {
-                return inspection.ObjectValue is WzImageCanvasInspection localRootCanvas
-                    ? new CanvasImageTarget(sourcePath, inspection.Selector, localRootCanvas, null)
+                return context.ImageInspection.ObjectValue is WzImageCanvasInspection localRootCanvas
+                    ? CanvasImageTarget.Local(context, localRootCanvas, null)
                     : null;
             }
 
-            var localCanvas = FindCanvasProperty(inspection, resolvedTarget.ValuePath);
+            var localCanvas = FindCanvasProperty(context.ImageInspection, resolvedTarget.ValuePath);
             return localCanvas?.Value is WzImageCanvasInspection canvas
-                ? new CanvasImageTarget(sourcePath, inspection.Selector, canvas, localCanvas.Path ?? resolvedTarget.ValuePath)
+                ? CanvasImageTarget.Local(context, canvas, localCanvas.Path ?? resolvedTarget.ValuePath)
                 : null;
         }
 
-        var context = await WzImageInspectionLoader.LoadAsync(
+        var linkedContext = await CanvasImageInspectionContext.LoadAsync(
             resolvedTarget.PackagePath,
             resolvedTarget.ImageSelector,
-            options.StringKey,
-            options.MaxPropertyDepth,
+            options,
             cancellationToken);
         var linkedCanvasProperty = string.IsNullOrWhiteSpace(resolvedTarget.ValuePath)
             ? null
-            : FindCanvasProperty(context.ImageInspection, resolvedTarget.ValuePath);
+            : FindCanvasProperty(linkedContext.ImageInspection, resolvedTarget.ValuePath);
         if (linkedCanvasProperty?.Value is WzImageCanvasInspection linkedCanvas)
         {
-            return new CanvasImageTarget(
-                resolvedTarget.PackagePath,
-                resolvedTarget.ImageSelector,
+            return CanvasImageTarget.Linked(
+                linkedContext,
                 linkedCanvas,
                 linkedCanvasProperty.Path ?? resolvedTarget.ValuePath);
         }
 
         if (string.IsNullOrWhiteSpace(resolvedTarget.ValuePath) &&
-            context.ImageInspection.ObjectValue is WzImageCanvasInspection linkedRootCanvas)
+            linkedContext.ImageInspection.ObjectValue is WzImageCanvasInspection linkedRootCanvas)
         {
-            return new CanvasImageTarget(resolvedTarget.PackagePath, resolvedTarget.ImageSelector, linkedRootCanvas, null);
+            return CanvasImageTarget.Linked(linkedContext, linkedRootCanvas, null);
         }
 
+        await linkedContext.DisposeAsync();
         return null;
     }
 
@@ -309,10 +305,117 @@ public sealed class ResourceCanvasImageService
         }
     }
 
-    private sealed record CanvasImageTarget(
-        string SourcePath,
-        string Selector,
-        WzImageCanvasInspection Value,
-        string? Path);
+    private sealed class CanvasImageInspectionContext : IAsyncDisposable
+    {
+        private CanvasImageInspectionContext(
+            string sourcePath,
+            WzImageInspection imageInspection,
+            Stream sourceStream)
+        {
+            SourcePath = sourcePath;
+            ImageInspection = imageInspection;
+            SourceStream = sourceStream;
+        }
+
+        public string SourcePath { get; }
+
+        public WzImageInspection ImageInspection { get; }
+
+        public Stream SourceStream { get; }
+
+        public static async Task<CanvasImageInspectionContext> LoadAsync(
+            string path,
+            string selector,
+            ResourceInspectionOptions options,
+            CancellationToken cancellationToken)
+        {
+            if (IsMsContainerPath(path))
+            {
+                var msContext = await WzMsImageInspectionLoader.LoadAsync(
+                    path,
+                    selector,
+                    options.StringKey,
+                    options.MaxPropertyDepth,
+                    cancellationToken);
+                return new CanvasImageInspectionContext(
+                    msContext.ContainerInspection.Header.SourcePath,
+                    msContext.ImageInspection,
+                    msContext.PayloadStream);
+            }
+
+            var context = await WzImageInspectionLoader.LoadAsync(
+                path,
+                selector,
+                options.StringKey,
+                options.MaxPropertyDepth,
+                cancellationToken);
+            return new CanvasImageInspectionContext(
+                context.DirectoryInspection.Header.SourcePath,
+                context.ImageInspection,
+                File.OpenRead(path));
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return SourceStream.DisposeAsync();
+        }
+    }
+
+    private sealed class CanvasImageTarget : IAsyncDisposable
+    {
+        private readonly CanvasImageInspectionContext? ownedContext;
+
+        private CanvasImageTarget(
+            CanvasImageInspectionContext context,
+            WzImageCanvasInspection value,
+            string? path,
+            bool ownsContext)
+        {
+            Context = context;
+            Value = value;
+            Path = path;
+            ownedContext = ownsContext ? context : null;
+        }
+
+        public string SourcePath => Context.SourcePath;
+
+        public string Selector => Context.ImageInspection.Selector;
+
+        public Stream SourceStream => Context.SourceStream;
+
+        public WzImageCanvasInspection Value { get; }
+
+        public string? Path { get; }
+
+        private CanvasImageInspectionContext Context { get; }
+
+        public static CanvasImageTarget Local(
+            CanvasImageInspectionContext context,
+            WzImageCanvasInspection value,
+            string? path)
+        {
+            return new CanvasImageTarget(context, value, path, ownsContext: false);
+        }
+
+        public static CanvasImageTarget Linked(
+            CanvasImageInspectionContext context,
+            WzImageCanvasInspection value,
+            string? path)
+        {
+            return new CanvasImageTarget(context, value, path, ownsContext: true);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return ownedContext?.DisposeAsync() ?? ValueTask.CompletedTask;
+        }
+    }
+
+    private static bool IsMsContainerPath(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
+    }
 
 }

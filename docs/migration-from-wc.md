@@ -232,8 +232,11 @@ For each migrated feature, record:
   - Core tests for projecting `.ms` entries into the shared inspection model.
   - Core and CLI tests for projecting synthetic `.mn` entries through the same
     inspection model.
+  - Core/App tests for direct MS Canvas preview and MS `_outlink` Canvas preview
+    through the shared logical link resolver.
   - CLI test for debug output on a synthetic `.ms` container.
-  - Optional GMS smoke that reads all local `Data/Packs/*.ms` directory tables.
+  - Optional GMS smoke that reads all local `Data/Packs/*.ms` directory tables
+    and verifies `Packs/Mob_00000.ms` `_outlink` Canvas preview resolution.
 - Known unsupported cases:
   - `.ms` and `.mn` entry payload extraction is implemented for the current
     v2/Snow and v4/ChaCha20 container readers, but unsupported or malformed IMG

@@ -383,6 +383,12 @@ Local GMS smoke status:
   found but the implemented v2/v4 payload extraction or downstream IMG reader
   could not inspect it; unsupported container shapes still return
   `wcx.package.ms.directoryUnsupported`.
+- Canvas preview now uses the same MS/MN image payload extraction path as
+  `inspect`. Synthetic tests cover direct MS Canvas preview and same-container
+  MS `_outlink` resolution; optional local GMS smoke covers
+  `Packs/Mob_00000.ms` selector `Mob/1150000.img`, value
+  `move/0/_outlink`, which resolves the logical Canvas target through the
+  current workspace.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

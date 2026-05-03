@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.IO.Compression;
 using System.Text;
 using WzComparerX.WzLib;
 
@@ -210,10 +211,133 @@ internal static class MsContainerFixture
         return bytes.ToArray();
     }
 
+    public static byte[] CreateCanvasPropertyImage(
+        string propertyName,
+        byte[] pixels,
+        int width = 1,
+        int height = 1,
+        int format = 2)
+    {
+        return CreatePropertyImage(CreateObjectProperty(
+            propertyName,
+            CreateCanvasObjectValue(pixels, width, height, format)));
+    }
+
+    public static byte[] CreateLinkedCanvasPropertyImage(
+        string propertyName,
+        string linkName,
+        string linkValue)
+    {
+        byte[] pixels = [0x00, 0x00, 0x00, 0x00];
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreatePropertyImage(CreateObjectProperty(
+            propertyName,
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString(linkName),
+                0x08,
+                CreateImageString(linkValue),
+                1,
+                1,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload)));
+    }
+
     private static void AddString(List<byte> bytes, string value)
     {
         bytes.AddRange(BitConverter.GetBytes(value.Length));
         bytes.AddRange(Encoding.Unicode.GetBytes(value));
+    }
+
+    private static byte[] CreateObjectProperty(string name, byte[] objectValue)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x09);
+        bytes.AddRange(BitConverter.GetBytes(objectValue.Length));
+        bytes.AddRange(objectValue);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateCanvasObjectValue(
+        byte[] pixels,
+        int width,
+        int height,
+        int format)
+    {
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateObjectValue(
+            "Canvas",
+            0x00,
+            0x00,
+            width,
+            height,
+            format,
+            0x00,
+            1,
+            0,
+            (byte)0x00,
+            (byte)0x00,
+            BitConverter.GetBytes(payload.Length),
+            payload);
+    }
+
+    private static byte[] CreateObjectValue(string objectType, params object[] payloadParts)
+    {
+        var bytes = new List<byte>();
+        AddImageObjectName(bytes, objectType);
+        AddPayloadParts(bytes, payloadParts);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateDirectZlibPayload(byte[] pixels)
+    {
+        using var output = new MemoryStream();
+        output.WriteByte(0x00);
+        using (var zlib = new ZLibStream(output, CompressionMode.Compress, leaveOpen: true))
+        {
+            zlib.Write(pixels);
+        }
+
+        return output.ToArray();
+    }
+
+    private static void AddPayloadParts(List<byte> bytes, params object[] payloadParts)
+    {
+        foreach (var part in payloadParts)
+        {
+            switch (part)
+            {
+                case byte value:
+                    bytes.Add(value);
+                    break;
+                case int value:
+                    bytes.Add((byte)value);
+                    break;
+                case byte[] value:
+                    bytes.AddRange(value);
+                    break;
+                default:
+                    throw new ArgumentException($"Unsupported payload part type: {part.GetType()}.");
+            }
+        }
+    }
+
+    private static void AddImageObjectName(List<byte> bytes, string value)
+    {
+        bytes.Add(0x73);
+        AddWzString(bytes, value);
     }
 
     private static byte[] CreateEntryKey(int index)

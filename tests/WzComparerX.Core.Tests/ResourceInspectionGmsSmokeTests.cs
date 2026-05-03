@@ -184,6 +184,39 @@ public class ResourceInspectionGmsSmokeTests
         AssertNoErrorDiagnostics(inspection);
     }
 
+    [Fact]
+    public async Task CanvasOptionalGmsMsPackImage_ResolvesOutlinkPreview()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var msPath = Path.Combine(dataDirectory, "Packs", "Mob_00000.ms");
+        if (!File.Exists(msPath))
+        {
+            return;
+        }
+
+        var service = new ResourceCanvasImageService();
+        var document = await service.LoadAsync(
+            msPath,
+            "Mob/1150000.img",
+            "move/0/_outlink",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.True(
+            document.SourcePath.EndsWith(".wz", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(msPath, document.SourcePath, StringComparison.Ordinal),
+            $"Unexpected linked source path: {document.SourcePath}");
+        Assert.EndsWith("1150000.img", document.Selector, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("move/0", document.ValuePath);
+        Assert.True(document.Width > 0);
+        Assert.True(document.Height > 0);
+        Assert.NotEmpty(document.Pixels);
+    }
+
     private static string? GetGmsDataDirectory()
     {
         var path = Environment.GetEnvironmentVariable("WCX_GMS_DATA_DIR");

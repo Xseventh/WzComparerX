@@ -1291,6 +1291,95 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_LoadsMsCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = Path.Combine(Path.GetTempPath(), $"Mob_00000-{Guid.NewGuid():N}.ms");
+        var imageBytes = MsContainerFixture.CreateCanvasPropertyImage("icon", pixels);
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Mob/1150000.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Payload: imageBytes)),
+            CancellationToken.None);
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Mob/1150000.img",
+                "icon",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(path, document.SourcePath);
+            Assert.Equal("Mob/1150000.img", document.Selector);
+            Assert.Equal("icon", document.ValuePath);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ResolvesMsOutlinkCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = Path.Combine(Path.GetTempPath(), $"Mob_00000-{Guid.NewGuid():N}.ms");
+        var proxyBytes = MsContainerFixture.CreateLinkedCanvasPropertyImage(
+            "proxy",
+            "_outlink",
+            "Mob/_Canvas/1150000.img/icon");
+        var linkedBytes = MsContainerFixture.CreateCanvasPropertyImage("icon", pixels);
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Mob/1150000.img",
+                    0,
+                    proxyBytes.Length,
+                    1024,
+                    Payload: proxyBytes),
+                new MsContainerFixture.Entry(
+                    "Mob/_Canvas/1150000.img",
+                    1,
+                    linkedBytes.Length,
+                    1024,
+                    Payload: linkedBytes)),
+            CancellationToken.None);
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var inspection = await new WzMsContainerInspectionReader().ReadAsync(path, CancellationToken.None);
+            Assert.Contains(inspection.Entries, entry => entry.Path == "Mob/_Canvas/1150000.img");
+
+            var document = await service.LoadAsync(
+                path,
+                "Mob/1150000.img",
+                "proxy/_outlink",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(path, document.SourcePath);
+            Assert.Equal("Mob/_Canvas/1150000.img", document.Selector);
+            Assert.Equal("icon", document.ValuePath);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task CanvasImageService_ReportsUnresolvedOutlinkCanvasTarget()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-canvas-unresolved-outlink-");

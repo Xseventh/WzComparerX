@@ -92,15 +92,29 @@ public static class ResourceInspectionLinkResolver
             return null;
         }
 
+        var imageName = parts[imageIndex];
+        var valuePath = imageIndex + 1 < parts.Length ? string.Join('/', parts[(imageIndex + 1)..]) : null;
+        var packageSegments = parts[..imageIndex];
+        var logicalImageSelector = string.Join('/', parts[..(imageIndex + 1)]);
+        if (IsMsContainerPath(currentPackagePath))
+        {
+            var currentMsTarget = await TryResolveImageInMsContainerAsync(
+                currentPackagePath,
+                logicalImageSelector,
+                valuePath,
+                cancellationToken);
+            if (currentMsTarget is not null)
+            {
+                return currentMsTarget;
+            }
+        }
+
         var dataRoot = FindDataRoot(currentPackagePath);
         if (dataRoot is null)
         {
             return null;
         }
 
-        var imageName = parts[imageIndex];
-        var valuePath = imageIndex + 1 < parts.Length ? string.Join('/', parts[(imageIndex + 1)..]) : null;
-        var packageSegments = parts[..imageIndex];
         foreach (var candidate in EnumerateLogicalPackageCandidates(dataRoot, packageSegments, imageName))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -109,6 +123,20 @@ public static class ResourceInspectionLinkResolver
                 candidate.Selector,
                 valuePath,
                 stringKey,
+                cancellationToken);
+            if (target is not null)
+            {
+                return target;
+            }
+        }
+
+        foreach (var msPath in EnumerateLogicalMsContainerCandidates(dataRoot, packageSegments))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var target = await TryResolveImageInMsContainerAsync(
+                msPath,
+                logicalImageSelector,
+                valuePath,
                 cancellationToken);
             if (target is not null)
             {
@@ -185,12 +213,37 @@ public static class ResourceInspectionLinkResolver
                 }
             }
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or InvalidDataException or EndOfStreamException or NotSupportedException or UnauthorizedAccessException)
         {
             return null;
         }
 
         return null;
+    }
+
+    private static async Task<ResourceInspectionResolvedLinkTarget?> TryResolveImageInMsContainerAsync(
+        string containerPath,
+        string selector,
+        string? valuePath,
+        CancellationToken cancellationToken)
+    {
+        if (!File.Exists(containerPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var inspection = await new WzMsContainerInspectionReader().ReadAsync(containerPath, cancellationToken);
+            var entry = WzMsImageInspectionLoader.TryFindImageEntry(inspection, selector);
+            return entry is null
+                ? null
+                : new ResourceInspectionResolvedLinkTarget(inspection.Header.SourcePath, entry.Path, valuePath);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
+        {
+            return null;
+        }
     }
 
     private static IEnumerable<LogicalPackageCandidate> EnumerateLogicalPackageCandidates(
@@ -211,6 +264,45 @@ public static class ResourceInspectionLinkResolver
         var folder = Path.Combine([dataRoot, .. packageSegments]);
         var folderPackagePath = Path.Combine(folder, packageSegments[^1] + ".wz");
         yield return new LogicalPackageCandidate(folderPackagePath, imageName);
+    }
+
+    private static IEnumerable<string> EnumerateLogicalMsContainerCandidates(
+        string dataRoot,
+        string[] packageSegments)
+    {
+        if (packageSegments.Length == 0)
+        {
+            yield break;
+        }
+
+        var packsRoot = Path.Combine(dataRoot, "Packs");
+        if (!Directory.Exists(packsRoot))
+        {
+            yield break;
+        }
+
+        var prefix = packageSegments[0];
+        foreach (var path in Directory.EnumerateFiles(packsRoot)
+                     .Where(IsMsContainerPath)
+                     .Where(path => IsLogicalMsContainerCandidate(path, prefix))
+                     .Order(StringComparer.OrdinalIgnoreCase))
+        {
+            yield return path;
+        }
+    }
+
+    private static bool IsLogicalMsContainerCandidate(string path, string prefix)
+    {
+        var fileName = Path.GetFileNameWithoutExtension(path);
+        return string.Equals(fileName, prefix, StringComparison.OrdinalIgnoreCase) ||
+            fileName.StartsWith(prefix + "_", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsMsContainerPath(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? FindDataRoot(string path)

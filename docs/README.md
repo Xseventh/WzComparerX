@@ -206,6 +206,9 @@ M4 完成后已经开始低风险架构整理：
   和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，并且
   `.ms` / `.mn` image payload 可以通过同一条 IMG inspection 路径提取；
   `.mn` 目前由 synthetic fixture 覆盖，真实 `.mn` smoke 仍等待旧客户端样本。
+- Canvas preview 现在也能通过同一条 MS/MN payload 路径预览 `.ms` / `.mn`
+  IMG 内的 direct Canvas，并能把 `.ms` IMG 内的 `_outlink` 按 WC-style
+  logical path 解析到当前 MS container 或匹配的 WZ package group。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。

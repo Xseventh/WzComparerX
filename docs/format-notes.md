@@ -193,6 +193,14 @@ inspect successfully as directory tables and `Packs/Skill_00002.ms` ->
 `.mn` is currently fixture-covered only because the local client has no `.mn`
 sample.
 
+Canvas preview now uses the same MS/MN image payload path as `inspect`. Synthetic
+coverage verifies direct MS Canvas payloads and same-container MS `_outlink`
+resolution. A local GMS smoke run also verified `Packs/Mob_00000.ms` selector
+`Mob/1150000.img`, value `move/0/_outlink`: WCX resolves the logical target
+`Mob/_Canvas/1150000.img/move/0` through the workspace, which can land on the
+current MS container or on the matching WZ package group such as
+`Data/Mob/_Canvas/_Canvas_000.wz`, matching WC's global `FindWz(path)` style.
+
 ## Milestone 2 Parser Coverage
 
 M2 accepted the following migrated behavior as complete:

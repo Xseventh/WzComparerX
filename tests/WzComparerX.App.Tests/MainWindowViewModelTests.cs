@@ -429,6 +429,67 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectingMsOutlinkStringNode_LoadsLinkedCanvasPreview()
+    {
+        byte[] linkedPixels = [0x10, 0x20, 0x30, 0xff];
+        var path = Path.Combine(Path.GetTempPath(), $"Mob_00000-{Guid.NewGuid():N}.ms");
+        var proxyBytes = MsContainerFixture.CreateLinkedCanvasPropertyImage(
+            "proxy",
+            "_outlink",
+            "Mob/_Canvas/1150000.img/icon");
+        var linkedBytes = MsContainerFixture.CreateCanvasPropertyImage("icon", linkedPixels);
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Mob/1150000.img",
+                    0,
+                    proxyBytes.Length,
+                    1024,
+                    Payload: proxyBytes),
+                new MsContainerFixture.Entry(
+                    "Mob/_Canvas/1150000.img",
+                    1,
+                    linkedBytes.Length,
+                    1024,
+                    Payload: linkedBytes)),
+            TestContext.Current.CancellationToken);
+        var viewModel = new MainWindowViewModel(
+            document => new ResourceCanvasPreviewViewModel(document, bitmap: null))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            var package = Assert.Single(viewModel.RootNodes);
+            var mob = Assert.Single(package.Children, child => child.Name == "Mob");
+            var image = Assert.Single(mob.Children, child => child.Name == "1150000.img");
+
+            viewModel.SelectedNode = image;
+            await WaitForImageContentAsync(viewModel);
+
+            var proxy = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children, child => child.Name == "proxy");
+            var outlink = Assert.Single(proxy.Children, child => child.Name == "_outlink");
+            viewModel.SelectedImageContentNode = outlink;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.Equal("Mob/_Canvas/1150000.img", viewModel.CanvasPreview?.Selector);
+            Assert.Equal("icon", viewModel.CanvasPreview?.ValuePath);
+            Assert.Equal(1, viewModel.CanvasPreview?.Width);
+            Assert.Equal(1, viewModel.CanvasPreview?.Height);
+            Assert.DoesNotContain(viewModel.ActivityLog, item => item.Message.Contains("Invalid WZ package", StringComparison.Ordinal));
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task SelectingImageNode_LoadsImageContentWithoutFirstCanvasPreview()
     {
         var path = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
