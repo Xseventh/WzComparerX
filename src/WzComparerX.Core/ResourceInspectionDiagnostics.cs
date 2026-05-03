@@ -58,9 +58,19 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            "MS container inspection is not implemented yet; WCX currently supports WZ package inspection for this path.",
+            "MS container inspection currently supports only version 4 directory tables; this path is not supported yet.",
             path,
             ResourceDiagnosticCodes.MsContainerInspectionUnsupported,
+            ResourceDiagnosticSources.Parser);
+    }
+
+    public static ResourceInspectionDiagnostic MsImageInspectionUnsupported(string path)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            "MS image extraction is not implemented yet; WCX currently supports MS container directory inspection only.",
+            path,
+            ResourceDiagnosticCodes.MsImageInspectionUnsupported,
             ResourceDiagnosticSources.Parser);
     }
 

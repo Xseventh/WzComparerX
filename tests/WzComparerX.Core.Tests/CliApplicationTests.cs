@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using WzComparerX.Cli;
+using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.Core.Tests;
@@ -219,11 +220,41 @@ public class CliApplicationTests
                 debug:
                   containerKind: ms
                 diagnostics:
-                  error [wcx.package.ms.directoryUnsupported]: MS container inspection is not implemented yet; WCX currently supports WZ package inspection for this path. (<ms>)
+                  error [wcx.package.ms.directoryUnsupported]: MS container inspection currently supports only version 4 directory tables; this path is not supported yet. (<ms>)
                 <ms> [package] : ms
 
                 """.ReplaceLineEndings(),
                 NormalizePath(result.Output, path, "<ms>"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugMsVersion4Container_ReturnsEntryTree()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry("Skill/1000.img", 0, 12, 1024, Flags: 7)));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", path);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("format: ms", result.Output);
+            Assert.Contains("version: 4", result.Output);
+            Assert.Contains("entryCount: 1", result.Output);
+            Assert.Contains("1000.img [image]", result.Output);
+            Assert.Contains("flags: 7", result.Output);
+            Assert.Contains("size: 12", result.Output);
+            Assert.DoesNotContain("wcx.package.ms.directoryUnsupported", result.Output);
         }
         finally
         {

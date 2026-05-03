@@ -20,4 +20,8 @@
     <ProjectReference Include="..\..\src\WzComparerX.Core\WzComparerX.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\TestSupport\MsContainerFixture.cs" Link="TestSupport\MsContainerFixture.cs" />
+  </ItemGroup>
+
 </Project>

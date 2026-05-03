@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.Text;
 using System.Text.Json;
 using WzComparerX.Core;
+using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.Core.Tests;
@@ -177,6 +178,98 @@ public class ResourceDocumentServiceTests
             Assert.Equal(ResourceDiagnosticCodes.MsContainerInspectionUnsupported, diagnostic.Code);
             Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
             Assert.Equal(path, diagnostic.Path);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectMsVersion4Container_ReturnsEntryTree()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry("Skill/1000.img", 0, 12, 1024, Flags: 7),
+                new MsContainerFixture.Entry("Skill/2000.img", 1, 34, 1024, Flags: 8)));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal(Path.GetFileName(path), inspection.Root.Name);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.Equal("ms", inspection.Root.DisplayValue);
+            Assert.Equal(path, inspection.Root.Identity?.PackagePath);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 2));
+
+            var skill = Assert.Single(inspection.Root.Children);
+            Assert.Equal("Skill", skill.Name);
+            Assert.Equal("directory", skill.Kind);
+            Assert.Collection(
+                skill.Children,
+                image =>
+                {
+                    Assert.Equal("1000.img", image.Name);
+                    Assert.Equal("image", image.Kind);
+                    Assert.Equal("Skill/1000.img", image.Identity?.ImageSelector);
+                    Assert.Contains(image.DebugMetadata!, item => item.Name == "flags" && Equals(item.Value, 7));
+                    Assert.Contains(image.DebugMetadata!, item => item.Name == "size" && Equals(item.Value, 12));
+                },
+                image =>
+                {
+                    Assert.Equal("2000.img", image.Name);
+                    Assert.Equal("image", image.Kind);
+                    Assert.Equal("Skill/2000.img", image.Identity?.ImageSelector);
+                    Assert.Contains(image.DebugMetadata!, item => item.Name == "flags" && Equals(item.Value, 8));
+                    Assert.Contains(image.DebugMetadata!, item => item.Name == "size" && Equals(item.Value, 34));
+                });
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectMsVersion4Image_ReturnsUnsupportedImageDiagnostic()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry("Skill/1000.img", 0, 12, 1024)));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                "Skill/1000.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Equal("1000.img", inspection.Root.Name);
+            Assert.Equal("image", inspection.Root.Kind);
+            Assert.Equal("ms", inspection.Root.DisplayValue);
+            Assert.Equal("Skill/1000.img", inspection.Root.Identity?.ImageSelector);
+
+            var diagnostic = Assert.Single(inspection.Diagnostics!);
+            Assert.Equal(ResourceDiagnosticSeverities.Error, diagnostic.Severity);
+            Assert.Equal(ResourceDiagnosticCodes.MsImageInspectionUnsupported, diagnostic.Code);
+            Assert.Equal(ResourceDiagnosticSources.Parser, diagnostic.Source);
+            Assert.Equal("Skill/1000.img", diagnostic.Path);
         }
         finally
         {

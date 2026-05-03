@@ -23,7 +23,7 @@ diagnostics contracts, and App consumes Core services.
 | PKG1 package groups | `Name.ini` / `LastWzIndex` plus numbered shard merge | Implemented in Core package group layer; `.ini`-declared missing or invalid shards emit `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid` warnings; optional Core GMS smoke validates `Map1.wz` merging `Map1_000.wz` image identity | Add real-client smoke notes for any package group warnings found locally | P0 | Core temp-fixture tests plus optional local `Map1.wz` smoke |
 | Base package links | Empty stubs link into sibling package folders | Implemented conservatively for Base-style workspace and same-package relative links | Clarify diagnostics for unresolved stubs and preserve true source identity | P0 | Core tests plus local `Base.wz`, `UI.wz`, `Map.wz` smoke |
 | PKG2 header | Detect PKG2 and read header hash fields | Header-only; `inspect` reports stable blocker diagnostic `wcx.package.pkg2.directoryUnsupported`; local GMS header scan found no PKG2 `.wz` sample among 780 WZ files | Parse at least one representative directory shape when a sample or synthetic shape is available | P0 | WC reference review, synthetic fixture if possible, real-client smoke if sample exists |
-| List.wz / optional containers | WC supports older/newer container helpers | `.ms` files now report stable `wcx.package.ms.directoryUnsupported` diagnostics; local GMS scan found 10 `Data/Packs/*.ms` files, no `List.wz`, and no `.mn` files | Support remains required for older-client compatibility. Decide the first `.ms` inspection slice from WC `Ms_File` / `Ms_FileV2`; define `List.wz` and `.mn` slices from WC reference or an older-client sample instead of assuming the current GMS layout is complete | P1 | Local-client scan notes, WC reference review, future older-client smoke samples |
+| List.wz / optional containers | WC supports older/newer container helpers | `.ms` v2/Snow and v4/ChaCha20 container directory tables inspect through Core; local GMS `Data/Packs/*.ms` smoke covers 10 Mob/Skill pack files; selecting an `.ms` image reports stable `wcx.package.ms.imageUnsupported`; unsupported `.ms` shapes still report `wcx.package.ms.directoryUnsupported`. Local GMS scan found no `List.wz` and no `.mn` files | Support remains required for older-client compatibility. `.ms` image payload extraction, `List.wz`, and `.mn` still need first parser slices from WC reference behavior or older-client samples instead of assuming the current GMS layout is complete | P1 | Synthetic `.ms` v2/v4 fixtures, optional local GMS smoke, WC reference review, future older-client smoke samples |
 
 ## IMG Values
 
@@ -47,7 +47,7 @@ diagnostics contracts, and App consumes Core services.
 | Image selector | Selected IMG can be reloaded without UI path guessing | Core image nodes now carry `Identity.ImageSelector`; CLI debug JSON covers image/value/link identity | Test selector behavior across more linked package shapes | P0 | Core/App tests |
 | Value path | Canvas export and preview use explicit property paths | IMG property nodes now carry `Identity.ValuePath`, and debug link resolution can report linked value paths | Add more cross-package examples as compare/search requirements appear | P0 | Export/App tests |
 | Linked target | `source`, `_inlink`, `_outlink`, UOL targets should be represented | Core link-like value nodes carry normalized `Identity.LinkedTarget`; `inspect --debug` can include `Identity.ResolvedLinkedTarget` and resolved-link debug metadata for deterministic targets | Add richer unresolved-target diagnostics and real-client smoke for link-heavy packages | P0 | Core fixtures plus App preview tests |
-| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, package-group shard issues emit `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid`, PKG2 directory inspection emits `wcx.package.pkg2.directoryUnsupported`, RawData/Video/Sound metadata emit unsupported payload diagnostics, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Keep future export/playback diagnostics aligned with the same codes/sources | P0 | Unit tests and CLI golden output |
+| Diagnostics | Stable severity/source/code/path | Implemented for many parser/export cases; failed split-package candidates emit `wcx.package.link.unresolved`, package-group shard issues emit `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid`, PKG2 directory inspection emits `wcx.package.pkg2.directoryUnsupported`, unsupported `.ms` image extraction emits `wcx.package.ms.imageUnsupported`, RawData/Video/Sound metadata emit unsupported payload diagnostics, and unresolved Canvas preview links emit `wcx.viewer.canvas.linkUnresolved` | Keep future export/playback diagnostics aligned with the same codes/sources | P0 | Unit tests and CLI golden output |
 
 ## Real-Client Smoke Matrix
 
@@ -65,13 +65,14 @@ diagnostics contracts, and App consumes Core services.
 
 ## Immediate M5 Slices
 
-1. Review WC `Ms_File` / `Ms_FileV2` and choose a minimal `.ms` container
-   inspection slice, because the local GMS client has `Data/Packs/*.ms`
-   samples.
-2. Keep future media export/playback diagnostics aligned with the existing
+1. Decide the next `.ms` slice: entry payload extraction as WZ IMG inspection,
+   or keep it deferred until compare/search needs direct `.ms` image contents.
+2. Define `List.wz` and `.mn` first-slice plans from WC reference behavior or
+   an older-client sample; current local GMS does not contain those files.
+3. Keep future media export/playback diagnostics aligned with the existing
    parser payload diagnostic codes.
-3. Choose the first PKG2 directory parsing slice when a representative sample or
+4. Choose the first PKG2 directory parsing slice when a representative sample or
    synthetic shape is available; current local GMS WZ scan found only PKG1.
-4. Add representative real-client smoke notes for deeper IMG value families in
+5. Add representative real-client smoke notes for deeper IMG value families in
    Map, UI, Item/Character, String, Mob/Npc, Skill, Sound, and Effect without
    committing client files.

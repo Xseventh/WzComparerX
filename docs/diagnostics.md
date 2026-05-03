@@ -59,6 +59,7 @@ Current examples:
 - `wcx.package.group.shardInvalid`
 - `wcx.package.pkg2.directoryUnsupported`
 - `wcx.package.ms.directoryUnsupported`
+- `wcx.package.ms.imageUnsupported`
 - `wcx.export.lua.multipleBlocks`
 - `wcx.export.unsupported`
 - `wcx.export.canvas.compressionUnsupported`

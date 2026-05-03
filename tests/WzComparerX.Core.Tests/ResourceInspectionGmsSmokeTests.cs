@@ -115,6 +115,44 @@ public class ResourceInspectionGmsSmokeTests
         AssertNoErrorDiagnostics(inspection);
     }
 
+    [Fact]
+    public async Task InspectOptionalGmsMsPackContainers_ReadsDirectoryTables()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var packsDirectory = Path.Combine(dataDirectory, "Packs");
+        if (!Directory.Exists(packsDirectory))
+        {
+            return;
+        }
+
+        var msPaths = Directory.GetFiles(packsDirectory, "*.ms");
+        if (msPaths.Length == 0)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        foreach (var msPath in msPaths)
+        {
+            var inspection = await service.InspectAsync(
+                msPath,
+                selector: null,
+                new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.NotEmpty(inspection.Root.Children);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 2));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "entryCount");
+            AssertNoErrorDiagnostics(inspection);
+        }
+    }
+
     private static string? GetGmsDataDirectory()
     {
         var path = Environment.GetEnvironmentVariable("WCX_GMS_DATA_DIR");

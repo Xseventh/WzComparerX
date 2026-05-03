@@ -33,9 +33,14 @@ public sealed class ResourceInspectionService
             return await InspectSyntheticAsync(path, options, cancellationToken);
         }
 
+        if (IsMsContainerPath(path) && selector is not null)
+        {
+            return await InspectMsImageAsync(path, selector, options, cancellationToken);
+        }
+
         if (IsMsContainerPath(path))
         {
-            return BuildUnsupportedMsContainerDocument(path, options);
+            return await InspectMsContainerAsync(path, options, cancellationToken);
         }
 
         if (selector is not null)
@@ -169,6 +174,101 @@ public sealed class ResourceInspectionService
             root,
             options.IncludeDebugMetadata ? [new ResourceInspectionMetadata("containerKind", "ms")] : null,
             [diagnostic]);
+    }
+
+    private static async Task<ResourceInspectionDocument> InspectMsContainerAsync(
+        string path,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var inspection = await new WzMsContainerInspectionReader().ReadAsync(path, cancellationToken);
+            return BuildMsContainerDocument(inspection, options);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
+        {
+            return BuildUnsupportedMsContainerDocument(path, options);
+        }
+    }
+
+    private static async Task<ResourceInspectionDocument> InspectMsImageAsync(
+        string path,
+        string selector,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var inspection = await new WzMsContainerInspectionReader().ReadAsync(path, cancellationToken);
+            var entry = inspection.Entries.FirstOrDefault(candidate =>
+                string.Equals(candidate.Path, selector, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(candidate.Name, selector, StringComparison.OrdinalIgnoreCase));
+            var imagePath = entry?.Path ?? selector;
+            var root = new ResourceInspectionNode(
+                Path.GetFileName(imagePath),
+                "image",
+                imagePath,
+                "ms",
+                DebugMetadata: options.IncludeDebugMetadata && entry is not null
+                    ? BuildMsEntryMetadata(entry)
+                    : null,
+                Diagnostics: [ResourceInspectionDiagnostics.MsImageInspectionUnsupported(imagePath)],
+                Identity: new ResourceInspectionIdentity(
+                    PackagePath: inspection.Header.SourcePath,
+                    ImageSelector: imagePath));
+            return new ResourceInspectionDocument(
+                inspection.Header.SourcePath,
+                "ms",
+                root,
+                options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null,
+                root.Diagnostics);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
+        {
+            return BuildUnsupportedMsContainerDocument(path, options);
+        }
+    }
+
+    private static ResourceInspectionDocument BuildMsContainerDocument(
+        WzMsContainerInspection inspection,
+        ResourceInspectionOptions options)
+    {
+        var rootName = Path.GetFileName(inspection.Header.SourcePath);
+        if (string.IsNullOrWhiteSpace(rootName))
+        {
+            rootName = inspection.Header.SourcePath;
+        }
+
+        var builder = new InspectionNodeBuilder(
+            rootName,
+            "package",
+            rootName,
+            "ms",
+            new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath));
+        foreach (var entry in inspection.Entries)
+        {
+            var parts = entry.Path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+            {
+                parts = [entry.Name];
+            }
+
+            builder.AddPath(
+                parts,
+                0,
+                "image",
+                options.IncludeDebugMetadata ? BuildMsEntryMetadata(entry) : null,
+                identity: new ResourceInspectionIdentity(
+                    PackagePath: inspection.Header.SourcePath,
+                    ImageSelector: entry.Path));
+        }
+
+        return new ResourceInspectionDocument(
+            inspection.Header.SourcePath,
+            "ms",
+            builder.ToNode(),
+            options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null);
     }
 
     private static bool IsMsContainerPath(string path)
@@ -398,6 +498,43 @@ public sealed class ResourceInspectionService
         AddOptional(metadata, "hash1", header.Hash1);
         AddOptional(metadata, "hash2", header.Hash2);
         return metadata;
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildMsDocumentMetadata(
+        WzMsContainerInspection inspection)
+    {
+        return
+        [
+            new("containerKind", "ms"),
+            new("version", inspection.Header.Version),
+            new("entryCount", inspection.Header.EntryCount),
+            new("headerHash", inspection.Header.HeaderHash),
+            new("randomByteCount", inspection.Header.RandomByteCount),
+            new("saltLength", inspection.Header.SaltLength),
+            new("headerStartPosition", inspection.Header.HeaderStartPosition),
+            new("entryStartPosition", inspection.Header.EntryStartPosition),
+            new("dataStartPosition", inspection.Header.DataStartPosition),
+            new("fileSize", inspection.Header.FileSize)
+        ];
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildMsEntryMetadata(
+        WzMsContainerEntryInspection entry)
+    {
+        return
+        [
+            new("index", entry.Index),
+            new("checksum", entry.Checksum),
+            new("flags", entry.Flags),
+            new("relativeBlock", entry.RelativeBlock),
+            new("offset", entry.Offset),
+            new("size", entry.Size),
+            new("sizeAligned", entry.SizeAligned),
+            new("unknown1", entry.Unknown1),
+            new("unknown2", entry.Unknown2),
+            new("unknown3", entry.Unknown3),
+            new("unknown4", entry.Unknown4)
+        ];
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildDirectoryEntryMetadata(

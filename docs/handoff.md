@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+0372a9d Inspect MS container directory tables
 df41527 Clarify legacy container support targets
 3d26b16 Report MS container inspection blocker
 b1226ba Record GMS container inventory
@@ -358,15 +359,20 @@ Local GMS smoke status:
   points at the local GMS `Data` directory, Core tests validate representative
   package roots, `Map1.wz` package-group image identity, and
   `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved target identity.
+  The `.ms` container extension is recorded in
+  `docs/logs/2026-05-03-ms-container-directory-inspection.md`; the optional
+  smoke now also validates local `Data/Packs/*.ms` directory tables.
 - A local GMS M5 inventory found 780 `.wz` files, all PKG1 by `headers` scan;
   no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
-  `Data/Packs/*.ms` files exist. The next sample-driven container step should
-  review WC `Ms_File` / `Ms_FileV2` before implementing a minimal `.ms`
-  inspection slice. `List.wz` and `.mn` remain compatibility targets for older
-  clients even though the current local GMS install lacks samples.
-- `.ms` paths now return a stable inspection error diagnostic
-  `wcx.package.ms.directoryUnsupported` instead of falling through to a generic
-  invalid WZ error. Actual `.ms` header/entry parsing is still pending.
+  `Data/Packs/*.ms` files exist. `.ms` v2/Snow and v4/ChaCha20 container
+  directory tables now inspect through Core, and optional GMS smoke covers all
+  local `Data/Packs/*.ms` files. `List.wz` and `.mn` remain compatibility
+  targets for older clients even though the current local GMS install lacks
+  samples.
+- `.ms` entry payload extraction is still pending. Selecting an `.ms` image now
+  returns the stable parser diagnostic `wcx.package.ms.imageUnsupported`;
+  unsupported `.ms` container shapes still return
+  `wcx.package.ms.directoryUnsupported`.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

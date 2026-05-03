@@ -177,6 +177,16 @@ this does not remove them from the compatibility target: older clients may still
 require them, so their first WCX slice should be driven by WC reference behavior
 or an older-client sample.
 
+WCX now inspects `.ms` v2/Snow and v4/ChaCha20 container directory tables
+through the normal `inspect` path. The first slice reads header metadata,
+entry names, checksums, flags, relative blocks, absolute offsets, sizes, and
+unknown fields, then projects slash-separated entry names into the Core
+inspection tree as image nodes. It does not yet decrypt or inspect the entry
+payload as a WZ IMG; selecting an `.ms` image reports
+`wcx.package.ms.imageUnsupported`. A local GMS smoke run verified all 10
+`Data/Packs/*.ms` files inspect successfully as directory tables without
+committing client data.
+
 ## Milestone 2 Parser Coverage
 
 M2 accepted the following migrated behavior as complete:
