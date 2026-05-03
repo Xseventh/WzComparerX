@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+d5ab55e Inspect List.wz string lists
 d7a5918 Resolve MS outlink canvas previews
 32b365f Extract MS image payloads
 fb9c60a List MS MN packages in folder inspection
