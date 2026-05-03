@@ -18,6 +18,7 @@ public class WzMsContainerInspectionReaderTests
             .Read(stream, "/tmp/Skill_00002.ms");
 
         Assert.Equal(2, inspection.Header.Version);
+        Assert.Equal(WzMsContainerEncryptionKind.Snow, inspection.Header.EncryptionKind);
         Assert.Equal(2, inspection.Header.EntryCount);
         Assert.True(inspection.Header.EntryStartPosition > inspection.Header.HeaderStartPosition);
         Assert.True(inspection.Header.DataStartPosition % 1024 == 0);
@@ -36,6 +37,7 @@ public class WzMsContainerInspectionReaderTests
                 Assert.Equal(12, entry.Size);
                 Assert.Equal(1, entry.Unknown1);
                 Assert.Equal(0, entry.Unknown3);
+                Assert.Equal(16, entry.Key.Count);
             },
             entry =>
             {
@@ -64,6 +66,7 @@ public class WzMsContainerInspectionReaderTests
             .Read(stream, "/tmp/Skill_00002.ms");
 
         Assert.Equal(4, inspection.Header.Version);
+        Assert.Equal(WzMsContainerEncryptionKind.ChaCha20, inspection.Header.EncryptionKind);
         Assert.Equal(2, inspection.Header.EntryCount);
         Assert.Equal(0x12345678, inspection.Header.HeaderHash);
         Assert.True(inspection.Header.EntryStartPosition > inspection.Header.HeaderStartPosition);
@@ -85,6 +88,7 @@ public class WzMsContainerInspectionReaderTests
                 Assert.Equal(1024, entry.SizeAligned);
                 Assert.Equal(1, entry.Unknown1);
                 Assert.Equal(3, entry.Unknown3);
+                Assert.Equal(16, entry.Key.Count);
             },
             entry =>
             {
@@ -132,6 +136,52 @@ public class WzMsContainerInspectionReaderTests
 
         Assert.Throws<NotSupportedException>(() =>
             new WzMsContainerInspectionReader().Read(stream, "/tmp/Skill_00002.ms"));
+    }
+
+    [Fact]
+    public void ReadPayload_Version2ContainerDecryptsImagePayload()
+    {
+        var imageBytes = MsContainerFixture.CreatePropertyImage(
+            MsContainerFixture.CreateScalarProperty("level", 7));
+        var bytes = MsContainerFixture.CreateV2(
+            "Skill_00002.ms",
+            new MsContainerFixture.Entry(
+                "Skill/1000.img",
+                0,
+                imageBytes.Length,
+                1024,
+                Payload: imageBytes));
+        using var stream = new MemoryStream(bytes);
+        var inspection = new WzMsContainerInspectionReader()
+            .Read(stream, "/tmp/Skill_00002.ms");
+
+        var payload = new WzMsImagePayloadReader()
+            .Read(stream, inspection.Header, Assert.Single(inspection.Entries));
+
+        Assert.Equal(imageBytes, payload.ToArray());
+    }
+
+    [Fact]
+    public void ReadPayload_Version4ContainerDecryptsImagePayload()
+    {
+        var imageBytes = MsContainerFixture.CreatePropertyImage(
+            MsContainerFixture.CreateScalarProperty("level", 7));
+        var bytes = MsContainerFixture.CreateV4(
+            "Skill_00002.ms",
+            new MsContainerFixture.Entry(
+                "Skill/1000.img",
+                0,
+                imageBytes.Length,
+                1024,
+                Payload: imageBytes));
+        using var stream = new MemoryStream(bytes);
+        var inspection = new WzMsContainerInspectionReader()
+            .Read(stream, "/tmp/Skill_00002.ms");
+
+        var payload = new WzMsImagePayloadReader()
+            .Read(stream, inspection.Header, Assert.Single(inspection.Entries));
+
+        Assert.Equal(imageBytes, payload.ToArray());
     }
 
     private static int CalculateRandomByteCount(string fileName)

@@ -179,15 +179,19 @@ path while `List.wz` and PKG2 still need WC reference behavior or older-client
 samples before parser behavior is accepted.
 
 WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
-tables through the normal `inspect` path. The first slice reads header
+tables through the normal `inspect` path. The directory slice reads header
 metadata, entry names, checksums, flags, relative blocks, absolute offsets,
 sizes, and unknown fields, then projects slash-separated entry names into the
-Core inspection tree as image nodes. It does not yet decrypt or inspect the
-entry payload as a WZ IMG; selecting an `.ms` or `.mn` image reports
-`wcx.package.ms.imageUnsupported`. A local GMS smoke run verified all 10
-`Data/Packs/*.ms` files inspect successfully as directory tables without
-committing client data; `.mn` is currently fixture-covered only because the
-local client has no `.mn` sample.
+Core inspection tree as image nodes. The image-payload slice now follows WC's
+`Ms_Image.OpenRead()` / `Ms_ImageV2.OpenRead()` model: v2/Snow payloads decrypt
+with one continuous Snow pass plus a second pass over the first 1024 bytes,
+and v4/ChaCha20 payloads decrypt the first 1024 bytes while leaving the
+remaining bytes raw. The decrypted stream then enters the existing IMG
+inspection path. A local GMS smoke run verified all 10 `Data/Packs/*.ms` files
+inspect successfully as directory tables and `Packs/Skill_00002.ms` ->
+`Skill/15500.img` extracts as a `Property` IMG without committing client data;
+`.mn` is currently fixture-covered only because the local client has no `.mn`
+sample.
 
 ## Milestone 2 Parser Coverage
 

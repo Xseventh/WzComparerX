@@ -29,6 +29,34 @@ internal static class WzMsChaCha20
         }
     }
 
+    public static void Xor(
+        ReadOnlySpan<byte> input,
+        Span<byte> output,
+        ReadOnlySpan<byte> key,
+        ReadOnlySpan<byte> nonce,
+        uint counter)
+    {
+        if (output.Length < input.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(output));
+        }
+
+        Span<byte> keyStream = stackalloc byte[BlockLength];
+        var position = 0;
+        while (position < input.Length)
+        {
+            GenerateBlock(key, nonce, counter, keyStream);
+            counter++;
+            var count = Math.Min(BlockLength, input.Length - position);
+            for (var i = 0; i < count; i++)
+            {
+                output[position + i] = (byte)(input[position + i] ^ keyStream[i]);
+            }
+
+            position += count;
+        }
+    }
+
     private static void GenerateBlock(
         ReadOnlySpan<byte> key,
         ReadOnlySpan<byte> nonce,

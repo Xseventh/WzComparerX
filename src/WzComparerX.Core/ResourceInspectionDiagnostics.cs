@@ -68,7 +68,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            "MS/MN image extraction is not implemented yet; WCX currently supports MS/MN container directory inspection only.",
+            "MS/MN image payload could not be inspected with the implemented v2/v4 extraction and IMG readers.",
             path,
             ResourceDiagnosticCodes.MsImageInspectionUnsupported,
             ResourceDiagnosticSources.Parser);

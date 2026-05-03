@@ -320,6 +320,97 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectMsVersion4Image_ReturnsImageTreeWhenPayloadIsSupported()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        var imageBytes = MsContainerFixture.CreatePropertyImage(
+            MsContainerFixture.CreateScalarProperty("level", 7));
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Skill/1000.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Flags: 7,
+                    Payload: imageBytes)));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                "Skill/1000.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal("Skill/1000.img", inspection.Root.Name);
+            Assert.Equal("image", inspection.Root.Kind);
+            Assert.Equal("Property", inspection.Root.DisplayValue);
+            Assert.Equal(path, inspection.Root.Identity?.PackagePath);
+            Assert.Equal("Skill/1000.img", inspection.Root.Identity?.ImageSelector);
+            Assert.Contains(inspection.Root.DebugMetadata!, item => item.Name == "flags" && Equals(item.Value, 7));
+            Assert.Contains(inspection.Root.DebugMetadata!, item => item.Name == "size" && Equals(item.Value, imageBytes.Length));
+
+            var level = Assert.Single(inspection.Root.Children);
+            Assert.Equal("level", level.Name);
+            Assert.Equal("int32", level.Kind);
+            Assert.Equal("7", level.DisplayValue);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectMsVersion2Image_ReturnsImageTreeWhenPayloadIsSupported()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        var imageBytes = MsContainerFixture.CreatePropertyImage(
+            MsContainerFixture.CreateScalarProperty("level", 7));
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV2(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Skill/1000.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Flags: 7,
+                    Payload: imageBytes)));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                "Skill/1000.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("ms", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal("Skill/1000.img", inspection.Root.Name);
+            Assert.Equal("image", inspection.Root.Kind);
+            Assert.Equal("Property", inspection.Root.DisplayValue);
+            Assert.Equal("Skill/1000.img", inspection.Root.Identity?.ImageSelector);
+
+            var level = Assert.Single(inspection.Root.Children);
+            Assert.Equal("level", level.Name);
+            Assert.Equal("int32", level.Kind);
+            Assert.Equal("7", level.DisplayValue);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDirectory_LinksSiblingSplitPackagesForEmptyTopLevelDirectories()
     {
         var directory = Directory.CreateTempSubdirectory("wcx-split-package-");

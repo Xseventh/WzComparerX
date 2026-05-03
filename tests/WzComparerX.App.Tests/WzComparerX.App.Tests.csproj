@@ -23,4 +23,8 @@
     <ProjectReference Include="..\..\src\WzComparerX.App\WzComparerX.App.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="..\TestSupport\MsContainerFixture.cs" Link="TestSupport\MsContainerFixture.cs" />
+  </ItemGroup>
+
 </Project>

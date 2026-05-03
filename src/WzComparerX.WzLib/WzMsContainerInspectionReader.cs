@@ -143,9 +143,14 @@ public sealed class WzMsContainerInspectionReader
                 DataStartPosition: -1,
                 randomByteCount,
                 saltLength,
-                stream.Length),
+                stream.Length)
+            {
+                EncryptionKind = WzMsContainerEncryptionKind.Snow,
+                KeySalt = new string(saltChars),
+                FileNameWithSalt = fileNameWithSalt
+            },
             fileNameWithSalt,
-            MsContainerEncryptionKind.Snow);
+            WzMsContainerEncryptionKind.Snow);
     }
 
     private static MsContainerReadContext ReadChaCha20Header(Stream stream, string sourcePath)
@@ -216,9 +221,14 @@ public sealed class WzMsContainerInspectionReader
                 DataStartPosition: -1,
                 randomByteCount,
                 saltLength,
-                stream.Length),
+                stream.Length)
+            {
+                EncryptionKind = WzMsContainerEncryptionKind.ChaCha20,
+                KeySalt = salt,
+                FileNameWithSalt = fileNameWithSalt
+            },
             fileNameWithSalt,
-            MsContainerEncryptionKind.ChaCha20);
+            WzMsContainerEncryptionKind.ChaCha20);
     }
 
     private static (IReadOnlyList<WzMsContainerEntryInspection> Items, long DataStartPosition) ReadEntries(
@@ -246,11 +256,11 @@ public sealed class WzMsContainerInspectionReader
             var sizeAligned = reader.ReadInt32();
             var unknown1 = reader.ReadInt32();
             var unknown2 = reader.ReadInt32();
-            _ = reader.ReadBytes(16);
-            var unknown3 = context.EncryptionKind == MsContainerEncryptionKind.ChaCha20
+            var entryKey = reader.ReadBytes(16);
+            var unknown3 = context.EncryptionKind == WzMsContainerEncryptionKind.ChaCha20
                 ? reader.ReadInt32()
                 : 0;
-            var unknown4 = context.EncryptionKind == MsContainerEncryptionKind.ChaCha20
+            var unknown4 = context.EncryptionKind == WzMsContainerEncryptionKind.ChaCha20
                 ? reader.ReadInt32()
                 : 0;
 
@@ -267,7 +277,10 @@ public sealed class WzMsContainerInspectionReader
                 unknown1,
                 unknown2,
                 unknown3,
-                unknown4));
+                unknown4)
+            {
+                Key = entryKey
+            });
         }
 
         var dataStartPosition = Align(stream.Position);
@@ -279,7 +292,7 @@ public sealed class WzMsContainerInspectionReader
 
     private static IMsEntryReader CreateEntryReader(Stream stream, MsContainerReadContext context)
     {
-        if (context.EncryptionKind == MsContainerEncryptionKind.Snow)
+        if (context.EncryptionKind == WzMsContainerEncryptionKind.Snow)
         {
             Span<byte> entryKey = stackalloc byte[16];
             BuildSnowEntryTableKey(context.FileNameWithSalt, entryKey);
@@ -548,11 +561,5 @@ public sealed class WzMsContainerInspectionReader
     private sealed record MsContainerReadContext(
         WzMsContainerHeaderInspection Header,
         string FileNameWithSalt,
-        MsContainerEncryptionKind EncryptionKind);
-
-    private enum MsContainerEncryptionKind
-    {
-        Snow,
-        ChaCha20
-    }
+        WzMsContainerEncryptionKind EncryptionKind);
 }

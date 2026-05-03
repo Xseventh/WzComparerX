@@ -263,6 +263,45 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugMsVersion4Image_ReturnsImageTreeWhenPayloadIsSupported()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        var imageBytes = MsContainerFixture.CreatePropertyImage(
+            MsContainerFixture.CreateScalarProperty("level", 7));
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Skill/1000.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Flags: 7,
+                    Payload: imageBytes)));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", path, "Skill/1000.img");
+            var output = NormalizePath(result.Output, path, "<ms>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("source: <ms>", output);
+            Assert.Contains("format: ms", output);
+            Assert.Contains("selector: Skill/1000.img", output);
+            Assert.Contains("Skill/1000.img [image] : Property", output);
+            Assert.Contains("level [int32] : 7", output);
+            Assert.Contains("flags: 7", output);
+            Assert.DoesNotContain("wcx.package.ms.imageUnsupported", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugMnVersion4Container_ReturnsEntryTree()
     {
         var path = Path.Combine(Path.GetTempPath(), $"Quest_00001-{Guid.NewGuid():N}.mn");

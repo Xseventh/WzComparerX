@@ -204,30 +204,79 @@ public sealed class ResourceInspectionService
             var entry = inspection.Entries.FirstOrDefault(candidate =>
                 string.Equals(candidate.Path, selector, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(candidate.Name, selector, StringComparison.OrdinalIgnoreCase));
-            var imagePath = entry?.Path ?? selector;
-            var root = new ResourceInspectionNode(
-                Path.GetFileName(imagePath),
-                "image",
-                imagePath,
-                "ms",
-                DebugMetadata: options.IncludeDebugMetadata && entry is not null
-                    ? BuildMsEntryMetadata(entry)
-                    : null,
-                Diagnostics: [ResourceInspectionDiagnostics.MsImageInspectionUnsupported(imagePath)],
-                Identity: new ResourceInspectionIdentity(
-                    PackagePath: inspection.Header.SourcePath,
-                    ImageSelector: imagePath));
-            return new ResourceInspectionDocument(
-                inspection.Header.SourcePath,
-                "ms",
-                root,
-                options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null,
-                root.Diagnostics);
+            if (entry is null)
+            {
+                return BuildUnsupportedMsImageDocument(inspection, selector, null, options);
+            }
+
+            try
+            {
+                await using var payload = await new WzMsImagePayloadReader().ReadAsync(
+                    path,
+                    inspection,
+                    entry,
+                    cancellationToken);
+                var selectedStringKey = options.StringKey ?? WzStringEncryptionKind.None;
+                var imageReader = new WzImageInspectionReader(
+                    new WzStringDecryptor(selectedStringKey),
+                    options.MaxPropertyDepth);
+                var imageInspection = imageReader.Read(
+                    payload,
+                    CreateMsImageHeader(inspection, entry),
+                    CreateMsImageEntry(entry),
+                    entry.Path);
+                var root = await ProjectImageInspectionAsync(imageInspection, options, cancellationToken);
+                if (options.IncludeDebugMetadata)
+                {
+                    root = root with
+                    {
+                        DebugMetadata = AppendMetadata(root.DebugMetadata, BuildMsEntryMetadata(entry))
+                    };
+                }
+
+                return new ResourceInspectionDocument(
+                    inspection.Header.SourcePath,
+                    "ms",
+                    root,
+                    options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null,
+                    root.Diagnostics);
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
+            {
+                return BuildUnsupportedMsImageDocument(inspection, entry.Path, entry, options);
+            }
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
         {
             return BuildUnsupportedMsContainerDocument(path, options);
         }
+    }
+
+    private static ResourceInspectionDocument BuildUnsupportedMsImageDocument(
+        WzMsContainerInspection inspection,
+        string selector,
+        WzMsContainerEntryInspection? entry,
+        ResourceInspectionOptions options)
+    {
+        var imagePath = entry?.Path ?? selector;
+        var root = new ResourceInspectionNode(
+            Path.GetFileName(imagePath),
+            "image",
+            imagePath,
+            "ms",
+            DebugMetadata: options.IncludeDebugMetadata && entry is not null
+                ? BuildMsEntryMetadata(entry)
+                : null,
+            Diagnostics: [ResourceInspectionDiagnostics.MsImageInspectionUnsupported(imagePath)],
+            Identity: new ResourceInspectionIdentity(
+                PackagePath: inspection.Header.SourcePath,
+                ImageSelector: imagePath));
+        return new ResourceInspectionDocument(
+            inspection.Header.SourcePath,
+            "ms",
+            root,
+            options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null,
+            root.Diagnostics);
     }
 
     private static ResourceInspectionDocument BuildMsContainerDocument(
@@ -276,6 +325,45 @@ public sealed class ResourceInspectionService
         var extension = Path.GetExtension(path);
         return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static WzPackageHeader CreateMsImageHeader(
+        WzMsContainerInspection inspection,
+        WzMsContainerEntryInspection entry)
+    {
+        return new WzPackageHeader(
+            WzPackageFormat.Pkg1,
+            "MS",
+            inspection.Header.SourcePath,
+            string.Empty,
+            HeaderSize: 0,
+            DataSize: entry.Size,
+            FileSize: entry.Size,
+            DirectoryStartPosition: 0);
+    }
+
+    private static WzDirectoryEntryInspection CreateMsImageEntry(WzMsContainerEntryInspection entry)
+    {
+        return new WzDirectoryEntryInspection(
+            entry.Index,
+            0x04,
+            WzDirectoryEntryKind.Image,
+            entry.Name,
+            entry.Size,
+            entry.Checksum,
+            HashOffsetPosition: 0,
+            HashOffset: 0,
+            Offset: 0,
+            Path: entry.Path);
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> AppendMetadata(
+        IReadOnlyList<ResourceInspectionMetadata>? first,
+        IReadOnlyList<ResourceInspectionMetadata> second)
+    {
+        return first is null
+            ? second
+            : first.Concat(second).ToArray();
     }
 
     private static ResourceInspectionNode ProjectRawNode(RawResourceNode node, string? parentPath)

@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+76aed3c Extract MS image payloads
 e86f706 Inspect MS container directory tables
 df41527 Clarify legacy container support targets
 3d26b16 Report MS container inspection blocker
@@ -365,15 +366,18 @@ Local GMS smoke status:
 - A local GMS M5 inventory found 780 `.wz` files, all PKG1 by `headers` scan;
   no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
   `Data/Packs/*.ms` files exist. `.ms` / `.mn` v2/Snow and v4/ChaCha20
-  container directory tables now inspect through Core, and folder inspection
-  lists `.ms` / `.mn` packages alongside `.wz`; optional GMS smoke covers all
-  local `Data/Packs/*.ms` files, and synthetic `.mn` fixtures lock the same WC
-  loader path while real `.mn` smoke waits for an older-client sample.
+  container directory tables now inspect through Core, folder inspection lists
+  `.ms` / `.mn` packages alongside `.wz`, and `.ms` / `.mn` image payloads can
+  be extracted into the existing IMG inspection path. Optional GMS smoke covers
+  all local `Data/Packs/*.ms` directory tables and verifies
+  `Packs/Skill_00002.ms` -> `Skill/15500.img` extraction; synthetic `.mn`
+  fixtures lock the same WC loader path while real `.mn` smoke waits for an
+  older-client sample.
   `List.wz` remains a compatibility target for older clients even though the
   current local GMS install lacks a sample.
-- `.ms` / `.mn` entry payload extraction is still pending. Selecting an image
-  from either container family now returns the stable parser diagnostic
-  `wcx.package.ms.imageUnsupported`; unsupported container shapes still return
+- `wcx.package.ms.imageUnsupported` now means an `.ms` / `.mn` image entry was
+  found but the implemented v2/v4 payload extraction or downstream IMG reader
+  could not inspect it; unsupported container shapes still return
   `wcx.package.ms.directoryUnsupported`.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local

@@ -14,7 +14,21 @@ public sealed record WzMsContainerHeaderInspection(
     long DataStartPosition,
     int RandomByteCount,
     int SaltLength,
-    long FileSize);
+    long FileSize)
+{
+    public WzMsContainerEncryptionKind EncryptionKind { get; init; } = WzMsContainerEncryptionKind.Unknown;
+
+    public string KeySalt { get; init; } = string.Empty;
+
+    public string FileNameWithSalt { get; init; } = string.Empty;
+}
+
+public enum WzMsContainerEncryptionKind
+{
+    Unknown,
+    Snow,
+    ChaCha20
+}
 
 public sealed record WzMsContainerEntryInspection(
     int Index,
@@ -29,4 +43,7 @@ public sealed record WzMsContainerEntryInspection(
     int Unknown1,
     int Unknown2,
     int Unknown3,
-    int Unknown4);
+    int Unknown4)
+{
+    public IReadOnlyList<byte> Key { get; init; } = Array.Empty<byte>();
+}

@@ -51,7 +51,7 @@ internal static class MsContainerFixture
             entryTable.AddRange(BitConverter.GetBytes(entry.SizeAligned));
             entryTable.AddRange(BitConverter.GetBytes(entry.Unknown1));
             entryTable.AddRange(BitConverter.GetBytes(entry.Unknown2));
-            entryTable.AddRange(Enumerable.Repeat((byte)i, 16));
+            entryTable.AddRange(CreateEntryKey(i));
             entryTable.AddRange(BitConverter.GetBytes(entry.Unknown3));
             entryTable.AddRange(BitConverter.GetBytes(entry.Unknown4));
         }
@@ -83,7 +83,16 @@ internal static class MsContainerFixture
             .Select(entry => entry.RelativeBlock * Alignment + entry.SizeAligned)
             .DefaultIfEmpty(0)
             .Max();
-        bytes.AddRange(Enumerable.Repeat((byte)0, maxEnd));
+        var payloads = new byte[maxEnd];
+        for (var i = 0; i < entries.Length; i++)
+        {
+            WritePayload(
+                payloads,
+                entries[i],
+                EncryptV4Payload(fileName, entries[i].Path, CreateEntryKey(i), entries[i].Payload));
+        }
+
+        bytes.AddRange(payloads);
         return bytes.ToArray();
     }
 
@@ -125,7 +134,7 @@ internal static class MsContainerFixture
             entryTable.AddRange(BitConverter.GetBytes(entry.SizeAligned));
             entryTable.AddRange(BitConverter.GetBytes(entry.Unknown1));
             entryTable.AddRange(BitConverter.GetBytes(entry.Unknown2));
-            entryTable.AddRange(Enumerable.Repeat((byte)i, 16));
+            entryTable.AddRange(CreateEntryKey(i));
         }
 
         while ((entryTable.Count & 3) != 0)
@@ -153,7 +162,16 @@ internal static class MsContainerFixture
             .Select(entry => entry.RelativeBlock * Alignment + entry.SizeAligned)
             .DefaultIfEmpty(0)
             .Max();
-        bytes.AddRange(Enumerable.Repeat((byte)0, maxEnd));
+        var payloads = new byte[maxEnd];
+        for (var i = 0; i < entries.Length; i++)
+        {
+            WritePayload(
+                payloads,
+                entries[i],
+                EncryptV2Payload(entries[i].Path, CreateEntryKey(i), entries[i].Payload));
+        }
+
+        bytes.AddRange(payloads);
         return bytes.ToArray();
     }
 
@@ -166,12 +184,194 @@ internal static class MsContainerFixture
         int Unknown1 = 0,
         int Unknown2 = 0,
         int Unknown3 = 0,
-        int Unknown4 = 0);
+        int Unknown4 = 0,
+        byte[]? Payload = null);
+
+    public static byte[] CreatePropertyImage(params byte[][] entries)
+    {
+        var bytes = new List<byte>(CreateImage("Property"));
+        bytes.Add(0x00);
+        bytes.Add(0x00);
+        bytes.Add((byte)entries.Length);
+        foreach (var entry in entries)
+        {
+            bytes.AddRange(entry);
+        }
+
+        return bytes.ToArray();
+    }
+
+    public static byte[] CreateScalarProperty(string name, int value)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x03);
+        bytes.Add((byte)value);
+        return bytes.ToArray();
+    }
 
     private static void AddString(List<byte> bytes, string value)
     {
         bytes.AddRange(BitConverter.GetBytes(value.Length));
         bytes.AddRange(Encoding.Unicode.GetBytes(value));
+    }
+
+    private static byte[] CreateEntryKey(int index)
+    {
+        return Enumerable.Repeat((byte)index, 16).ToArray();
+    }
+
+    private static void WritePayload(byte[] payloads, Entry entry, byte[] encryptedPayload)
+    {
+        if (encryptedPayload.Length == 0)
+        {
+            return;
+        }
+
+        encryptedPayload.CopyTo(payloads.AsSpan(entry.RelativeBlock * Alignment));
+    }
+
+    private static byte[] EncryptV2Payload(string entryName, byte[] entryKey, byte[]? payload)
+    {
+        if (payload is null)
+        {
+            return [];
+        }
+
+        var encrypted = new byte[((payload.Length + 3) / 4) * 4];
+        payload.CopyTo(encrypted, 0);
+        var key = BuildImageKey(string.Empty, entryName, entryKey, chaCha20: false);
+        var firstLength = AlignToSnowBlock(Math.Min(payload.Length, 1024));
+        if (firstLength > 0)
+        {
+            TransformSnow(encrypted.AsSpan(0, firstLength), key, encrypting: true);
+        }
+
+        if (encrypted.Length > 0)
+        {
+            TransformSnow(encrypted, key, encrypting: true);
+        }
+
+        return encrypted;
+    }
+
+    private static byte[] EncryptV4Payload(string fileName, string entryName, byte[] entryKey, byte[]? payload)
+    {
+        _ = fileName;
+        if (payload is null)
+        {
+            return [];
+        }
+
+        var encrypted = payload.ToArray();
+        var initialLength = Math.Min(encrypted.Length, 1024);
+        if (initialLength > 0)
+        {
+            var key = BuildImageKey(string.Empty, entryName, entryKey, chaCha20: true);
+            BuildChaCha20ImageNonce(string.Empty, out var nonce, out var counter);
+            WzMsChaCha20.Xor(payload.AsSpan(0, initialLength), encrypted.AsSpan(0, initialLength), key, nonce, counter);
+        }
+
+        return encrypted;
+    }
+
+    private static byte[] BuildImageKey(string keySalt, string entryName, byte[] entryKey, bool chaCha20)
+    {
+        uint keyHash = 0x811C9DC5;
+        foreach (var value in keySalt)
+        {
+            keyHash = (keyHash ^ value) * 0x1000193;
+        }
+
+        var keyHashDigits = keyHash.ToString().Select(static value => (byte)(value - '0')).ToArray();
+        var key = new byte[chaCha20 ? WzMsChaCha20.KeyLength : 16];
+        for (var i = 0; i < key.Length; i++)
+        {
+            key[i] = (byte)(i + entryName[i % entryName.Length] * (
+                keyHashDigits[i % keyHashDigits.Length] % 2 +
+                entryKey[(keyHashDigits[(i + 2) % keyHashDigits.Length] + i) % entryKey.Length] +
+                (keyHashDigits[(i + 1) % keyHashDigits.Length] + i) % 5));
+        }
+
+        if (chaCha20)
+        {
+            for (var i = 0; i < key.Length; i++)
+            {
+                key[i] ^= ChaCha20KeyObscure[i];
+            }
+        }
+
+        return key;
+    }
+
+    private static void BuildChaCha20ImageNonce(string keySalt, out byte[] nonce, out uint counter)
+    {
+        uint keyHash = 0x811C9DC5;
+        foreach (var value in keySalt)
+        {
+            keyHash = (keyHash ^ value) * 0x1000193;
+        }
+
+        var keyHash2 = keyHash >> 1;
+        var keyHash3 = keyHash2 ^ 0x6C;
+        Span<byte> keyHashData = stackalloc byte[12];
+        BinaryPrimitives.WriteUInt32LittleEndian(keyHashData[..4], keyHash);
+        BinaryPrimitives.WriteUInt32LittleEndian(keyHashData.Slice(4, 4), keyHash2);
+        BinaryPrimitives.WriteUInt32LittleEndian(keyHashData.Slice(8, 4), keyHash3);
+        for (uint i = 0, a = 0, b = 0, c = 90, d = 0; i < 12; ++i)
+        {
+            keyHashData[(int)i] ^= (byte)(d + 11 * (i / 11) + (c ^ (i >> 2)) + (a ^ b));
+            d--;
+            a += 8;
+            b += 17;
+            c += 43;
+        }
+
+        nonce = new byte[WzMsChaCha20.NonceLength];
+        keyHashData[..8].CopyTo(nonce.AsSpan(4));
+        counter = BinaryPrimitives.ReadUInt32LittleEndian(keyHashData.Slice(8, 4));
+    }
+
+    private static int AlignToSnowBlock(int length)
+    {
+        return (length & 3) == 0 ? length : length - (length & 3) + 4;
+    }
+
+    private static void TransformSnow(Span<byte> buffer, byte[] key, bool encrypting)
+    {
+        if (buffer.IsEmpty)
+        {
+            return;
+        }
+
+        using var transform = new WzSnow2CryptoTransform(key, [], encrypting);
+        var input = buffer.ToArray();
+        transform.TransformBlock(input, 0, input.Length, input, 0);
+        input.CopyTo(buffer);
+    }
+
+    private static byte[] CreateImage(string objectType)
+    {
+        var bytes = new List<byte>();
+        bytes.Add(0x73);
+        AddWzString(bytes, objectType);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateImageString(string value)
+    {
+        var bytes = new List<byte> { 0x00 };
+        AddWzString(bytes, value);
+        return bytes.ToArray();
+    }
+
+    private static void AddWzString(List<byte> bytes, string value)
+    {
+        bytes.Add(unchecked((byte)(sbyte)-value.Length));
+        for (var i = 0; i < value.Length; i++)
+        {
+            bytes.Add((byte)(value[i] ^ (byte)(0xAA + i)));
+        }
     }
 
     private static void BuildHeaderKey(string fileNameWithSalt, Span<byte> key)

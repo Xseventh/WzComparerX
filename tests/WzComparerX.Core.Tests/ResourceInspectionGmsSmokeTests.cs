@@ -153,6 +153,37 @@ public class ResourceInspectionGmsSmokeTests
         }
     }
 
+    [Fact]
+    public async Task InspectOptionalGmsMsPackImage_ExtractsImagePayload()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var msPath = Path.Combine(dataDirectory, "Packs", "Skill_00002.ms");
+        if (!File.Exists(msPath))
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            msPath,
+            "Skill/15500.img",
+            new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
+
+        Assert.Equal("ms", inspection.Format);
+        Assert.Equal("image", inspection.Root.Kind);
+        Assert.Equal("Property", inspection.Root.DisplayValue);
+        Assert.Equal("Skill/15500.img", inspection.Root.Identity?.ImageSelector);
+        Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 2));
+        Assert.Contains(inspection.Root.Children, child => child.Name == "info" && child.Kind == "object");
+        Assert.Contains(inspection.Root.Children, child => child.Name == "skill" && child.Kind == "object");
+        AssertNoErrorDiagnostics(inspection);
+    }
+
     private static string? GetGmsDataDirectory()
     {
         var path = Environment.GetEnvironmentVariable("WCX_GMS_DATA_DIR");

@@ -203,9 +203,9 @@ M4 完成后已经开始低风险架构整理：
   diagnostic：`wcx.package.pkg2.directoryUnsupported`，而不是暴露裸解析异常。
 - 本地 GMS 清点确认当前样本没有 PKG2、`List.wz` 或 `.mn`，但这些仍是
   旧客户端兼容目标；当前样本存在 `Data/Packs/*.ms`，`.ms` / `.mn` v2/Snow
-  和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，其中
-  `.mn` 目前由 synthetic fixture 覆盖；image payload extraction 仍未实现并
-  会报告 `wcx.package.ms.imageUnsupported`。
+  和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，并且
+  `.ms` / `.mn` image payload 可以通过同一条 IMG inspection 路径提取；
+  `.mn` 目前由 synthetic fixture 覆盖，真实 `.mn` smoke 仍等待旧客户端样本。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。
@@ -284,7 +284,7 @@ App 层应调用 Core service，不应重新实现 WZ / IMG parser。
 - 本地 GMS Core smoke 使用 `WCX_GMS_DATA_DIR` 指向客户端 `Data` 目录后运行
   `ResourceInspectionGmsSmokeTests`；这些测试默认无环境变量时不读取外部文件，
   并覆盖代表性 WZ package、Map package group/link identity，以及当前 GMS
-  `Data/Packs/*.ms` directory-table inspection。
+  `Data/Packs/*.ms` directory-table 和代表性 image payload inspection。
 - M4 UI 行为测试放在 `WzComparerX.App.Tests`，不要塞进 Core tests。
 - UI 可视回归优先使用 Avalonia Headless 和可选截图产物。
 - 后续涉及 App/UI 或浏览器工作流的迭代，尽量额外跑 Headless 子集：

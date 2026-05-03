@@ -1,6 +1,7 @@
 using WzComparerX.App.Services;
 using WzComparerX.App.ViewModels;
 using WzComparerX.Core;
+using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.App.Tests;
@@ -183,6 +184,56 @@ public class MainWindowViewModelTests
             Assert.Equal("image", Assert.Single(viewModel.ImageContentNodes).Kind);
             Assert.Equal(string.Empty, viewModel.SelectorText);
             Assert.False(viewModel.LoadImageCommand.CanExecute(null));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SelectingMsImageNode_LoadsImageContent()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"Skill_00002-{Guid.NewGuid():N}.ms");
+        var imageBytes = MsContainerFixture.CreatePropertyImage(
+            MsContainerFixture.CreateScalarProperty("level", 7));
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV2(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Skill/1000.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Flags: 7,
+                    Payload: imageBytes)),
+            TestContext.Current.CancellationToken);
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            var package = Assert.Single(viewModel.RootNodes);
+            var skill = Assert.Single(package.Children);
+            var image = Assert.Single(skill.Children);
+
+            viewModel.SelectedNode = image;
+            await WaitForImageContentAsync(viewModel);
+
+            Assert.Equal("ms", package.DisplayValue);
+            Assert.EndsWith($"{Path.GetFileName(path)}/Skill/1000.img", image.Path, StringComparison.Ordinal);
+            var inspectedImage = Assert.Single(viewModel.ImageContentNodes);
+            Assert.Equal("Skill/1000.img", inspectedImage.Name);
+            Assert.Equal("Property", inspectedImage.DisplayValue);
+            Assert.Equal("Loaded IMG: Skill/1000.img", viewModel.ImageContentStatus);
+            var level = Assert.Single(inspectedImage.Children);
+            Assert.Equal("level", level.Name);
+            Assert.Equal("int32", level.Kind);
+            Assert.Equal("7", level.DisplayValue);
         }
         finally
         {

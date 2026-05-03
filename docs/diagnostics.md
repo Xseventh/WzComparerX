@@ -79,6 +79,9 @@ Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.
 The `wcx.package.ms.*` codes cover the WC MS-loader container family, including
 both `.ms` and `.mn` files.
+`wcx.package.ms.imageUnsupported` means an image entry was found, but the
+implemented v2/v4 payload extraction or the downstream IMG reader could not
+produce an inspection tree for that entry.
 
 ## Severities
 

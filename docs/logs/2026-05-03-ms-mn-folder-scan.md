@@ -15,6 +15,6 @@
 - WC only auto-loads `Packs/*.{ms,mn}` for the KMST1125/Base.wz special path.
   WCX folder inspection is slightly more explicit: if the user opens a folder,
   `.ms` / `.mn` packages in that folder tree are listed as packages.
-- MS/MN image payload extraction is still not implemented, so selecting an
-  image entry from an MS/MN container reports
-  `wcx.package.ms.imageUnsupported`.
+- Later on 2026-05-03, MS/MN image payload extraction was added for the initial
+  v2/Snow and v4/ChaCha20 slice; this folder-scan behavior remains the package
+  discovery layer.

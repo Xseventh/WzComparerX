@@ -235,13 +235,13 @@ For each migrated feature, record:
   - CLI test for debug output on a synthetic `.ms` container.
   - Optional GMS smoke that reads all local `Data/Packs/*.ms` directory tables.
 - Known unsupported cases:
-  - `.ms` and `.mn` entry payload extraction is not implemented yet.
-  - Selecting an `.ms` or `.mn` image returns
-    `wcx.package.ms.imageUnsupported`.
+  - `.ms` and `.mn` entry payload extraction is implemented for the current
+    v2/Snow and v4/ChaCha20 container readers, but unsupported or malformed IMG
+    payload shapes still return `wcx.package.ms.imageUnsupported`.
   - Unsupported `.ms` or `.mn` container shapes return
     `wcx.package.ms.directoryUnsupported`.
-  - The per-entry key bytes are currently consumed to keep the entry stream
-    aligned, but not exposed in inspection metadata.
+  - The per-entry key bytes are retained for payload extraction but are not
+    exposed in inspection metadata.
   - v2 checksum validation is implemented for the header; v4 hash validation
     remains aligned with WC's current TODO.
 - UI dependency removed or isolated:
