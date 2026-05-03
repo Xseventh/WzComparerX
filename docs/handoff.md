@@ -28,7 +28,11 @@ Recent commits:
 
 ```text
 32b365f Extract MS image payloads
+fb9c60a List MS MN packages in folder inspection
+102f5e4 Clarify MS MN container inspection
+ed341bd Sync handoff after MS inspection
 e86f706 Inspect MS container directory tables
+1b7ae13 Align docs with active M5 status
 df41527 Clarify legacy container support targets
 3d26b16 Report MS container inspection blocker
 b1226ba Record GMS container inventory
