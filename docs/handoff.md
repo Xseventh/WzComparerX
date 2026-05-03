@@ -27,7 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
-76aed3c Extract MS image payloads
+32b365f Extract MS image payloads
 e86f706 Inspect MS container directory tables
 df41527 Clarify legacy container support targets
 3d26b16 Report MS container inspection blocker
