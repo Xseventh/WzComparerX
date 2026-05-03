@@ -94,6 +94,7 @@ To inspect resources through the stable Core inspection model:
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect fixtures/synthetic/basic-tree.json
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto path/to/Base.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto path/to/Base_000.wz StandardPDD.img
+dotnet run --project src/WzComparerX.Cli --no-build -- inspect --key auto path/to/List.wz
 dotnet run --project src/WzComparerX.Cli --no-build -- inspect --json fixtures/synthetic/basic-tree.json
 ```
 
@@ -102,6 +103,10 @@ and automation workflows. Use `--key auto` to try no-op, KMS, and GMS PKG1
 string keys and select the most plausible decoded directory names. Use
 `--key none`, `--key noop`, `--key kms`, or `--key gms` when a file needs a
 specific PKG1 string key mode.
+
+`List.wz` is inspected as `format: listwz`. It is a WC compatibility helper for
+encrypted string-list entries, not a package tree; the current slice decodes
+no-op/KMS/GMS records and excludes WC's `dummy` sentinel.
 
 For IMG inspection, the selector can be an image name, image path, or entry
 index. By default, a selected IMG is lazily loaded and inspected as a complete

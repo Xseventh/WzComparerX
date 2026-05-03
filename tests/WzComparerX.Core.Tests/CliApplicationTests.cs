@@ -302,6 +302,60 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugListWz_ReturnsDecodedEntries()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), $"wcx-list-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDirectory);
+        var path = Path.Combine(tempDirectory, "List.wz");
+        await File.WriteAllBytesAsync(
+            path,
+            WzListFileFixture.Create(
+                WzStringEncryptionKind.Gms,
+                "dummy",
+                "Base/Character.wz",
+                "Mob/0100000.img"));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "auto", path);
+            var output = NormalizePath(result.Output, path, "<list>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(
+                """
+                source: <list>
+                format: listwz
+                debug:
+                  entryCount: 2
+                  rawEntryCount: 3
+                  stringKey: gms
+                <list> [list]
+                  Base/Character.wz [listEntry]
+                    debug:
+                      index: 1
+                      characterCount: 17
+                      lengthPosition: 16
+                      dataPosition: 20
+                      terminatorPosition: 54
+                  Mob/0100000.img [listEntry]
+                    debug:
+                      index: 2
+                      characterCount: 15
+                      lengthPosition: 56
+                      dataPosition: 60
+                      terminatorPosition: 90
+
+                """.ReplaceLineEndings(),
+                output);
+        }
+        finally
+        {
+            Directory.Delete(tempDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugMnVersion4Container_ReturnsEntryTree()
     {
         var path = Path.Combine(Path.GetTempPath(), $"Quest_00001-{Guid.NewGuid():N}.mn");

@@ -148,6 +148,25 @@ For each migrated feature, record:
   - Expand nested IMG `Property` objects to a caller-provided bounded depth.
   - Inspect nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
+
+### List.wz String-List Inspection
+
+- WC source files referenced:
+  - `WzComparerR2.WzLib/Wz_Crypto.cs`
+- WC behavior preserved:
+  - Treat `List.wz` as a helper string list, not a resource package tree.
+  - Read records as `int32` character count plus UTF-16LE-shaped bytes and a
+    2-byte terminator.
+  - Decode the low byte of each UTF-16 code unit with the selected PKG1 key
+    stream, matching WC's `LoadListWz` loop.
+  - Auto-detect GMS/KMS/no-op keys for synthetic coverage; WC detects GMS/KMS
+    by checking whether the first decrypted character is `d`.
+  - Exclude the `dummy` sentinel from the effective entries.
+- Known differences / deferred behavior:
+  - WCX exposes `List.wz` through `inspect` as `format: listwz` but does not yet
+    feed it into PKG1 string key/profile selection.
+  - The current local GMS sample has no `List.wz`; real smoke is waiting for an
+    older-client sample.
     object values.
   - Detect Canvas payload compression kind and expected uncompressed data
     length for WC texture formats.

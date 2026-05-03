@@ -33,6 +33,11 @@ public sealed class ResourceInspectionService
             return await InspectSyntheticAsync(path, options, cancellationToken);
         }
 
+        if (IsListFilePath(path))
+        {
+            return await InspectListFileAsync(path, options, cancellationToken);
+        }
+
         if (IsMsContainerPath(path) && selector is not null)
         {
             return await InspectMsImageAsync(path, selector, options, cancellationToken);
@@ -62,6 +67,33 @@ public sealed class ResourceInspectionService
             "synthetic",
             ProjectRawNode(document.Root, parentPath: null),
             options.IncludeDebugMetadata ? [new ResourceInspectionMetadata("sourceKind", "synthetic")] : null);
+    }
+
+    private static async Task<ResourceInspectionDocument> InspectListFileAsync(
+        string path,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken)
+    {
+        var inspection = await new WzListFileReader().ReadAsync(path, options.StringKey, cancellationToken);
+        var rootName = Path.GetFileName(inspection.SourcePath);
+        if (string.IsNullOrWhiteSpace(rootName))
+        {
+            rootName = inspection.SourcePath;
+        }
+
+        var children = inspection.Entries
+            .Select(entry => new ResourceInspectionNode(
+                entry.Path,
+                "listEntry",
+                entry.Path,
+                DebugMetadata: options.IncludeDebugMetadata ? BuildListEntryMetadata(entry) : null))
+            .ToArray();
+        var root = new ResourceInspectionNode(rootName, "list", rootName, Children: children);
+        return new ResourceInspectionDocument(
+            inspection.SourcePath,
+            "listwz",
+            root,
+            options.IncludeDebugMetadata ? BuildListDocumentMetadata(inspection) : null);
     }
 
     private static async Task<ResourceInspectionDocument> InspectDirectoryAsync(
@@ -325,6 +357,11 @@ public sealed class ResourceInspectionService
         var extension = Path.GetExtension(path);
         return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsListFilePath(string path)
+    {
+        return string.Equals(Path.GetFileName(path), "List.wz", StringComparison.OrdinalIgnoreCase);
     }
 
     private static WzPackageHeader CreateMsImageHeader(
@@ -624,6 +661,30 @@ public sealed class ResourceInspectionService
             new("unknown2", entry.Unknown2),
             new("unknown3", entry.Unknown3),
             new("unknown4", entry.Unknown4)
+        ];
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildListDocumentMetadata(
+        WzListFileInspection inspection)
+    {
+        return
+        [
+            new("entryCount", inspection.Entries.Count),
+            new("rawEntryCount", inspection.RawEntryCount),
+            new("stringKey", inspection.StringEncryptionKind.ToString().ToLowerInvariant())
+        ];
+    }
+
+    private static IReadOnlyList<ResourceInspectionMetadata> BuildListEntryMetadata(
+        WzListFileEntryInspection entry)
+    {
+        return
+        [
+            new("index", entry.Index),
+            new("characterCount", entry.CharacterCount),
+            new("lengthPosition", entry.LengthPosition),
+            new("dataPosition", entry.DataPosition),
+            new("terminatorPosition", entry.TerminatorPosition)
         ];
     }
 

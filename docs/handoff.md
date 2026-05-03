@@ -378,8 +378,11 @@ Local GMS smoke status:
   `Packs/Skill_00002.ms` -> `Skill/15500.img` extraction; synthetic `.mn`
   fixtures lock the same WC loader path while real `.mn` smoke waits for an
   older-client sample.
-  `List.wz` remains a compatibility target for older clients even though the
-  current local GMS install lacks a sample.
+  `List.wz` now has a first-slice WzLib reader and Core `inspect` projection
+  for no-op/KMS/GMS string-list records. It remains a helper file rather than a
+  package tree, is not yet wired into PKG1 string key/profile selection, and
+  still needs real older-client smoke because the current local GMS install
+  lacks a sample.
 - `wcx.package.ms.imageUnsupported` now means an `.ms` / `.mn` image entry was
   found but the implemented v2/v4 payload extraction or downstream IMG reader
   could not inspect it; unsupported container shapes still return

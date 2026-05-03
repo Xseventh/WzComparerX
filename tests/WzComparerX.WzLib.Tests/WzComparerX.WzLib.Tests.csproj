@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <Compile Include="..\TestSupport\MsContainerFixture.cs" Link="TestSupport\MsContainerFixture.cs" />
+    <Compile Include="..\TestSupport\WzListFileFixture.cs" Link="TestSupport\WzListFileFixture.cs" />
   </ItemGroup>
 
 </Project>

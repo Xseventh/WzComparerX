@@ -206,6 +206,9 @@ M4 完成后已经开始低风险架构整理：
   和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，并且
   `.ms` / `.mn` image payload 可以通过同一条 IMG inspection 路径提取；
   `.mn` 目前由 synthetic fixture 覆盖，真实 `.mn` smoke 仍等待旧客户端样本。
+  `List.wz` 已有基于 WC `LoadListWz` 的 first-slice reader，可通过
+  `inspect` 观察 no-op/KMS/GMS list entries，但尚未接入 PKG1 key/profile
+  选择；真实 smoke 同样等待旧客户端样本。
 - Canvas preview 现在也能通过同一条 MS/MN payload 路径预览 `.ms` / `.mn`
   IMG 内的 direct Canvas，并能把 `.ms` IMG 内的 `_outlink` 按 WC-style
   logical path 解析到当前 MS container 或匹配的 WZ package group。

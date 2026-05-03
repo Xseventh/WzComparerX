@@ -174,9 +174,14 @@ but did find 10 `.ms` pack files under `Data/Packs`, including Mob and Skill
 packs. That makes `.ms` container inspection sample-driven for this client.
 `List.wz`, `.mn`, and PKG2 are not covered by the current local GMS sample, but
 this does not remove them from the compatibility target: older clients may still
-require them, so `.mn` keeps synthetic coverage through WC's shared MS loader
-path while `List.wz` and PKG2 still need WC reference behavior or older-client
-samples before parser behavior is accepted.
+require them. `.mn` keeps synthetic coverage through WC's shared MS loader path.
+`List.wz` now has a first parser slice based on WC's `Wz_Crypto.LoadListWz`:
+it decodes no-op/KMS/GMS string-list records, excludes the `dummy` sentinel, and
+projects the decoded list through `inspect` as `format: listwz`. This is still
+only the observable helper-file slice; it is not yet wired into PKG1 string
+key/profile detection, and real `List.wz` smoke still waits for an older-client
+sample. PKG2 still needs WC reference behavior or a representative sample
+before directory parser behavior is accepted.
 
 WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
 tables through the normal `inspect` path. The directory slice reads header
