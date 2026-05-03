@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+d7a5918 Resolve MS outlink canvas previews
 32b365f Extract MS image payloads
 fb9c60a List MS MN packages in folder inspection
 102f5e4 Clarify MS MN container inspection
