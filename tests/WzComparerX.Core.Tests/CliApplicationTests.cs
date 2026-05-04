@@ -483,6 +483,44 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectDebugImage_EmitsScalarPropertyEncodings()
+    {
+        var imageBytes = CreatePropertyImage(
+            CreateNullProperty("nil"),
+            CreateScalarProperty("short", 0x02, BitConverter.GetBytes((short)1234)),
+            CreateScalarProperty("intLong", 0x03, 0x80, BitConverter.GetBytes(123456789)),
+            CreateScalarProperty("longLong", 0x14, 0x80, BitConverter.GetBytes(1234567890123L)),
+            CreateScalarProperty("singleLong", 0x04, 0x80, BitConverter.GetBytes(12.5f)),
+            CreateScalarProperty("double", 0x05, BitConverter.GetBytes(123.25d)),
+            CreateScalarProperty("text", 0x08, CreateImageString("hello")),
+            CreateObjectProperty("empty", CreateObjectValue("Property", 0x00, 0x00, 0)));
+        var path = WriteTemporaryPkg1ImageFile(imageBytes);
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", "--depth", "2", path, "Canvas.img");
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("propertyCount: 8", output);
+            Assert.Contains("nil [null]", output);
+            Assert.Contains("short [int16] : 1234", output);
+            Assert.Contains("intLong [int32] : 123456789", output);
+            Assert.Contains("longLong [int64] : 1234567890123", output);
+            Assert.Contains("singleLong [single] : 12.5", output);
+            Assert.Contains("double [double] : 123.25", output);
+            Assert.Contains("text [string] : hello", output);
+            Assert.Contains("empty [object] : Property", output);
+            Assert.Contains("childCount: 0", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugImage_EmitsMediaPayloadDiagnostics()
     {
         var imageBytes = CreatePropertyImage(
@@ -1346,6 +1384,23 @@ public class CliApplicationTests
         bytes.Add(0x09);
         bytes.AddRange(BitConverter.GetBytes(objectValue.Length));
         bytes.AddRange(objectValue);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateNullProperty(string name)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x00);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateScalarProperty(string name, byte type, params object[] payloadParts)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(type);
+        AddPayloadParts(bytes, payloadParts);
         return bytes.ToArray();
     }
 

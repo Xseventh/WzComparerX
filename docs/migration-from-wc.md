@@ -146,6 +146,10 @@ For each migrated feature, record:
   - Read first-layer `Property` entries, including simple scalar values and
     nested object summaries.
   - Expand nested IMG `Property` objects to a caller-provided bounded depth.
+  - Decode the supported scalar property tags currently covered by fixtures:
+    null, int16 aliases, compressed/expanded int32, alternate int32 tag,
+    compressed/expanded int64, compressed/expanded single, double, string, and
+    empty nested `Property` nodes.
   - Inspect nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
 

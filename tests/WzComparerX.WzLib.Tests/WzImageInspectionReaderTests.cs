@@ -71,6 +71,128 @@ public class WzImageInspectionReaderTests
     }
 
     [Fact]
+    public void Read_ReturnsSupportedScalarPropertyEncodings()
+    {
+        var bytes = CreatePropertyImage(
+            CreateNullProperty("nil"),
+            CreateScalarProperty("short", 0x02, BitConverter.GetBytes((short)1234)),
+            CreateScalarProperty("shortAlt", 0x0b, BitConverter.GetBytes((short)-123)),
+            CreateScalarProperty("intSmall", 0x03, 12),
+            CreateScalarProperty("intLong", 0x03, 0x80, BitConverter.GetBytes(123456789)),
+            CreateScalarProperty("intAlt", 0x13, 0x80, BitConverter.GetBytes(-7654321)),
+            CreateScalarProperty("longSmall", 0x14, unchecked((byte)(sbyte)-7)),
+            CreateScalarProperty("longLong", 0x14, 0x80, BitConverter.GetBytes(1234567890123L)),
+            CreateScalarProperty("singleSmall", 0x04, 3),
+            CreateScalarProperty("singleLong", 0x04, 0x80, BitConverter.GetBytes(12.5f)),
+            CreateScalarProperty("double", 0x05, BitConverter.GetBytes(123.25d)),
+            CreateScalarProperty("text", 0x08, CreateImageString("hello")));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(inspection.Properties);
+        Assert.Equal(12, inspection.PropertyCount);
+        Assert.Collection(
+            inspection.Properties,
+            property =>
+            {
+                Assert.Equal("nil", property.Name);
+                Assert.Equal("null", property.Kind);
+                Assert.Null(property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("short", property.Name);
+                Assert.Equal("int16", property.Kind);
+                Assert.Equal((short)1234, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("shortAlt", property.Name);
+                Assert.Equal("int16", property.Kind);
+                Assert.Equal((short)-123, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("intSmall", property.Name);
+                Assert.Equal("int32", property.Kind);
+                Assert.Equal(12, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("intLong", property.Name);
+                Assert.Equal("int32", property.Kind);
+                Assert.Equal(123456789, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("intAlt", property.Name);
+                Assert.Equal("int32", property.Kind);
+                Assert.Equal(-7654321, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("longSmall", property.Name);
+                Assert.Equal("int64", property.Kind);
+                Assert.Equal(-7L, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("longLong", property.Name);
+                Assert.Equal("int64", property.Kind);
+                Assert.Equal(1234567890123L, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("singleSmall", property.Name);
+                Assert.Equal("single", property.Kind);
+                Assert.Equal(3f, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("singleLong", property.Name);
+                Assert.Equal("single", property.Kind);
+                Assert.Equal(12.5f, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("double", property.Name);
+                Assert.Equal("double", property.Kind);
+                Assert.Equal(123.25d, property.Value);
+            },
+            property =>
+            {
+                Assert.Equal("text", property.Name);
+                Assert.Equal("string", property.Kind);
+                Assert.Equal("hello", property.Value);
+            });
+    }
+
+    [Fact]
+    public void Read_ReturnsEmptyNestedProperty()
+    {
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "empty",
+            CreateObjectValue("Property", 0x00, 0x00, 0)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
+        Assert.Equal("empty", property.Name);
+        Assert.Equal("object", property.Kind);
+        Assert.Equal("Property", property.Value);
+        Assert.Equal(0, property.ChildCount);
+        Assert.NotNull(property.Children);
+        Assert.Empty(property.Children);
+    }
+
+    [Fact]
     public void Read_ExpandsNestedPropertyWhenDepthAllows()
     {
         byte[] bytes =
@@ -808,6 +930,23 @@ public class WzImageInspectionReaderTests
         AddImageObjectName(bytes, objectType);
         AddPayloadParts(bytes, payloadParts);
 
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateNullProperty(string name)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x00);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateScalarProperty(string name, byte type, params object[] payloadParts)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(type);
+        AddPayloadParts(bytes, payloadParts);
         return bytes.ToArray();
     }
 

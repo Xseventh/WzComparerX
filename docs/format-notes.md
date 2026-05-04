@@ -206,6 +206,14 @@ resolution. A local GMS smoke run also verified `Packs/Mob_00000.ms` selector
 current MS container or on the matching WZ package group such as
 `Data/Mob/_Canvas/_Canvas_000.wz`, matching WC's global `FindWz(path)` style.
 
+M5 scalar fixtures now explicitly cover the supported binary IMG scalar
+property encodings: null, both int16 property tags, compressed and expanded
+int32, alternate int32 tag, compressed and expanded int64, compressed and
+expanded single, double, string, and empty nested `Property` nodes. The same
+fixture family is covered through WzLib reader tests and through CLI
+`inspect --debug` output so the supported scalar surface is observable before
+future compare/search work depends on it.
+
 ## Milestone 2 Parser Coverage
 
 M2 accepted the following migrated behavior as complete:
