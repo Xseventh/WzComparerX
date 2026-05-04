@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+6d55a2c Lock IMG scalar inspection fixtures
 d5ab55e Inspect List.wz string lists
 d7a5918 Resolve MS outlink canvas previews
 32b365f Extract MS image payloads
