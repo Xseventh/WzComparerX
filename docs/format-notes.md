@@ -164,8 +164,15 @@ parser errors. They also validate the `Data/Map/Map/Map1/Map1.wz` package group:
 `100000000.img` is merged from `Map1_000.wz` and keeps its true source package
 identity. Inspecting `Data/Map/Map/Map1/Map1_000.wz` selector
 `100000000.img` with debug metadata resolves `miniMap/_outlink` to image
-selector `100000000.img` and value path `miniMap/canvas`. These tests read
-local files only and do not commit client data.
+selector `100000000.img` and value path `miniMap/canvas`. A later smoke
+extension validates `Data/Character/Character_000.wz` selector `00002000.img`:
+`walk1/0/body/_outlink` resolves through `Data/Character/_Canvas/_Canvas_000.wz`
+and the Canvas preview service can load the linked direct-zlib Canvas pixels.
+The same extension validates `Data/Sound/Sound_000.wz` selector
+`AchievementEff.img`: `GradeUp` exposes Sound_DX8 duration, data offset, and
+data length metadata, while retaining the stable
+`wcx.payload.audio.unsupported` diagnostic for not-yet-decoded audio payloads.
+These tests read local files only and do not commit client data.
 
 A later M5 local inventory scan found 780 `.wz` files under the local GMS
 `Data` directory; `headers` did not report any `PKG2`, `unknown`, or invalid WZ

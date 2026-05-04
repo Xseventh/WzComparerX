@@ -217,6 +217,113 @@ public class ResourceInspectionGmsSmokeTests
         Assert.NotEmpty(document.Pixels);
     }
 
+    [Fact]
+    public async Task InspectOptionalGmsCharacterImage_ResolvesCanvasOutlinkIdentity()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var characterPath = Path.Combine(dataDirectory, "Character", "Character_000.wz");
+        if (!File.Exists(characterPath))
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            characterPath,
+            "00002000.img",
+            new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
+
+        var outlink = Flatten(inspection.Root)
+            .FirstOrDefault(node =>
+                node is { Name: "_outlink", Kind: "string" } &&
+                string.Equals(node.Identity?.ResolvedLinkedTarget?.ValuePath, "walk1/0/body", StringComparison.Ordinal));
+
+        Assert.NotNull(outlink);
+        Assert.NotNull(outlink.Identity);
+        Assert.Equal("Character/_Canvas/00002000.img/walk1/0/body", outlink.Identity.LinkedTarget);
+        Assert.NotNull(outlink.Identity.ResolvedLinkedTarget);
+        Assert.EndsWith(
+            Path.Combine("Character", "_Canvas", "_Canvas_000.wz"),
+            outlink.Identity.ResolvedLinkedTarget.PackagePath,
+            StringComparison.Ordinal);
+        Assert.Equal("00002000.img", outlink.Identity.ResolvedLinkedTarget.ImageSelector);
+        Assert.Equal("walk1/0/body", outlink.Identity.ResolvedLinkedTarget.ValuePath);
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
+    public async Task CanvasOptionalGmsCharacterImage_ResolvesOutlinkPreview()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var characterPath = Path.Combine(dataDirectory, "Character", "Character_000.wz");
+        if (!File.Exists(characterPath))
+        {
+            return;
+        }
+
+        var service = new ResourceCanvasImageService();
+        var document = await service.LoadAsync(
+            characterPath,
+            "00002000.img",
+            "walk1/0/body/_outlink",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.EndsWith(
+            Path.Combine("Character", "_Canvas", "_Canvas_000.wz"),
+            document.SourcePath,
+            StringComparison.Ordinal);
+        Assert.Equal("00002000.img", document.Selector);
+        Assert.Equal("walk1/0/body", document.ValuePath);
+        Assert.True(document.Width > 0);
+        Assert.True(document.Height > 0);
+        Assert.NotEmpty(document.Pixels);
+    }
+
+    [Fact]
+    public async Task InspectOptionalGmsSoundImage_ReadsSoundPayloadMetadata()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var soundPath = Path.Combine(dataDirectory, "Sound", "Sound_000.wz");
+        if (!File.Exists(soundPath))
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            soundPath,
+            "AchievementEff.img",
+            new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
+
+        var sound = Flatten(inspection.Root).FirstOrDefault(node => node is { Name: "GradeUp", Kind: "sound" });
+
+        Assert.NotNull(sound);
+        Assert.Contains("duration=", sound.DisplayValue, StringComparison.Ordinal);
+        Assert.Contains("dataLength=", sound.DisplayValue, StringComparison.Ordinal);
+        Assert.Contains(sound.Diagnostics ?? [], diagnostic =>
+            diagnostic.Code == ResourceDiagnosticCodes.AudioPayloadDecodingUnsupported &&
+            diagnostic.Severity == ResourceDiagnosticSeverities.Info);
+        Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "duration");
+        Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "dataOffset");
+        Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "dataLength");
+        AssertNoErrorDiagnostics(inspection);
+    }
+
     private static string? GetGmsDataDirectory()
     {
         var path = Environment.GetEnvironmentVariable("WCX_GMS_DATA_DIR");

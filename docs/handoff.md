@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+129ae95 Update handoff after IMG scalar fixtures
 6d55a2c Lock IMG scalar inspection fixtures
 d5ab55e Inspect List.wz string lists
 d7a5918 Resolve MS outlink canvas previews
@@ -395,6 +396,12 @@ Local GMS smoke status:
   `Packs/Mob_00000.ms` selector `Mob/1150000.img`, value
   `move/0/_outlink`, which resolves the logical Canvas target through the
   current workspace.
+- Optional local GMS smoke also covers deeper WZ IMG families:
+  `Character/Character_000.wz` selector `00002000.img` resolves
+  `walk1/0/body/_outlink` through `Character/_Canvas/_Canvas_000.wz` and loads
+  the linked Canvas preview pixels; `Sound/Sound_000.wz` selector
+  `AchievementEff.img` exposes `GradeUp` Sound_DX8 metadata and retains the
+  stable `wcx.payload.audio.unsupported` diagnostic.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.
