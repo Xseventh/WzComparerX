@@ -152,6 +152,89 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectPkg2Kmst1200Directory_ReturnsEntryTree()
+    {
+        var path = WriteTemporaryPkg2File(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("pkg2", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal(Path.GetFileName(path), inspection.Root.Name);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.Equal("pkg2", inspection.Root.DisplayValue);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "formatProfile" && Equals(item.Value, "pkg2_kmst1200"));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "wzVersion" && Equals(item.Value, Pkg2PackageFixture.WzVersion));
+            Assert.Collection(
+                inspection.Root.Children,
+                first =>
+                {
+                    Assert.Equal("ItemOption.img", first.Name);
+                    Assert.Equal("image", first.Kind);
+                    Assert.Equal(path, first.Identity?.PackagePath);
+                    Assert.Equal("ItemOption.img", first.Identity?.ImageSelector);
+                },
+                second =>
+                {
+                    Assert.Equal("SkillOption.img", second.Name);
+                    Assert.Equal("image", second.Kind);
+                    Assert.Equal(path, second.Identity?.PackagePath);
+                    Assert.Equal("SkillOption.img", second.Identity?.ImageSelector);
+                });
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectPkg2Kmst1200Image_ReadsImagePayload()
+    {
+        var path = WriteTemporaryPkg2File(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                "SkillOption.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("pkg2", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal("SkillOption.img", inspection.Root.Name);
+            Assert.Equal("image", inspection.Root.Kind);
+            Assert.Equal("Property", inspection.Root.DisplayValue);
+            var reqLevel = Assert.Single(inspection.Root.Children, child => child.Name == "reqLevel");
+            Assert.Equal("int32", reqLevel.Kind);
+            Assert.Equal("12", reqLevel.DisplayValue);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectMsContainer_ReturnsUnsupportedDiagnosticDocument()
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-ms-{Guid.NewGuid():N}.ms");
@@ -1526,6 +1609,13 @@ public class ResourceDocumentServiceTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-pkg2-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, CreatePkg2("Copyright", hash1: 0x11223344, hash2: 0xaabbccdd));
+        return path;
+    }
+
+    private static string WriteTemporaryPkg2File(params Pkg2PackageFixture.Entry[] entries)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-pkg2-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, Pkg2PackageFixture.CreateKmst1200(entries));
         return path;
     }
 

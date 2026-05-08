@@ -37,6 +37,10 @@ public static class WzStringKeyAutoDetector
             {
                 continue;
             }
+            catch (NotSupportedException)
+            {
+                continue;
+            }
 
             var score = Score(inspection);
             if (score > bestScore)

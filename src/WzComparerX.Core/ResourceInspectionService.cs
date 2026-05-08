@@ -102,12 +102,17 @@ public sealed class ResourceInspectionService
         CancellationToken cancellationToken)
     {
         var header = await new WzPackageHeaderReader().ReadAsync(path, cancellationToken);
-        if (header is { IsValid: true, Format: WzPackageFormat.Pkg2 })
+        WzPackageGroupInspection group;
+        try
+        {
+            group = await WzPackageGroupInspectionLoader.LoadAsync(path, options.StringKey, cancellationToken);
+        }
+        catch (Exception ex) when (header is { IsValid: true, Format: WzPackageFormat.Pkg2 } &&
+            ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
         {
             return BuildUnsupportedPkg2Document(header, options);
         }
 
-        var group = await WzPackageGroupInspectionLoader.LoadAsync(path, options.StringKey, cancellationToken);
         var inspection = group.Entry;
         if (!inspection.Header.IsValid)
         {
@@ -134,17 +139,22 @@ public sealed class ResourceInspectionService
         CancellationToken cancellationToken)
     {
         var header = await new WzPackageHeaderReader().ReadAsync(path, cancellationToken);
-        if (header is { IsValid: true, Format: WzPackageFormat.Pkg2 })
+        WzImageInspectionContext context;
+        try
+        {
+            context = await WzImageInspectionLoader.LoadAsync(
+                path,
+                selector,
+                options.StringKey,
+                options.MaxPropertyDepth,
+                cancellationToken);
+        }
+        catch (Exception ex) when (header is { IsValid: true, Format: WzPackageFormat.Pkg2 } &&
+            ex is NotSupportedException)
         {
             throw new ResourceInspectionException(ResourceInspectionDiagnostics.Pkg2DirectoryInspectionUnsupported(header.SourcePath));
         }
 
-        var context = await WzImageInspectionLoader.LoadAsync(
-            path,
-            selector,
-            options.StringKey,
-            options.MaxPropertyDepth,
-            cancellationToken);
         var directoryInspection = context.DirectoryInspection;
         var inspection = context.ImageInspection;
 
@@ -606,6 +616,7 @@ public sealed class ResourceInspectionService
             new("packageGroupCount", group.Members.Count)
         };
         AddOptional(metadata, "stringKey", inspection.StringEncryptionKind?.ToString().ToLowerInvariant());
+        AddOptional(metadata, "formatProfile", inspection.FormatProfile);
         AddOptional(metadata, "wzVersion", inspection.WzVersion);
         AddOptional(metadata, "hashVersion", inspection.HashVersion);
         return metadata;

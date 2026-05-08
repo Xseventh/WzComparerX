@@ -66,8 +66,20 @@ Initial WCX support covers only package header detection:
   missing-encver heuristic detects a removed encrypted-version field.
 - PKG2 stores two `UInt32` hash fields immediately after the copyright area.
 
-This does not yet validate WZ version profiles, decrypt directory strings, or
-read the directory tree.
+PKG2 directory support now has a first WC-aligned KMST1199/1200 slice:
+
+- The directory table starts with a compressed encrypted entry count.
+- KMST1199/1200 entry counts are decrypted from `hash1`, `hashVersion`, and
+  WC's mixed hash formula.
+- Each directory level stores entry names/sizes/checksums first, followed by a
+  second compressed count and one hashed offset per entry.
+- The first entry name in each directory level uses WC's PKG2 UTF-16 directory
+  string key; subsequent names use the normal PKG1-style string reader.
+- KMST1199/1200 image offsets use WC's `Pkg2OffsetCalcV3` formula.
+
+Legacy KMST1196-1198 PKG2 profiles remain unsupported until a representative
+sample or tighter WC reference slice is available. Unsupported PKG2 profiles
+return `wcx.package.pkg2.directoryUnsupported`.
 
 ## Local MapleStory Client Smoke Path
 
@@ -196,8 +208,18 @@ it decodes no-op/KMS/GMS string-list records, excludes the `dummy` sentinel, and
 projects the decoded list through `inspect` as `format: listwz`. This is still
 only the observable helper-file slice; it is not yet wired into PKG1 string
 key/profile detection, and real `List.wz` smoke still waits for an older-client
-sample. PKG2 still needs WC reference behavior or a representative sample
-before directory parser behavior is accepted.
+sample.
+
+A user-supplied KMS/KMST-style PKG2 sample at local path category
+`~/Downloads/Item_000.wz` is used for manual smoke only and must not be
+committed. Its header is `PKG2`, `headerSize = 60`, `directoryStartPosition =
+68`, `hash1 = 0xb5b60cfc`, and `hash2 = 0x48f17f97`. WCX detects this sample as
+`pkg2_kmst1200` with `hashVersion = 0xb0da16f2` and no-op PKG1-style strings
+for non-first directory entries. `inspect --debug` now lists root image entries
+`ItemOption.img`, `ItemSellPriceStandard.img`, `SkillOption.img`, and
+`ThothSearchOption.img`; `inspect --depth 1 ... SkillOption.img` validates that
+the calculated PKG2 image offset feeds the normal IMG inspection path and
+exposes top-level `skill`, `socket`, and `inc` objects.
 
 WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
 tables through the normal `inspect` path. The directory slice reads header
@@ -250,7 +272,7 @@ The following work moved beyond M2:
 - PNG export.
 - Full Canvas pixel decode matrix.
 - Audio and video payload decoding.
-- Full PKG2 directory parsing.
+- Legacy/full PKG2 profile coverage beyond the current KMST1199/1200 slice.
 - UI browsing.
 
 Read-only local smoke verification covered `Base/Base.wz`, `Base/Base_000.wz`,

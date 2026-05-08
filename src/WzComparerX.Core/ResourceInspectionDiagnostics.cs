@@ -48,7 +48,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            "PKG2 directory inspection is not implemented yet; only header detection is currently supported.",
+            "PKG2 directory inspection supports only implemented KMST1199/1200 directory profiles; this container shape is unsupported.",
             path,
             ResourceDiagnosticCodes.Pkg2DirectoryInspectionUnsupported,
             ResourceDiagnosticSources.Parser);

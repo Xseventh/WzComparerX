@@ -34,6 +34,11 @@ public sealed class WzDirectoryInspectionReader
             return new WzDirectoryInspection(header, EntryCount: 0, Array.Empty<WzDirectoryEntryInspection>());
         }
 
+        if (header.Format == WzPackageFormat.Pkg2)
+        {
+            return ReadPkg2(stream, header, cancellationToken);
+        }
+
         if (header.Format != WzPackageFormat.Pkg1)
         {
             throw new NotSupportedException("Directory inspection currently supports PKG1 WZ files only.");
@@ -72,6 +77,65 @@ public sealed class WzDirectoryInspectionReader
             version?.WzVersion,
             version?.HashVersion,
             stringDecryptor.Kind);
+    }
+
+    private WzDirectoryInspection ReadPkg2(
+        Stream stream,
+        WzPackageHeader header,
+        CancellationToken cancellationToken)
+    {
+        if (!stream.CanSeek)
+        {
+            throw new ArgumentException("Directory inspection requires a seekable stream.", nameof(stream));
+        }
+
+        var profile = DetectPkg2Profile(stream, header);
+        stream.Position = header.DirectoryStartPosition;
+        var entries = new List<WzDirectoryEntryInspection>();
+        var entryCount = ReadPkg2DirectoryTree(
+            stream,
+            header,
+            profile,
+            entries,
+            depth: 0,
+            parentPath: string.Empty,
+            cancellationToken);
+
+        return new WzDirectoryInspection(
+            header,
+            entryCount,
+            entries,
+            profile.WzVersion,
+            profile.HashVersion,
+            stringDecryptor.Kind,
+            profile.Name);
+    }
+
+    private WzPkg2DirectoryProfile DetectPkg2Profile(Stream stream, WzPackageHeader header)
+    {
+        var position = stream.Position;
+        try
+        {
+            stream.Position = header.DirectoryStartPosition;
+            ReadCompressedInt32(stream);
+            var nodeType = ReadByte(stream);
+            if (nodeType is not (0x03 or 0x04))
+            {
+                throw new InvalidDataException($"Unknown PKG2 directory node type 0x{nodeType:X2}.");
+            }
+
+            var rawBytes = ReadPkg2StringBytes(stream);
+            if (!WzPkg2DirectoryProfile.TryDetect(header, rawBytes, out var profile))
+            {
+                throw new NotSupportedException("PKG2 directory inspection currently supports only KMST1199/1200 directory profiles.");
+            }
+
+            return profile;
+        }
+        finally
+        {
+            stream.Position = position;
+        }
     }
 
     private int ReadDirectoryTree(
@@ -140,6 +204,91 @@ public sealed class WzDirectoryInspectionReader
         {
             cancellationToken.ThrowIfCancellationRequested();
             ReadDirectoryTree(stream, header, entries, depth + 1, entry.Path ?? string.Empty, cancellationToken);
+        }
+
+        return entryCount;
+    }
+
+    private int ReadPkg2DirectoryTree(
+        Stream stream,
+        WzPackageHeader header,
+        WzPkg2DirectoryProfile profile,
+        List<WzDirectoryEntryInspection> entries,
+        int depth,
+        string parentPath,
+        CancellationToken cancellationToken)
+    {
+        var encryptedEntryCount = ReadCompressedInt32(stream);
+        var entryCount = profile.DecryptEntryCount(encryptedEntryCount);
+        if (entryCount < 0)
+        {
+            throw new InvalidDataException($"PKG2 directory entry count cannot be negative: {entryCount}.");
+        }
+
+        var directoryEntries = new List<WzDirectoryEntryInspection>();
+        var entryHeaders = new List<Pkg2DirectoryEntryHeader>(entryCount);
+        for (var i = 0; i < entryCount; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var nodeType = ReadByte(stream);
+            if (nodeType is not (0x03 or 0x04))
+            {
+                throw new InvalidDataException($"Unknown PKG2 directory node type 0x{nodeType:X2}.");
+            }
+
+            var name = i == 0
+                ? WzPkg2DirectoryProfile.DecodePkg2String(ReadPkg2StringBytes(stream), profile.Pkg2StringKey)
+                : ReadString(stream);
+            var dataSize = ReadCompressedInt32(stream);
+            var checksum = ReadCompressedInt32(stream);
+            entryHeaders.Add(new Pkg2DirectoryEntryHeader(nodeType, name, dataSize, checksum));
+        }
+
+        var encryptedOffsetCount = ReadCompressedInt32(stream);
+        if (encryptedOffsetCount != encryptedEntryCount)
+        {
+            throw new InvalidDataException("PKG2 directory offset count does not match entry count.");
+        }
+
+        foreach (var entryHeader in entryHeaders)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var hashOffsetPosition = stream.Position;
+            var hashOffset = ReadUInt32LittleEndian(stream);
+            var path = CombinePath(parentPath, entryHeader.Name);
+            var entry = new WzDirectoryEntryInspection(
+                entries.Count,
+                entryHeader.NodeType,
+                ToEntryKind(entryHeader.NodeType),
+                entryHeader.Name,
+                entryHeader.DataSize,
+                entryHeader.Checksum,
+                hashOffsetPosition,
+                hashOffset,
+                profile.CalculateOffset(checked((uint)hashOffsetPosition), hashOffset, checked((uint)header.HeaderSize)),
+                depth,
+                path);
+            entries.Add(entry);
+
+            if (entry.Kind == WzDirectoryEntryKind.Directory)
+            {
+                directoryEntries.Add(entry);
+            }
+        }
+
+        foreach (var entry in directoryEntries)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ReadPkg2DirectoryTree(
+                stream,
+                header,
+                profile,
+                entries,
+                depth + 1,
+                entry.Path ?? string.Empty,
+                cancellationToken);
         }
 
         return entryCount;
@@ -260,6 +409,17 @@ public sealed class WzDirectoryInspectionReader
         return bytes;
     }
 
+    private static byte[] ReadPkg2StringBytes(Stream stream)
+    {
+        var size = ReadSByte(stream);
+        if (size >= 0)
+        {
+            throw new InvalidDataException($"Unexpected PKG2 directory string length: {size}.");
+        }
+
+        return ReadBytes(stream, -size * sizeof(char));
+    }
+
     private static void SkipBytes(Stream stream, int count)
     {
         if (count < 0)
@@ -286,4 +446,10 @@ public sealed class WzDirectoryInspectionReader
             remaining -= read;
         }
     }
+
+    private sealed record Pkg2DirectoryEntryHeader(
+        byte NodeType,
+        string Name,
+        int DataSize,
+        int Checksum);
 }

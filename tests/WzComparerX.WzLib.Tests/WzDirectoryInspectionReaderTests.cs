@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.WzLib.Tests;
@@ -152,6 +153,39 @@ public class WzDirectoryInspectionReaderTests
         Assert.Equal("dir/leaf.img", inspection.Entries[1].Path);
         Assert.Equal(1, inspection.Entries[1].Depth);
         Assert.Equal(WzDirectoryEntryKind.Image, inspection.Entries[1].Kind);
+    }
+
+    [Fact]
+    public void Read_ReturnsPkg2Kmst1200DirectoryEntries()
+    {
+        var bytes = Pkg2PackageFixture.CreateKmst1200(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+        var headerReader = new WzPackageHeaderReader();
+        var inspectionReader = new WzDirectoryInspectionReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Item_000.wz");
+
+        var inspection = inspectionReader.Read(stream, header);
+
+        Assert.Equal(WzPackageFormat.Pkg2, inspection.Header.Format);
+        Assert.Equal(2, inspection.EntryCount);
+        Assert.Equal(2, inspection.Entries.Count);
+        Assert.Equal(Pkg2PackageFixture.WzVersion, inspection.WzVersion);
+        Assert.Equal(Pkg2PackageFixture.HashVersion, inspection.HashVersion);
+        Assert.Equal("pkg2_kmst1200", inspection.FormatProfile);
+        Assert.Equal("ItemOption.img", inspection.Entries[0].Name);
+        Assert.Equal("SkillOption.img", inspection.Entries[1].Name);
+        Assert.Equal(WzDirectoryEntryKind.Image, inspection.Entries[0].Kind);
+        Assert.Equal(0x04, inspection.Entries[0].NodeType);
+        Assert.True(inspection.Entries[0].Offset > inspection.Entries[0].HashOffsetPosition);
+        Assert.True(inspection.Entries[1].Offset > inspection.Entries[1].HashOffsetPosition);
     }
 
     private static byte[] CreatePkg1WithDirectoryEntries()

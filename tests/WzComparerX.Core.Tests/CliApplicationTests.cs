@@ -189,11 +189,45 @@ public class CliApplicationTests
                   hash1: 287454020
                   hash2: 2864434397
                 diagnostics:
-                  error [wcx.package.pkg2.directoryUnsupported]: PKG2 directory inspection is not implemented yet; only header detection is currently supported. (<wz>)
+                  error [wcx.package.pkg2.directoryUnsupported]: PKG2 directory inspection supports only implemented KMST1199/1200 directory profiles; this container shape is unsupported. (<wz>)
                 <wz> [package] : pkg2
 
                 """.ReplaceLineEndings(),
                 NormalizePath(result.Output, path, "<wz>"));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugPkg2Kmst1200Directory_EmitsEntries()
+    {
+        var path = WriteTemporaryPkg2File(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", path);
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("format: pkg2", output);
+            Assert.Contains("entryCount: 2", output);
+            Assert.Contains("formatProfile: pkg2_kmst1200", output);
+            Assert.Contains("wzVersion: 1200", output);
+            Assert.Contains("hashVersion: 2967082738", output);
+            Assert.Contains("ItemOption.img [image]", output);
+            Assert.Contains("SkillOption.img [image]", output);
+            Assert.Contains("nodeType: 0x04", output);
+            Assert.DoesNotContain("wcx.package.pkg2.directoryUnsupported", output);
         }
         finally
         {
@@ -1174,6 +1208,13 @@ public class CliApplicationTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-pkg2-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, CreatePkg2("Copyright", hash1: 0x11223344, hash2: 0xaabbccdd));
+        return path;
+    }
+
+    private static string WriteTemporaryPkg2File(params Pkg2PackageFixture.Entry[] entries)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-pkg2-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, Pkg2PackageFixture.CreateKmst1200(entries));
         return path;
     }
 

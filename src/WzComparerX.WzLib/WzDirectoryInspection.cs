@@ -6,4 +6,5 @@ public sealed record WzDirectoryInspection(
     IReadOnlyList<WzDirectoryEntryInspection> Entries,
     int? WzVersion = null,
     uint? HashVersion = null,
-    WzStringEncryptionKind? StringEncryptionKind = null);
+    WzStringEncryptionKind? StringEncryptionKind = null,
+    string? FormatProfile = null);

@@ -199,8 +199,11 @@ M4 完成后已经开始低风险架构整理：
 - `.ini` / `LastWzIndex` 声明的 numbered shard 如果缺失或无法加载，Core
   inspection 会在 package root 上输出稳定 warning diagnostic：
   `wcx.package.group.shardMissing` / `wcx.package.group.shardInvalid`。
-- PKG2 仍是 header-only 覆盖，但 `inspect` 现在会返回稳定 error
-  diagnostic：`wcx.package.pkg2.directoryUnsupported`，而不是暴露裸解析异常。
+- PKG2 已有第一段 KMST1199/1200 directory/profile/offset 支持：
+  synthetic fixture 锁住 `pkg2_kmst1200` directory 和 image payload inspection；
+  用户提供的本地 KMS `Item_000.wz` smoke 验证了 root IMG 列表和
+  `SkillOption.img` 的 IMG extraction。其他 PKG2 profile 仍返回稳定 error
+  diagnostic：`wcx.package.pkg2.directoryUnsupported`。
 - 本地 GMS 清点确认当前样本没有 PKG2、`List.wz` 或 `.mn`，但这些仍是
   旧客户端兼容目标；当前样本存在 `Data/Packs/*.ms`，`.ms` / `.mn` v2/Snow
   和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，并且

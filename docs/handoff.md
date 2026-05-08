@@ -345,9 +345,10 @@ M4 completed:
   diagnostics on the package root when a declared numbered shard is missing or
   cannot be loaded: `wcx.package.group.shardMissing` and
   `wcx.package.group.shardInvalid`.
-- PKG2 remains header-only, but `inspect` now returns a stable parser error
-  diagnostic, `wcx.package.pkg2.directoryUnsupported`, and exits non-zero
-  instead of exposing unsupported directory parsing as a raw exception.
+- PKG2 has a first KMST1199/1200 directory/profile/offset slice. Synthetic
+  `pkg2_kmst1200` fixtures cover directory entries and image payload
+  inspection; unsupported PKG2 profiles still return the stable parser
+  diagnostic `wcx.package.pkg2.directoryUnsupported`.
 - PKG1 directory inspection now has deterministic malformed-table guards for
   negative directory entry counts and `0x02` string-reference names that resolve
   beyond the file.
@@ -387,6 +388,12 @@ Local GMS smoke status:
   package tree, is not yet wired into PKG1 string key/profile selection, and
   still needs real older-client smoke because the current local GMS install
   lacks a sample.
+- A user-supplied local KMS/KMST-style PKG2 sample at `~/Downloads/Item_000.wz`
+  is used for manual smoke only and is not committed. WCX detects it as
+  `pkg2_kmst1200` with `hashVersion = 0xb0da16f2`, lists root images
+  `ItemOption.img`, `ItemSellPriceStandard.img`, `SkillOption.img`, and
+  `ThothSearchOption.img`, and can inspect `SkillOption.img` through the shared
+  IMG reader to top-level `skill`, `socket`, and `inc` objects.
 - `wcx.package.ms.imageUnsupported` now means an `.ms` / `.mn` image entry was
   found but the implemented v2/v4 payload extraction or downstream IMG reader
   could not inspect it; unsupported container shapes still return

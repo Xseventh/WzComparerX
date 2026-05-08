@@ -115,9 +115,11 @@ For each migrated feature, record:
   - Valid PKG2 hash fields.
   - Invalid signature handling.
 - Known unsupported cases:
-  - WZ version profile detection is not migrated yet.
-  - Directory tree parsing is not migrated yet.
-  - MS/MN and PKG2 string encryption detection are not migrated yet.
+  - Header detection itself does not validate version profiles; PKG1 and the
+    first PKG2 KMST1199/1200 directory/profile slices are tracked in later
+    migrated-behavior sections.
+  - MS/MN containers and `List.wz` are not WZ header formats and are tracked
+    separately.
 - UI dependency removed or isolated:
   - Implemented in `WzComparerX.WzLib` only; no UI dependency.
 
@@ -152,6 +154,48 @@ For each migrated feature, record:
     empty nested `Property` nodes.
   - Inspect nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
+
+### PKG2 KMST1199/1200 Directory Inspection
+
+- WC source files referenced:
+  - `WzComparerR2.WzLib/Wz_File.cs`
+  - `WzComparerR2.WzLib/Wz_Header.cs`
+  - `WzComparerR2.WzLib/Utilities/WzBinaryReader.cs`
+  - `WzComparerR2.WzLib/Wz_Crypto.cs`
+  - `WzComparerR2.WzLib/Compatibility/WzDirStringReader.cs`
+  - `WzComparerR2.WzLib/Compatibility/WzOffsetCalc.cs`
+  - `WzComparerR2.WzLib/Compatibility/WzVersionProfile.cs`
+  - `WzComparerR2.WzLib/Compatibility/WzVersionVerifier.cs`
+- WC behavior preserved:
+  - Read PKG2 encrypted entry counts and offset counts.
+  - Decode KMST1199/1200 first-entry directory names with the PKG2 UTF-16
+    directory string key derived from `hash1` and `hashVersion`.
+  - Decode later names in the same directory level through the normal
+    PKG1-style string reader.
+  - Decrypt KMST1199/1200 entry counts and calculate image offsets with WC's
+    `Pkg2OffsetCalcV3` formula.
+  - Project PKG2 image entries through the same Core inspection identity and
+    IMG extraction path as PKG1 images.
+- Fixture or sample used:
+  - Synthetic `pkg2_kmst1200` package bytes generated in
+    `tests/TestSupport/Pkg2PackageFixture.cs`.
+  - User-supplied local KMS/KMST-style `Item_000.wz` sample in `~/Downloads`
+    for manual smoke only; the file is not committed.
+- Test coverage added:
+  - WzLib synthetic directory inspection test for KMST1200 names, profile, hash
+    version, and image offsets.
+  - Core inspection tests for synthetic PKG2 directory projection and image
+    payload inspection.
+  - CLI debug smoke test for synthetic PKG2 directory output.
+- Known unsupported cases:
+  - KMST1196-1198 legacy PKG2 profiles are still unsupported.
+  - Unsupported PKG2 profile/container shapes return
+    `wcx.package.pkg2.directoryUnsupported`.
+  - This slice does not add new IMG value decoding beyond the existing shared
+    IMG readers.
+- UI dependency removed or isolated:
+  - Implemented in `WzComparerX.WzLib` and Core inspection services only; no UI
+    dependency.
 
 ### List.wz String-List Inspection
 

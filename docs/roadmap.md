@@ -513,7 +513,7 @@ parser coverage and smoke notes.
 | Capability | WC support | WCX current state | Approximate coverage | Roadmap owner |
 | --- | --- | --- | --- | --- |
 | Basic resource browsing | WZ/IMG/MS/MN open, three-tree browsing, details, context menus, history | WZ/MS/MN/file/folder/fixture open, Resources + IMG Content + Preview | ~45% | M9 |
-| Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 header only; `.ms`/`.mn` directory tables and initial image payload extraction; List.wz first-slice inspection | ~45-50% | M5 |
+| Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 KMST1199/1200 directory and image-offset first slice; `.ms`/`.mn` directory tables and initial image payload extraction; List.wz first-slice inspection | ~50-55% | M5 |
 | IMG property parsing | Property, Vector, Convex, UOL, Canvas, Sound, RawData, Video, Lua, text IMG | Most have inspection metadata; payload behavior is shallow | ~50% | M5 |
 | Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | Direct-zlib format `1`/`2` narrow preview/export slice | ~15-20% | M8 |
 | Animation/GIF/APNG/video export | Frame extraction, GIF/APNG, FFmpeg settings | No complete animation export | ~0-5% | M8 |

@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <Compile Include="..\TestSupport\MsContainerFixture.cs" Link="TestSupport\MsContainerFixture.cs" />
+    <Compile Include="..\TestSupport\Pkg2PackageFixture.cs" Link="TestSupport\Pkg2PackageFixture.cs" />
     <Compile Include="..\TestSupport\WzListFileFixture.cs" Link="TestSupport\WzListFileFixture.cs" />
   </ItemGroup>
 
