@@ -172,6 +172,15 @@ The same extension validates `Data/Sound/Sound_000.wz` selector
 `AchievementEff.img`: `GradeUp` exposes Sound_DX8 duration, data offset, and
 data length metadata, while retaining the stable
 `wcx.payload.audio.unsupported` diagnostic for not-yet-decoded audio payloads.
+An additional M5 smoke expansion validates `Data/Effect/Effect_000.wz`
+selector `BasicEff.img`: `scout/back/0/_outlink` resolves through
+`Data/Effect/_Canvas/_Canvas_002.wz` and the Canvas preview service can load the
+linked pixels. The same expansion validates future StringLinker/domain input
+shapes without committing client data: `Data/String/String_000.wz` selector
+`Eqp.img` exposes the `Eqp/Cap`, `Eqp/Weapon`, and `Eqp/Accessory` structure,
+and `Data/Item/Item_000.wz` selector `SkillOption.img` exposes top-level
+`skill`, `socket`, and `inc` objects plus representative `skillId` and
+`reqLevel` int32 values.
 These tests read local files only and do not commit client data.
 
 A later M5 local inventory scan found 780 `.wz` files under the local GMS

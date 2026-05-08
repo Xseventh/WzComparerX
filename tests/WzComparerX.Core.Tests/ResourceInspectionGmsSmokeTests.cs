@@ -185,6 +185,70 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalGmsStringEqpImage_ReadsStringLinkerShape()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var stringPath = Path.Combine(dataDirectory, "String", "String_000.wz");
+        if (!File.Exists(stringPath))
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            stringPath,
+            "Eqp.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 2,
+                IncludeDebugMetadata: true));
+
+        var eqp = Assert.Single(inspection.Root.Children, child => child.Name == "Eqp");
+        Assert.Equal("object", eqp.Kind);
+        Assert.Contains(eqp.Children, child => child is { Name: "Cap", Kind: "object" });
+        Assert.Contains(eqp.Children, child => child is { Name: "Weapon", Kind: "object" });
+        Assert.Contains(eqp.Children, child => child is { Name: "Accessory", Kind: "object" });
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
+    public async Task InspectOptionalGmsItemSkillOptionImage_ReadsSkillOptionScalars()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var itemPath = Path.Combine(dataDirectory, "Item", "Item_000.wz");
+        if (!File.Exists(itemPath))
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            itemPath,
+            "SkillOption.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 3,
+                IncludeDebugMetadata: true));
+
+        Assert.Contains(inspection.Root.Children, child => child is { Name: "skill", Kind: "object" });
+        Assert.Contains(inspection.Root.Children, child => child is { Name: "socket", Kind: "object" });
+        Assert.Contains(inspection.Root.Children, child => child is { Name: "inc", Kind: "object" });
+        Assert.Contains(Flatten(inspection.Root), node => node is { Name: "skillId", Kind: "int32" });
+        Assert.Contains(Flatten(inspection.Root), node => node is { Name: "reqLevel", Kind: "int32" });
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
     public async Task CanvasOptionalGmsMsPackImage_ResolvesOutlinkPreview()
     {
         var dataDirectory = GetGmsDataDirectory();
@@ -212,6 +276,79 @@ public class ResourceInspectionGmsSmokeTests
             $"Unexpected linked source path: {document.SourcePath}");
         Assert.EndsWith("1150000.img", document.Selector, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("move/0", document.ValuePath);
+        Assert.True(document.Width > 0);
+        Assert.True(document.Height > 0);
+        Assert.NotEmpty(document.Pixels);
+    }
+
+    [Fact]
+    public async Task InspectOptionalGmsEffectImage_ResolvesCanvasOutlinkIdentity()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var effectPath = Path.Combine(dataDirectory, "Effect", "Effect_000.wz");
+        if (!File.Exists(effectPath))
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            effectPath,
+            "BasicEff.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 4,
+                IncludeDebugMetadata: true));
+
+        var outlink = Flatten(inspection.Root)
+            .FirstOrDefault(node =>
+                node is { Name: "_outlink", Kind: "string" } &&
+                string.Equals(node.Identity?.LinkedTarget, "Effect/_Canvas/BasicEff.img/scout/back/0", StringComparison.Ordinal));
+
+        Assert.NotNull(outlink);
+        Assert.NotNull(outlink.Identity?.ResolvedLinkedTarget);
+        Assert.EndsWith(
+            Path.Combine("Effect", "_Canvas", "_Canvas_002.wz"),
+            outlink.Identity.ResolvedLinkedTarget.PackagePath,
+            StringComparison.Ordinal);
+        Assert.Equal("BasicEff.img", outlink.Identity.ResolvedLinkedTarget.ImageSelector);
+        Assert.Equal("scout/back/0", outlink.Identity.ResolvedLinkedTarget.ValuePath);
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
+    public async Task CanvasOptionalGmsEffectImage_ResolvesOutlinkPreview()
+    {
+        var dataDirectory = GetGmsDataDirectory();
+        if (dataDirectory is null)
+        {
+            return;
+        }
+
+        var effectPath = Path.Combine(dataDirectory, "Effect", "Effect_000.wz");
+        if (!File.Exists(effectPath))
+        {
+            return;
+        }
+
+        var service = new ResourceCanvasImageService();
+        var document = await service.LoadAsync(
+            effectPath,
+            "BasicEff.img",
+            "scout/back/0/_outlink",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.EndsWith(
+            Path.Combine("Effect", "_Canvas", "_Canvas_002.wz"),
+            document.SourcePath,
+            StringComparison.Ordinal);
+        Assert.Equal("BasicEff.img", document.Selector);
+        Assert.Equal("scout/back/0", document.ValuePath);
         Assert.True(document.Width > 0);
         Assert.True(document.Height > 0);
         Assert.NotEmpty(document.Pixels);

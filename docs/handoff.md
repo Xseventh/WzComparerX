@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+8647e80 Expand GMS IMG smoke coverage
 129ae95 Update handoff after IMG scalar fixtures
 6d55a2c Lock IMG scalar inspection fixtures
 d5ab55e Inspect List.wz string lists
@@ -402,6 +403,14 @@ Local GMS smoke status:
   the linked Canvas preview pixels; `Sound/Sound_000.wz` selector
   `AchievementEff.img` exposes `GradeUp` Sound_DX8 metadata and retains the
   stable `wcx.payload.audio.unsupported` diagnostic.
+- A later optional local GMS smoke expansion covers
+  `Effect/Effect_000.wz` selector `BasicEff.img`, resolving
+  `scout/back/0/_outlink` through `Effect/_Canvas/_Canvas_002.wz` and loading
+  linked Canvas preview pixels. It also records future StringLinker/domain input
+  shapes: `String/String_000.wz` selector `Eqp.img` exposes `Eqp/Cap`,
+  `Eqp/Weapon`, and `Eqp/Accessory`, while `Item/Item_000.wz` selector
+  `SkillOption.img` exposes `skill`, `socket`, `inc`, and representative
+  `skillId` / `reqLevel` int32 values.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.
