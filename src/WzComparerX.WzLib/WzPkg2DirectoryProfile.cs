@@ -2,7 +2,7 @@ namespace WzComparerX.WzLib;
 
 internal sealed record WzPkg2DirectoryProfile(
     string Name,
-    int WzVersion,
+    int? WzVersion,
     uint HashVersion,
     uint Hash1,
     uint Pkg2StringKey)
@@ -78,7 +78,7 @@ internal sealed record WzPkg2DirectoryProfile(
 
             profile = new WzPkg2DirectoryProfile(
                 "pkg2_modern_kms",
-                WzVersion: 0,
+                WzVersion: null,
                 ModernKmsHashVersion,
                 hash1,
                 key);

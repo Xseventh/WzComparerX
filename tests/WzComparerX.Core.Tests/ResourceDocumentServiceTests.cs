@@ -225,6 +225,7 @@ public class ResourceDocumentServiceTests
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "pkg2HeaderVariant" && Equals(item.Value, "modern"));
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "formatProfile" && Equals(item.Value, "pkg2_modern_kms"));
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "hashVersion" && Equals(item.Value, Pkg2PackageFixture.HashVersion));
+            Assert.DoesNotContain(inspection.DebugMetadata ?? [], item => item.Name == "wzVersion");
             Assert.Collection(
                 inspection.Root.Children,
                 first => Assert.Equal("ItemOption.img", first.Name),

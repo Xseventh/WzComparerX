@@ -211,7 +211,7 @@ public class WzDirectoryInspectionReaderTests
         Assert.True(inspection.Header.IsModernPkg2Header);
         Assert.Equal(2, inspection.EntryCount);
         Assert.Equal(2, inspection.Entries.Count);
-        Assert.Equal(Pkg2PackageFixture.ModernWzVersion, inspection.WzVersion);
+        Assert.Null(inspection.WzVersion);
         Assert.Equal(Pkg2PackageFixture.HashVersion, inspection.HashVersion);
         Assert.Equal("pkg2_modern_kms", inspection.FormatProfile);
         Assert.Equal("ItemOption.img", inspection.Entries[0].Name);

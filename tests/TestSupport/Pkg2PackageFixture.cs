@@ -13,7 +13,6 @@ internal static class Pkg2PackageFixture
     public const uint ModernHash1 = 0xfb6981e4;
     public const uint ModernHash2 = 0xd5862d30;
     public const int ModernHeaderSize = 0x44;
-    public const int ModernWzVersion = 0;
 
     private const int StandardHeaderSize = 60;
     private const uint Pkg2StringKey = 0x5416c8fa;
