@@ -7,6 +7,8 @@ internal sealed record WzPkg2DirectoryProfile(
     uint Hash1,
     uint Pkg2StringKey)
 {
+    internal const uint ModernKmsHashVersion = 0xB0DA16F2u;
+
     private const uint OffsetMagic = 0x1A2B3C4D;
 
     public int DecryptEntryCount(int encryptedEntryCount)
@@ -58,6 +60,29 @@ internal sealed record WzPkg2DirectoryProfile(
         if (firstPkg2StringBytes[7] != 0)
         {
             return false;
+        }
+
+        if (header.IsModernPkg2Header)
+        {
+            if (!VerifyV4(hash1, hash2, ModernKmsHashVersion))
+            {
+                return false;
+            }
+
+            var key = CalculatePkg2StringKey(hash1, ModernKmsHashVersion);
+            var name = DecodePkg2String(firstPkg2StringBytes, key);
+            if (!IsLegalNodeName(name))
+            {
+                return false;
+            }
+
+            profile = new WzPkg2DirectoryProfile(
+                "pkg2_modern_kms",
+                WzVersion: 0,
+                ModernKmsHashVersion,
+                hash1,
+                key);
+            return true;
         }
 
         for (var keyByte0 = 0; keyByte0 <= byte.MaxValue; keyByte0++)
@@ -128,6 +153,19 @@ internal sealed record WzPkg2DirectoryProfile(
         }
 
         return new string(output);
+    }
+
+    internal static uint CalculatePkg2StringKey(uint hash1, uint hashVersion)
+    {
+        unchecked
+        {
+            return Mix(Mix(hash1 ^ hashVersion ^ 0x6D4C3B2Au) ^ 0x4F4CB34Au);
+        }
+    }
+
+    internal static bool VerifyModernHeader(uint hash1, uint check)
+    {
+        return VerifyV4(hash1, check, ModernKmsHashVersion);
     }
 
     private static uint RecoverHashVersionFromKmst1199Key(uint hash1, uint key)

@@ -619,6 +619,11 @@ public sealed class ResourceInspectionService
         AddOptional(metadata, "formatProfile", inspection.FormatProfile);
         AddOptional(metadata, "wzVersion", inspection.WzVersion);
         AddOptional(metadata, "hashVersion", inspection.HashVersion);
+        if (inspection.Header.IsModernPkg2Header)
+        {
+            metadata.Add(new ResourceInspectionMetadata("pkg2HeaderVariant", "modern"));
+        }
+
         return metadata;
     }
 
@@ -635,6 +640,11 @@ public sealed class ResourceInspectionService
         };
         AddOptional(metadata, "hash1", header.Hash1);
         AddOptional(metadata, "hash2", header.Hash2);
+        if (header.IsModernPkg2Header)
+        {
+            metadata.Add(new ResourceInspectionMetadata("pkg2HeaderVariant", "modern"));
+        }
+
         return metadata;
     }
 

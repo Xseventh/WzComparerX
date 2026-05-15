@@ -201,6 +201,42 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task InspectModernKmsPkg2Directory_ReturnsEntryTree()
+    {
+        var path = WriteTemporaryModernPkg2File(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+        var service = new ResourceInspectionService();
+
+        try
+        {
+            var inspection = await service.InspectAsync(
+                path,
+                null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
+
+            Assert.Equal("pkg2", inspection.Format);
+            Assert.Null(inspection.Diagnostics);
+            Assert.Equal("package", inspection.Root.Kind);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "pkg2HeaderVariant" && Equals(item.Value, "modern"));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "formatProfile" && Equals(item.Value, "pkg2_modern_kms"));
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "hashVersion" && Equals(item.Value, Pkg2PackageFixture.HashVersion));
+            Assert.Collection(
+                inspection.Root.Children,
+                first => Assert.Equal("ItemOption.img", first.Name),
+                second => Assert.Equal("SkillOption.img", second.Name));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectPkg2Kmst1200Image_ReadsImagePayload()
     {
         var path = WriteTemporaryPkg2File(
@@ -1616,6 +1652,13 @@ public class ResourceDocumentServiceTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-pkg2-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, Pkg2PackageFixture.CreateKmst1200(entries));
+        return path;
+    }
+
+    private static string WriteTemporaryModernPkg2File(params Pkg2PackageFixture.Entry[] entries)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-inspect-modern-pkg2-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, Pkg2PackageFixture.CreateModernKms(entries));
         return path;
     }
 

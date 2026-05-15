@@ -1,5 +1,6 @@
 using System.Buffers.Binary;
 using System.Text;
+using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.WzLib.Tests;
@@ -52,6 +53,28 @@ public class WzPackageHeaderReaderTests
         Assert.Equal(0x11223344u, header.Hash1);
         Assert.Equal(0xaabbccddu, header.Hash2);
         Assert.Equal(header.HeaderSize + 8, header.DirectoryStartPosition);
+    }
+
+    [Fact]
+    public void Read_ModernPkg2Header_ReturnsGatheredHashes()
+    {
+        var bytes = Pkg2PackageFixture.CreateModernKms(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))));
+        var reader = new WzPackageHeaderReader();
+
+        var header = reader.Read(new MemoryStream(bytes), "Item_000.wz");
+
+        Assert.True(header.IsValid);
+        Assert.Equal(WzPackageFormat.Pkg2, header.Format);
+        Assert.Equal("PKG2", header.Signature);
+        Assert.True(header.IsModernPkg2Header);
+        Assert.Equal(Pkg2PackageFixture.ModernHeaderSize, header.HeaderSize);
+        Assert.Equal(Pkg2PackageFixture.ModernHeaderSize, header.DirectoryStartPosition);
+        Assert.Equal(bytes.Length - Pkg2PackageFixture.ModernHeaderSize, header.DataSize);
+        Assert.Equal(Pkg2PackageFixture.ModernHash1, header.Hash1);
+        Assert.Equal(Pkg2PackageFixture.ModernHash2, header.Hash2);
     }
 
     [Fact]

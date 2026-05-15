@@ -12,8 +12,8 @@ public sealed record WzPackageHeader(
     int? EncryptedVersion = null,
     bool IsEncryptedVersionMissing = false,
     uint? Hash1 = null,
-    uint? Hash2 = null)
+    uint? Hash2 = null,
+    bool IsModernPkg2Header = false)
 {
     public bool IsValid => Format is not WzPackageFormat.Unknown;
 }
-

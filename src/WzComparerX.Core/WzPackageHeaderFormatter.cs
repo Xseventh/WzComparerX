@@ -35,9 +35,12 @@ public sealed class WzPackageHeaderFormatter
         {
             builder.AppendLine($"hash1: {header.Hash1}");
             builder.AppendLine($"hash2: {header.Hash2}");
+            if (header.IsModernPkg2Header)
+            {
+                builder.AppendLine("pkg2HeaderVariant: modern");
+            }
         }
 
         return builder.ToString();
     }
 }
-

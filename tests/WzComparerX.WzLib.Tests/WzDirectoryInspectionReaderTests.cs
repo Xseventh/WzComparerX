@@ -188,6 +188,40 @@ public class WzDirectoryInspectionReaderTests
         Assert.True(inspection.Entries[1].Offset > inspection.Entries[1].HashOffsetPosition);
     }
 
+    [Fact]
+    public void Read_ReturnsModernKmsPkg2DirectoryEntries()
+    {
+        var bytes = Pkg2PackageFixture.CreateModernKms(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+        var headerReader = new WzPackageHeaderReader();
+        var inspectionReader = new WzDirectoryInspectionReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Item_000.wz");
+
+        var inspection = inspectionReader.Read(stream, header);
+
+        Assert.Equal(WzPackageFormat.Pkg2, inspection.Header.Format);
+        Assert.True(inspection.Header.IsModernPkg2Header);
+        Assert.Equal(2, inspection.EntryCount);
+        Assert.Equal(2, inspection.Entries.Count);
+        Assert.Equal(Pkg2PackageFixture.ModernWzVersion, inspection.WzVersion);
+        Assert.Equal(Pkg2PackageFixture.HashVersion, inspection.HashVersion);
+        Assert.Equal("pkg2_modern_kms", inspection.FormatProfile);
+        Assert.Equal("ItemOption.img", inspection.Entries[0].Name);
+        Assert.Equal("SkillOption.img", inspection.Entries[1].Name);
+        Assert.Equal(WzDirectoryEntryKind.Image, inspection.Entries[0].Kind);
+        Assert.Equal(0x04, inspection.Entries[0].NodeType);
+        Assert.True(inspection.Entries[0].Offset > inspection.Entries[0].HashOffsetPosition);
+        Assert.True(inspection.Entries[1].Offset > inspection.Entries[1].HashOffsetPosition);
+    }
+
     private static byte[] CreatePkg1WithDirectoryEntries()
     {
         byte[] directoryData =
