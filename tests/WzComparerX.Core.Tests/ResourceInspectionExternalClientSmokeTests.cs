@@ -1,18 +1,13 @@
 using WzComparerX.Core;
+using WzComparerX.Tests;
 
 namespace WzComparerX.Core.Tests;
 
-public class ResourceInspectionGmsSmokeTests
+public class ResourceInspectionExternalClientSmokeTests
 {
     [Fact]
-    public async Task InspectOptionalGmsPackageRoots_ReadsRepresentativePackageFamilies()
+    public async Task InspectOptionalExternalClientPackageRoots_ReadsRepresentativePackageFamilies()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
         var samples = new[]
         {
             "Character/Character.wz",
@@ -26,42 +21,29 @@ public class ResourceInspectionGmsSmokeTests
             "UI/UI.wz"
         };
         var service = new ResourceInspectionService();
-        var inspectedCount = 0;
 
         foreach (var sample in samples)
         {
-            var path = Path.Combine(dataDirectory, sample.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(path))
+            foreach (var path in ExternalClientSmokeData.FindRelativeFiles(sample.Split('/')))
             {
-                continue;
+                var inspection = await service.InspectAsync(
+                    path,
+                    selector: null,
+                    new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
+
+                Assert.Equal("pkg1", inspection.Format);
+                Assert.Equal("package", inspection.Root.Kind);
+                Assert.NotEmpty(inspection.Root.Children);
+                AssertNoErrorDiagnostics(inspection);
             }
-
-            var inspection = await service.InspectAsync(
-                path,
-                selector: null,
-                new ResourceInspectionOptions(StringKey: null, IncludeDebugMetadata: true));
-
-            Assert.Equal("pkg1", inspection.Format);
-            Assert.Equal("package", inspection.Root.Kind);
-            Assert.NotEmpty(inspection.Root.Children);
-            AssertNoErrorDiagnostics(inspection);
-            inspectedCount++;
         }
-
-        Assert.True(inspectedCount > 0, "No representative GMS package roots were found.");
     }
 
     [Fact]
-    public async Task InspectOptionalGmsMapPackageGroup_ExposesMergedShardImageIdentity()
+    public async Task InspectOptionalExternalClientMapPackageGroup_ExposesMergedShardImageIdentity()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var map1Path = Path.Combine(dataDirectory, "Map", "Map", "Map1", "Map1.wz");
-        if (!File.Exists(map1Path))
+        var map1Path = ExternalClientSmokeData.FindFirstFile("Map", "Map", "Map1", "Map1.wz");
+        if (map1Path is null)
         {
             return;
         }
@@ -83,16 +65,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsMapImage_ResolvesMiniMapOutlinkIdentity()
+    public async Task InspectOptionalExternalClientMapImage_ResolvesMiniMapOutlinkIdentity()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var map1ShardPath = Path.Combine(dataDirectory, "Map", "Map", "Map1", "Map1_000.wz");
-        if (!File.Exists(map1ShardPath))
+        var map1ShardPath = ExternalClientSmokeData.FindFirstFile("Map", "Map", "Map1", "Map1_000.wz");
+        if (map1ShardPath is null)
         {
             return;
         }
@@ -116,22 +92,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsMsPackContainers_ReadsDirectoryTables()
+    public async Task InspectOptionalExternalClientMsPackContainers_ReadsDirectoryTables()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var packsDirectory = Path.Combine(dataDirectory, "Packs");
-        if (!Directory.Exists(packsDirectory))
-        {
-            return;
-        }
-
-        var msPaths = Directory.GetFiles(packsDirectory, "*.ms");
-        if (msPaths.Length == 0)
+        var msPaths = ExternalClientSmokeData.FindFiles("*.ms", "Packs");
+        if (msPaths.Count == 0)
         {
             return;
         }
@@ -154,16 +118,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsMsPackImage_ExtractsImagePayload()
+    public async Task InspectOptionalExternalClientMsPackImage_ExtractsImagePayload()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var msPath = Path.Combine(dataDirectory, "Packs", "Skill_00002.ms");
-        if (!File.Exists(msPath))
+        var msPath = ExternalClientSmokeData.FindFirstFile("Packs", "Skill_00002.ms");
+        if (msPath is null)
         {
             return;
         }
@@ -185,16 +143,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsStringEqpImage_ReadsStringLinkerShape()
+    public async Task InspectOptionalExternalClientStringEqpImage_ReadsStringLinkerShape()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var stringPath = Path.Combine(dataDirectory, "String", "String_000.wz");
-        if (!File.Exists(stringPath))
+        var stringPath = ExternalClientSmokeData.FindFirstFile("String", "String_000.wz");
+        if (stringPath is null)
         {
             return;
         }
@@ -217,16 +169,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsItemSkillOptionImage_ReadsSkillOptionScalars()
+    public async Task InspectOptionalExternalClientItemSkillOptionImage_ReadsSkillOptionScalars()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var itemPath = Path.Combine(dataDirectory, "Item", "Item_000.wz");
-        if (!File.Exists(itemPath))
+        var itemPath = ExternalClientSmokeData.FindFirstFile("Item", "Item_000.wz");
+        if (itemPath is null)
         {
             return;
         }
@@ -249,16 +195,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task CanvasOptionalGmsMsPackImage_ResolvesOutlinkPreview()
+    public async Task CanvasOptionalExternalClientMsPackImage_ResolvesOutlinkPreview()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var msPath = Path.Combine(dataDirectory, "Packs", "Mob_00000.ms");
-        if (!File.Exists(msPath))
+        var msPath = ExternalClientSmokeData.FindFirstFile("Packs", "Mob_00000.ms");
+        if (msPath is null)
         {
             return;
         }
@@ -282,16 +222,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsEffectImage_ResolvesCanvasOutlinkIdentity()
+    public async Task InspectOptionalExternalClientEffectImage_ResolvesCanvasOutlinkIdentity()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var effectPath = Path.Combine(dataDirectory, "Effect", "Effect_000.wz");
-        if (!File.Exists(effectPath))
+        var effectPath = ExternalClientSmokeData.FindFirstFile("Effect", "Effect_000.wz");
+        if (effectPath is null)
         {
             return;
         }
@@ -322,16 +256,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task CanvasOptionalGmsEffectImage_ResolvesOutlinkPreview()
+    public async Task CanvasOptionalExternalClientEffectImage_ResolvesOutlinkPreview()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var effectPath = Path.Combine(dataDirectory, "Effect", "Effect_000.wz");
-        if (!File.Exists(effectPath))
+        var effectPath = ExternalClientSmokeData.FindFirstFile("Effect", "Effect_000.wz");
+        if (effectPath is null)
         {
             return;
         }
@@ -355,16 +283,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsCharacterImage_ResolvesCanvasOutlinkIdentity()
+    public async Task InspectOptionalExternalClientCharacterImage_ResolvesCanvasOutlinkIdentity()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var characterPath = Path.Combine(dataDirectory, "Character", "Character_000.wz");
-        if (!File.Exists(characterPath))
+        var characterPath = ExternalClientSmokeData.FindFirstFile("Character", "Character_000.wz");
+        if (characterPath is null)
         {
             return;
         }
@@ -394,16 +316,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task CanvasOptionalGmsCharacterImage_ResolvesOutlinkPreview()
+    public async Task CanvasOptionalExternalClientCharacterImage_ResolvesOutlinkPreview()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var characterPath = Path.Combine(dataDirectory, "Character", "Character_000.wz");
-        if (!File.Exists(characterPath))
+        var characterPath = ExternalClientSmokeData.FindFirstFile("Character", "Character_000.wz");
+        if (characterPath is null)
         {
             return;
         }
@@ -427,16 +343,10 @@ public class ResourceInspectionGmsSmokeTests
     }
 
     [Fact]
-    public async Task InspectOptionalGmsSoundImage_ReadsSoundPayloadMetadata()
+    public async Task InspectOptionalExternalClientSoundImage_ReadsSoundPayloadMetadata()
     {
-        var dataDirectory = GetGmsDataDirectory();
-        if (dataDirectory is null)
-        {
-            return;
-        }
-
-        var soundPath = Path.Combine(dataDirectory, "Sound", "Sound_000.wz");
-        if (!File.Exists(soundPath))
+        var soundPath = ExternalClientSmokeData.FindFirstFile("Sound", "Sound_000.wz");
+        if (soundPath is null)
         {
             return;
         }
@@ -459,14 +369,6 @@ public class ResourceInspectionGmsSmokeTests
         Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "dataOffset");
         Assert.Contains(sound.DebugMetadata ?? [], item => item.Name == "dataLength");
         AssertNoErrorDiagnostics(inspection);
-    }
-
-    private static string? GetGmsDataDirectory()
-    {
-        var path = Environment.GetEnvironmentVariable("WCX_GMS_DATA_DIR");
-        return string.IsNullOrWhiteSpace(path) || !Directory.Exists(path)
-            ? null
-            : path;
     }
 
     private static IEnumerable<ResourceInspectionNode> Flatten(ResourceInspectionNode node)

@@ -202,9 +202,9 @@ M4 完成后已经开始低风险架构整理：
 - PKG2 已有 KMST1199/1200 和 modern KMS directory/profile/offset 支持：
   synthetic fixture 锁住 `pkg2_kmst1200` 与 `pkg2_modern_kms` directory、
   CLI 可见输出和 image payload inspection；用户提供的本地 KMS/KMST
-  smoke 验证了 root IMG 列表和 IMG extraction。完整 KMS 客户端下载后，再
-  补 `WCX_KMS_DATA_DIR` optional Core smoke。其他 PKG2 profile 仍返回稳定
-  error diagnostic：`wcx.package.pkg2.directoryUnsupported`。
+  smoke 验证了 root IMG 列表和 IMG extraction。完整 KMS 客户端下载后，再在
+  统一 external client smoke 入口中补 KMS coverage。其他 PKG2 profile 仍返回
+  稳定 error diagnostic：`wcx.package.pkg2.directoryUnsupported`。
 - 本地 GMS 清点确认当前样本没有 PKG2、`List.wz` 或 `.mn`，但这些仍是
   旧客户端兼容目标；当前样本存在 `Data/Packs/*.ms`，`.ms` / `.mn` v2/Snow
   和 v4/ChaCha20 container directory inspection 已经接入 `inspect`，并且
@@ -291,13 +291,16 @@ App 层应调用 Core service，不应重新实现 WZ / IMG parser。
 - 小 fixture 放在 `fixtures/synthetic/`。
 - expected output 放在 `fixtures/expected/`。
 - 真实客户端文件不能提交进仓库，只能做本地 smoke 并记录路径类别和结果摘要。
-- 本地 GMS Core smoke 使用 `WCX_GMS_DATA_DIR` 指向客户端 `Data` 目录后运行
-  `ResourceInspectionGmsSmokeTests`；这些测试默认无环境变量时不读取外部文件，
-  并覆盖代表性 WZ package、Map package group/link identity，以及当前 GMS
+- 外部客户端 smoke 使用统一入口 `WCX_CLIENT_DATA_DIRS`，也兼容旧的
+  `WCX_GMS_DATA_DIR`。`ResourceInspectionExternalClientSmokeTests` 会按目录中
+  实际存在的文件能力运行代表性 WZ package、Map package group/link identity、
   `Data/Packs/*.ms` directory-table 和代表性 image payload inspection。
-- TODO：等完整 KMS 客户端可用后，再补 `WCX_KMS_DATA_DIR` optional Core
-  smoke；届时覆盖 modern PKG2 header variant、root IMG directory table、
-  选中 IMG payload extraction，以及更多 KMS package families。
+  多客户端可用系统 path separator 分隔，也可以写成 `gms=<path>` /
+  `kms=<path>` 形式方便日志和后续扩展。
+- TODO：等完整 KMS 客户端可用后，在同一个 external client smoke harness 里
+  补 `WCX_KMS_DATA_DIR` / `WCX_CLIENT_DATA_DIRS` 覆盖；届时增加 modern PKG2
+  header variant、root IMG directory table、选中 IMG payload extraction，以及
+  更多 KMS package families。
 - M4 UI 行为测试放在 `WzComparerX.App.Tests`，不要塞进 Core tests。
 - UI 可视回归优先使用 Avalonia Headless 和可选截图产物。
 - 后续涉及 App/UI 或浏览器工作流的迭代，尽量额外跑 Headless 子集：

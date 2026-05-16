@@ -368,11 +368,14 @@ Local GMS smoke status:
   large Canvas auto-scaling behavior. Screenshots were saved under
   `/private/tmp/wcx-gms-ui-smoke-2026-05-01/` during the run and are not
   committed.
-- M5 optional Core GMS smoke tests are recorded in
-  `docs/logs/2026-05-02-gms-core-smoke-tests.md`. When `WCX_GMS_DATA_DIR`
-  points at the local GMS `Data` directory, Core tests validate representative
-  package roots, `Map1.wz` package-group image identity, and
-  `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved target identity.
+- M5 optional Core smoke tests now use a unified external-client entrypoint:
+  `WCX_CLIENT_DATA_DIRS` can point at one or more client `Data` directories,
+  while `WCX_GMS_DATA_DIR` remains a compatibility alias for the local GMS
+  sample. The current tests validate whichever supported file families are
+  discovered, including representative package roots, `Map1.wz` package-group
+  image identity, and `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved
+  target identity for the local GMS layout. The original GMS smoke run is
+  recorded in `docs/logs/2026-05-02-gms-core-smoke-tests.md`.
   The `.ms` container extension is recorded in
   `docs/logs/2026-05-03-ms-container-directory-inspection.md`; the optional
   smoke now also validates local `Data/Packs/*.ms` directory tables.
@@ -401,9 +404,9 @@ Local GMS smoke status:
   is also smoke-only and is not committed. WCX detects `Item_000.wz` and
   `String_000.wz` as `pkg2_modern_kms`, lists four and 26 root IMG entries
   respectively, and confirms `ItemSellPriceStandard.img` / `Eqp.img` flow into
-  the shared IMG reader. TODO: add a `WCX_KMS_DATA_DIR` optional Core smoke
-  suite after a complete KMS client is available, rather than relying on this
-  small ad-hoc sample set.
+  the shared IMG reader. TODO: add KMS coverage to the same external-client
+  smoke harness after a complete KMS client is available, rather than relying on
+  this small ad-hoc sample set.
 - `wcx.package.ms.imageUnsupported` now means an `.ms` / `.mn` image entry was
   found but the implemented v2/v4 payload extraction or downstream IMG reader
   could not inspect it; unsupported container shapes still return

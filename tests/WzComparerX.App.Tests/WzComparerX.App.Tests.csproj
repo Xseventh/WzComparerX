@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\TestSupport\ExternalClientSmokeData.cs" Link="TestSupport\ExternalClientSmokeData.cs" />
     <Compile Include="..\TestSupport\MsContainerFixture.cs" Link="TestSupport\MsContainerFixture.cs" />
   </ItemGroup>
 

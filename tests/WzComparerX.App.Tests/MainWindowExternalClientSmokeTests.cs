@@ -7,22 +7,17 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using WzComparerX.App.ViewModels;
 using WzComparerX.App.Views;
+using WzComparerX.Tests;
 
 namespace WzComparerX.App.Tests;
 
-public class MainWindowGmsSmokeTests
+public class MainWindowExternalClientSmokeTests
 {
     [AvaloniaFact]
-    public async Task MainWindow_OptionalGmsMapPackageGroupSmoke()
+    public async Task MainWindow_OptionalExternalClientMapPackageGroupSmoke()
     {
-        var dataDirectory = Environment.GetEnvironmentVariable("WCX_GMS_DATA_DIR");
-        if (string.IsNullOrWhiteSpace(dataDirectory))
-        {
-            return;
-        }
-
-        var map1Path = Path.Combine(dataDirectory, "Map", "Map", "Map1", "Map1.wz");
-        if (!File.Exists(map1Path))
+        var map1Path = ExternalClientSmokeData.FindFirstFile("Map", "Map", "Map1", "Map1.wz");
+        if (map1Path is null)
         {
             return;
         }
@@ -131,7 +126,8 @@ public class MainWindowGmsSmokeTests
 
     private static void SaveScreenshotArtifact(Bitmap frame, string fileName)
     {
-        var directory = Environment.GetEnvironmentVariable("WCX_GMS_UI_SMOKE_SCREENSHOT_DIR") ??
+        var directory = Environment.GetEnvironmentVariable("WCX_EXTERNAL_CLIENT_UI_SMOKE_SCREENSHOT_DIR") ??
+            Environment.GetEnvironmentVariable("WCX_GMS_UI_SMOKE_SCREENSHOT_DIR") ??
             Environment.GetEnvironmentVariable("WCX_HEADLESS_SCREENSHOT_DIR");
         if (string.IsNullOrWhiteSpace(directory))
         {
