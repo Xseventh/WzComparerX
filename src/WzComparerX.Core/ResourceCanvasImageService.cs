@@ -95,7 +95,7 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(canvas.CompressionKind, path));
         }
 
-        if (canvas.Format is not 1 and not 2 and not 257 and not 513)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 2050)
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
@@ -113,6 +113,7 @@ public sealed class ResourceCanvasImageService
             1 => ConvertBgra4444ToBgra8888(bitmap, path),
             257 => ConvertBgra1555ToBgra8888(bitmap, path),
             513 => ConvertBgr565ToBgra8888(bitmap, path),
+            2050 => ConvertDxt5ToBgra8888(bitmap, path),
             2 => TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path),
             _ => throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(bitmap.Format, path))
         };
@@ -132,6 +133,128 @@ public sealed class ResourceCanvasImageService
         }
 
         return destination;
+    }
+
+    private static byte[] ConvertDxt5ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var blocksWide = (bitmap.Width + 3) / 4;
+        var blocksHigh = (bitmap.Height + 3) / 4;
+        var source = TrimOrCopy(bitmap.Pixels, checked(blocksWide * blocksHigh * 16), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        Span<byte> alphaTable = stackalloc byte[8];
+        Span<byte> colorTable = stackalloc byte[16];
+
+        for (var blockY = 0; blockY < blocksHigh; blockY++)
+        {
+            for (var blockX = 0; blockX < blocksWide; blockX++)
+            {
+                var block = source.AsSpan(((blockY * blocksWide) + blockX) * 16, 16);
+                BuildDxt5AlphaTable(block[0], block[1], alphaTable);
+                BuildDxtColorTable(block, colorTable);
+                var alphaBits = ReadUInt48LittleEndian(block[2..8]);
+                var colorBits = ReadUInt32LittleEndian(block[12..16]);
+
+                for (var y = 0; y < 4; y++)
+                {
+                    var destinationY = (blockY * 4) + y;
+                    if (destinationY >= bitmap.Height)
+                    {
+                        continue;
+                    }
+
+                    for (var x = 0; x < 4; x++)
+                    {
+                        var destinationX = (blockX * 4) + x;
+                        if (destinationX >= bitmap.Width)
+                        {
+                            continue;
+                        }
+
+                        var blockPixel = (y * 4) + x;
+                        var alphaIndex = (int)((alphaBits >> (blockPixel * 3)) & 0x07);
+                        var colorIndex = (int)((colorBits >> (blockPixel * 2)) & 0x03);
+                        var colorOffset = colorIndex * 4;
+                        var destinationOffset = ((destinationY * bitmap.Width) + destinationX) * 4;
+                        destination[destinationOffset] = colorTable[colorOffset];
+                        destination[destinationOffset + 1] = colorTable[colorOffset + 1];
+                        destination[destinationOffset + 2] = colorTable[colorOffset + 2];
+                        destination[destinationOffset + 3] = alphaTable[alphaIndex];
+                    }
+                }
+            }
+        }
+
+        return destination;
+    }
+
+    private static void BuildDxt5AlphaTable(byte alpha0, byte alpha1, Span<byte> alphaTable)
+    {
+        alphaTable[0] = alpha0;
+        alphaTable[1] = alpha1;
+        if (alpha0 > alpha1)
+        {
+            for (var i = 2; i < 8; i++)
+            {
+                alphaTable[i] = (byte)((((8 - i) * alpha0) + ((i - 1) * alpha1) + 3) / 7);
+            }
+        }
+        else
+        {
+            for (var i = 2; i < 6; i++)
+            {
+                alphaTable[i] = (byte)((((6 - i) * alpha0) + ((i - 1) * alpha1) + 2) / 5);
+            }
+
+            alphaTable[6] = 0;
+            alphaTable[7] = byte.MaxValue;
+        }
+    }
+
+    private static void BuildDxtColorTable(ReadOnlySpan<byte> block, Span<byte> colorTable)
+    {
+        var color0 = ReadUInt16LittleEndian(block[8..10]);
+        var color1 = ReadUInt16LittleEndian(block[10..12]);
+        WriteRgb565AsBgra(color0, colorTable[0..4]);
+        WriteRgb565AsBgra(color1, colorTable[4..8]);
+
+        if (color0 > color1)
+        {
+            InterpolateBgra(colorTable[0..4], colorTable[4..8], colorTable[8..12], firstWeight: 2, secondWeight: 1, divisor: 3, bias: 1);
+            InterpolateBgra(colorTable[0..4], colorTable[4..8], colorTable[12..16], firstWeight: 1, secondWeight: 2, divisor: 3, bias: 1);
+        }
+        else
+        {
+            InterpolateBgra(colorTable[0..4], colorTable[4..8], colorTable[8..12], firstWeight: 1, secondWeight: 1, divisor: 2, bias: 0);
+            colorTable[12] = 0;
+            colorTable[13] = 0;
+            colorTable[14] = 0;
+            colorTable[15] = byte.MaxValue;
+        }
+    }
+
+    private static void WriteRgb565AsBgra(ushort value, Span<byte> destination)
+    {
+        destination[0] = Expand5To8(value & 0x1f);
+        destination[1] = Expand6To8((value >> 5) & 0x3f);
+        destination[2] = Expand5To8((value >> 11) & 0x1f);
+        destination[3] = byte.MaxValue;
+    }
+
+    private static void InterpolateBgra(
+        ReadOnlySpan<byte> first,
+        ReadOnlySpan<byte> second,
+        Span<byte> destination,
+        int firstWeight,
+        int secondWeight,
+        int divisor,
+        int bias)
+    {
+        for (var i = 0; i < 3; i++)
+        {
+            destination[i] = (byte)(((first[i] * firstWeight) + (second[i] * secondWeight) + bias) / divisor);
+        }
+
+        destination[3] = byte.MaxValue;
     }
 
     private static byte[] ConvertBgra1555ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
@@ -176,6 +299,27 @@ public sealed class ResourceCanvasImageService
     private static byte Expand6To8(int value)
     {
         return (byte)((value << 2) | (value >> 4));
+    }
+
+    private static ushort ReadUInt16LittleEndian(ReadOnlySpan<byte> bytes)
+    {
+        return (ushort)(bytes[0] | (bytes[1] << 8));
+    }
+
+    private static uint ReadUInt32LittleEndian(ReadOnlySpan<byte> bytes)
+    {
+        return (uint)(bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24));
+    }
+
+    private static ulong ReadUInt48LittleEndian(ReadOnlySpan<byte> bytes)
+    {
+        ulong value = 0;
+        for (var i = 0; i < 6; i++)
+        {
+            value |= (ulong)bytes[i] << (i * 8);
+        }
+
+        return value;
     }
 
     private static byte[] TrimOrCopy(byte[] source, int expectedLength, string? path)

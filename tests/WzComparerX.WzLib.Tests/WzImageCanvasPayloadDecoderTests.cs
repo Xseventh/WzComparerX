@@ -91,6 +91,33 @@ public class WzImageCanvasPayloadDecoderTests
     }
 
     [Fact]
+    public void Decode_ReturnsFormat2050ZlibRawBlocks()
+    {
+        var pixels = CreateDxt5Block(color0: 0xf800, color1: 0x0000);
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 4,
+            Height: 4,
+            Format: 2050,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(4, bitmap.Width);
+        Assert.Equal(4, bitmap.Height);
+        Assert.Equal(2050, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
     public void Decode_RejectsUnsupportedCompression()
     {
         using var stream = new MemoryStream([0x00, 0x01, 0x02]);
@@ -168,5 +195,34 @@ public class WzImageCanvasPayloadDecoderTests
         }
 
         return output.ToArray();
+    }
+
+    private static byte[] CreateDxt5Block(
+        byte alpha0 = 255,
+        byte alpha1 = 0,
+        ushort color0 = 0xf800,
+        ushort color1 = 0,
+        ulong alphaBits = 0,
+        uint colorBits = 0)
+    {
+        return
+        [
+            alpha0,
+            alpha1,
+            (byte)(alphaBits & 0xff),
+            (byte)((alphaBits >> 8) & 0xff),
+            (byte)((alphaBits >> 16) & 0xff),
+            (byte)((alphaBits >> 24) & 0xff),
+            (byte)((alphaBits >> 32) & 0xff),
+            (byte)((alphaBits >> 40) & 0xff),
+            (byte)(color0 & 0xff),
+            (byte)(color0 >> 8),
+            (byte)(color1 & 0xff),
+            (byte)(color1 >> 8),
+            (byte)(colorBits & 0xff),
+            (byte)((colorBits >> 8) & 0xff),
+            (byte)((colorBits >> 16) & 0xff),
+            (byte)((colorBits >> 24) & 0xff)
+        ];
     }
 }

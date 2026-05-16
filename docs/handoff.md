@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+307e83c Preview 16-bit zlib canvases
 c0c5a00 Lock PKG1 directory edge fixtures
 9087c4f Lock split package diagnostic boundary
 a59e4dd Use singular external client data variable
@@ -207,14 +208,17 @@ The old temporary parser/CLI terminology has been retired from active design,
 command documentation, file names, and active tests. The supported observation
 surface is now `inspect` and `inspect --debug`.
 
-Canvas pixel decoding has the first narrow direct-zlib raw-byte slice for
-format `2` / `2562`; PNG export and broader Canvas format coverage remain
-later work. RawData/Video/Sound payload decoding is not implemented yet. Lua image
-entries report script length and a short UTF-8 snippet; `export --type lua`
-writes the full decoded script for supported Lua IMG blocks. Text-format IMG
-streams starting with `#Property` or `Root <Property>` inspect as bounded
-`Property` trees and can be exported with `export --type text`. Text exports
-write to stdout by default or exact bytes to `--out <path>`; Canvas export is
+Canvas pixel decoding has the first narrow direct-zlib raw-byte export slice for
+format `2` / `2562`, while the Avalonia viewer can convert direct-zlib
+`ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`), `ARGB8888` (`2`), and
+`DXT5` (`2050`) Canvas payloads to BGRA8888 preview pixels. PNG export and
+broader Canvas format coverage remain later work. RawData/Video/Sound payload
+decoding is not implemented yet. Lua image entries report script length and a
+short UTF-8 snippet; `export --type lua` writes the full decoded script for
+supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
+`Root <Property>` inspect as bounded `Property` trees and can be exported with
+`export --type text`. Text exports write to stdout by default or exact bytes to
+`--out <path>`; Canvas export is
 binary-only and requires `--out`. Diagnostics carry stable severities, codes,
 sources, and resource paths through `ResourceInspectionDiagnostics`; CLI text
 output prints codes in brackets when present and avoids volatile raw exception
@@ -287,10 +291,11 @@ M4 completed:
   selection: selecting a Canvas node previews that exact value, root Canvas IMG
   objects use the same path, and `source` / `_inlink` / `_outlink` string nodes
   resolve to linked Canvas values when the workspace path can be mapped. The
-  preview path uses the current narrow direct-zlib format `1` / `2` slice
-  through `ResourceCanvasImageService`. Auto display scale enlarges small
-  bitmaps with capped integer scaling and shrinks very large bitmaps
-  proportionally, while manual `1x`, `2x`, `4x`, `8x`, and `16x` buttons remain
+  preview path uses the current direct-zlib `1` / `257` / `513` / `2` /
+  `2050` viewer slices through `ResourceCanvasImageService`. Auto display
+  scale enlarges small bitmaps with capped integer scaling and shrinks very
+  large bitmaps proportionally, while manual `1x`, `2x`, `4x`, `8x`, and
+  `16x` buttons remain
   exact.
 - The UI has a basic activity log for load, inspection, and error events.
 - Core directory inspection now has a WC-style package group layer above the

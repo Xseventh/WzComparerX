@@ -1651,6 +1651,46 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ConvertsFormat2050CanvasToBgra8888()
+    {
+        const ulong alphaBits = 0 | (1UL << 3) | (6UL << 6) | (7UL << 9);
+        const uint colorBits = 0 | (1u << 2) | (2u << 4) | (3u << 6);
+        var rawPixels = CreateDxt5Block(
+            alpha0: 10,
+            alpha1: 250,
+            color0: 0xf800,
+            color1: 0x07e0,
+            alphaBits: alphaBits,
+            colorBits: colorBits);
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0xff, 0x0a,
+            0x00, 0xff, 0x00, 0xfa,
+            0x00, 0x55, 0xaa, 0x00,
+            0x00, 0xaa, 0x55, 0xff
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 4, height: 1, format: 2050));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(2050, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void DiagnosticsFactory_ReturnsStableExportDiagnostic()
     {
         var diagnostic = ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(2, "Script.lua");
@@ -2027,6 +2067,35 @@ public class ResourceDocumentServiceTests
     private static byte[] CreateBytes(byte value, int count)
     {
         return Enumerable.Repeat(value, count).ToArray();
+    }
+
+    private static byte[] CreateDxt5Block(
+        byte alpha0 = 255,
+        byte alpha1 = 0,
+        ushort color0 = 0xf800,
+        ushort color1 = 0,
+        ulong alphaBits = 0,
+        uint colorBits = 0)
+    {
+        return
+        [
+            alpha0,
+            alpha1,
+            (byte)(alphaBits & 0xff),
+            (byte)((alphaBits >> 8) & 0xff),
+            (byte)((alphaBits >> 16) & 0xff),
+            (byte)((alphaBits >> 24) & 0xff),
+            (byte)((alphaBits >> 32) & 0xff),
+            (byte)((alphaBits >> 40) & 0xff),
+            (byte)(color0 & 0xff),
+            (byte)(color0 >> 8),
+            (byte)(color1 & 0xff),
+            (byte)(color1 >> 8),
+            (byte)(colorBits & 0xff),
+            (byte)((colorBits >> 8) & 0xff),
+            (byte)((colorBits >> 16) & 0xff),
+            (byte)((colorBits >> 24) & 0xff)
+        ];
     }
 
     private static byte[] CreateCompressedInt32(int value)

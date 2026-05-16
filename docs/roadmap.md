@@ -148,8 +148,9 @@ Tasks:
   and it is inspected as a complete IMG Content tree without replacing the
   resource tree.
 - Property panel. Started with selected-node metadata and diagnostics.
-- Canvas preview. Started with lazy Canvas value preview through Core using the
-  current direct-zlib format `1` / `2` decoder slice. Preview now follows IMG
+- Canvas preview. Started with lazy Canvas value preview through Core using
+  direct-zlib `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`),
+  `ARGB8888` (`2`), and `DXT5` (`2050`) decoder slices. Preview now follows IMG
   Content selection: Canvas nodes preview exact values, root Canvas IMG objects
   share the same viewer path, and `source` / `_inlink` / `_outlink` strings can
   resolve linked Canvas values. Small bitmaps are displayed with capped integer
@@ -171,9 +172,9 @@ Exit criteria:
   ViewModel/headless tests.
 - Local GMS smoke records package group merge, selected IMG extraction, Canvas
   Preview, large directory behavior, and large Canvas auto-scaling.
-- Direct-zlib Canvas preview for formats `1` / `2` is enough for M4 closeout.
-  Broader Canvas decode, PNG export, MapRender, search, and compare remain
-  later milestones.
+- Direct-zlib Canvas preview for formats `1` / `2` was enough for M4 closeout.
+  M5 has since added `257`, `513`, and `2050`; PNG export, MapRender, search,
+  and compare remain later milestones.
 - Larger `MainWindowViewModel` workflow splitting and Core package-group helper
   cleanup are planned immediately after M4 closeout, not during final UI smoke
   stabilization.
@@ -183,8 +184,9 @@ Closeout notes:
 - M4 establishes a usable Avalonia browser shell over the Core inspection model.
 - Resources tree, IMG Content tree, Canvas Preview, linked Canvas preview, and
   WC-style package group merge are covered by App tests and local GMS smoke.
-- Direct-zlib Canvas preview formats `1` / `2` are accepted as the M4 image
-  preview slice; broader decode and PNG export stay later.
+- Direct-zlib Canvas preview formats `1` / `2` were accepted as the M4 image
+  preview slice; M5 extends this to `257`, `513`, and `2050`, while PNG export
+  stays later.
 - Post-M4 cleanup has started by extracting Canvas Preview and IMG Content
   workflow logic plus resource detail projection out of `MainWindowViewModel`;
   Core split-package link path resolution has also been split from the main
@@ -515,7 +517,7 @@ parser coverage and smoke notes.
 | Basic resource browsing | WZ/IMG/MS/MN open, three-tree browsing, details, context menus, history | WZ/MS/MN/file/folder/fixture open, Resources + IMG Content + Preview | ~45% | M9 |
 | Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 KMST1199/1200 directory and image-offset first slice; `.ms`/`.mn` directory tables and initial image payload extraction; List.wz first-slice inspection | ~50-55% | M5 |
 | IMG property parsing | Property, Vector, Convex, UOL, Canvas, Sound, RawData, Video, Lua, text IMG | Most have inspection metadata; payload behavior is shallow | ~50% | M5 |
-| Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | Direct-zlib format `1`/`2` narrow preview/export slice | ~15-20% | M8 |
+| Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | Direct-zlib viewer slices for `1`/`257`/`513`/`2`/`2050`; raw export remains the initial direct-zlib Canvas byte slice | ~20-25% | M8 |
 | Animation/GIF/APNG/video export | Frame extraction, GIF/APNG, FFmpeg settings | No complete animation export | ~0-5% | M8 |
 | Sound playback/export | Sound_DX8 extract, play, pause, loop, save mp3/wav/pcm | Sound metadata only | ~5% | M8 |
 | Canvas#Video/video | VPX/video load and preview paths | Video metadata only | ~0-5% | M8 |
