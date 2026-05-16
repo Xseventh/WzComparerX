@@ -61,6 +61,35 @@ public class WzImageCanvasPayloadDecoderTests
         Assert.Equal(pixels, bitmap.Pixels);
     }
 
+    [Theory]
+    [InlineData(257)]
+    [InlineData(513)]
+    public void Decode_Returns16BitZlibRawPixels(int format)
+    {
+        byte[] pixels = [0x00, 0xfc, 0xe0, 0x07];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 2,
+            Height: 1,
+            Format: format,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(2, bitmap.Width);
+        Assert.Equal(1, bitmap.Height);
+        Assert.Equal(format, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
     [Fact]
     public void Decode_RejectsUnsupportedCompression()
     {

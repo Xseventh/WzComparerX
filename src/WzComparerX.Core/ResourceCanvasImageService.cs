@@ -95,7 +95,7 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(canvas.CompressionKind, path));
         }
 
-        if (canvas.Format is not 1 and not 2)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513)
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
@@ -111,6 +111,8 @@ public sealed class ResourceCanvasImageService
         return bitmap.Format switch
         {
             1 => ConvertBgra4444ToBgra8888(bitmap, path),
+            257 => ConvertBgra1555ToBgra8888(bitmap, path),
+            513 => ConvertBgr565ToBgra8888(bitmap, path),
             2 => TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path),
             _ => throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(bitmap.Format, path))
         };
@@ -130,6 +132,50 @@ public sealed class ResourceCanvasImageService
         }
 
         return destination;
+    }
+
+    private static byte[] ConvertBgra1555ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 2), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex += 2)
+        {
+            var value = source[sourceIndex] | (source[sourceIndex + 1] << 8);
+            var destinationIndex = (sourceIndex / 2) * 4;
+            destination[destinationIndex] = Expand5To8(value & 0x1f);
+            destination[destinationIndex + 1] = Expand5To8((value >> 5) & 0x1f);
+            destination[destinationIndex + 2] = Expand5To8((value >> 10) & 0x1f);
+            destination[destinationIndex + 3] = (value & 0x8000) != 0 ? byte.MaxValue : (byte)0;
+        }
+
+        return destination;
+    }
+
+    private static byte[] ConvertBgr565ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 2), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex += 2)
+        {
+            var value = source[sourceIndex] | (source[sourceIndex + 1] << 8);
+            var destinationIndex = (sourceIndex / 2) * 4;
+            destination[destinationIndex] = Expand5To8(value & 0x1f);
+            destination[destinationIndex + 1] = Expand6To8((value >> 5) & 0x3f);
+            destination[destinationIndex + 2] = Expand5To8((value >> 11) & 0x1f);
+            destination[destinationIndex + 3] = byte.MaxValue;
+        }
+
+        return destination;
+    }
+
+    private static byte Expand5To8(int value)
+    {
+        return (byte)((value << 3) | (value >> 2));
+    }
+
+    private static byte Expand6To8(int value)
+    {
+        return (byte)((value << 2) | (value >> 4));
     }
 
     private static byte[] TrimOrCopy(byte[] source, int expectedLength, string? path)

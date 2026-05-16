@@ -87,11 +87,14 @@ conditions through CLI output.
 Status: steps 1 through 5 are started for direct zlib Canvas payloads with
 format `2` / `2562`, including a committed hex fixture, `inspect --debug`
 text/JSON golden outputs, and raw-byte CLI export coverage. This raw-byte path
-is sufficient for M3 only as a parser/export slice. PNG export and broader
+is sufficient for M3 only as a parser/export slice. The Avalonia viewer also
+converts direct-zlib `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`),
+and `ARGB8888` (`2`) into BGRA8888 preview pixels. PNG export and broader
 Canvas format coverage are later user-facing image export work. Canvas export
 now supports the explicit value selector described in
 `docs/canvas-export-selector-plan.md`.
 
 M4 note: the basic Avalonia preview reuses the same payload decoder and adds a
-small viewer conversion path for direct-zlib format `1` / `2` Canvas values.
+small viewer conversion path for direct-zlib format `1` / `257` / `513` / `2`
+Canvas values.
 This does not change the current raw Canvas export contract.

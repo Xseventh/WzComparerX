@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+c0c5a00 Lock PKG1 directory edge fixtures
 9087c4f Lock split package diagnostic boundary
 a59e4dd Use singular external client data variable
 3f75f77 Lock external client path parsing

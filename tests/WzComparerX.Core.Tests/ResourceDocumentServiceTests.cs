@@ -1590,6 +1590,67 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ConvertsFormat257CanvasToBgra8888()
+    {
+        byte[] rawPixels = [0x00, 0xfc, 0xff, 0x7f];
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0xff, 0xff,
+            0xff, 0xff, 0xff, 0x00
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 2, format: 257));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(257, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ConvertsFormat513CanvasToBgra8888()
+    {
+        byte[] rawPixels = [0x00, 0xf8, 0xe0, 0x07, 0x1f, 0x00];
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0xff, 0xff,
+            0x00, 0xff, 0x00, 0xff,
+            0xff, 0x00, 0x00, 0xff
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 3, format: 513));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(513, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void DiagnosticsFactory_ReturnsStableExportDiagnostic()
     {
         var diagnostic = ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(2, "Script.lua");
@@ -1797,12 +1858,12 @@ public class ResourceDocumentServiceTests
             "Canvas",
             0x00,
             0x00,
-            width,
-            height,
-            format,
+            CreateCompressedInt32(width),
+            CreateCompressedInt32(height),
+            CreateCompressedInt32(format),
             0x00,
-            1,
-            0,
+            CreateCompressedInt32(1),
+            CreateCompressedInt32(0),
             (byte)0x00,
             (byte)0x00,
             BitConverter.GetBytes(payload.Length),
@@ -1966,6 +2027,13 @@ public class ResourceDocumentServiceTests
     private static byte[] CreateBytes(byte value, int count)
     {
         return Enumerable.Repeat(value, count).ToArray();
+    }
+
+    private static byte[] CreateCompressedInt32(int value)
+    {
+        var bytes = new List<byte>();
+        AddCompressedInt32(bytes, value);
+        return bytes.ToArray();
     }
 
     private static void AddCompressedInt32(List<byte> bytes, int value)
