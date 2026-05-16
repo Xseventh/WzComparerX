@@ -450,6 +450,35 @@ public class WzImageInspectionReaderTests
     }
 
     [Fact]
+    public void Read_ReturnsRgba32FloatCanvasUncompressedLength()
+    {
+        var bytes = CreateImage(
+            "Canvas",
+            0x00,
+            0x00,
+            16,
+            8,
+            CreateCompressedInt32(4100),
+            0x00,
+            1,
+            0,
+            (byte)0x00,
+            (byte)0x00,
+            BitConverter.GetBytes(3),
+            0x01,
+            0x02,
+            0x03);
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(new WzStringDecryptor(WzStringEncryptionKind.None));
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        var canvas = Assert.IsType<WzImageCanvasInspection>(inspection.ObjectValue);
+        Assert.Equal(4100, canvas.Format);
+        Assert.Equal(2048, canvas.UncompressedDataLength);
+    }
+
+    [Fact]
     public void Read_ReturnsCanvasZlibCompressionMetadata()
     {
         var bytes = CreatePropertyImage(CreateObjectProperty(
@@ -981,6 +1010,11 @@ public class WzImageInspectionReaderTests
     private static byte[] CreateBytes(byte value, int count)
     {
         return Enumerable.Repeat(value, count).ToArray();
+    }
+
+    private static byte[] CreateCompressedInt32(int value)
+    {
+        return [(byte)0x80, .. BitConverter.GetBytes(value)];
     }
 
     private static void AddImageObjectName(List<byte> bytes, string value)

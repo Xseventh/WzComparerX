@@ -131,8 +131,8 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - Document metadata panel。
 - Selection / Diagnostics panel。
 - Canvas preview tab for the current direct-zlib `ARGB4444` (`1`),
-  `ARGB1555` (`257`), `RGB565` (`513`), `ARGB8888` (`2`), `DXT3` (`1026`),
-  and `DXT5` (`2050`) slices,
+  `ARGB1555` (`257`), `RGB565` (`513`), `ARGB8888` (`2`),
+  `RGBA1010102` (`2562`), `DXT3` (`1026`), and `DXT5` (`2050`) slices,
   following the selected IMG Content node. Selecting Canvas nodes previews that
   exact value; selecting `source` / `_inlink` / `_outlink` string nodes resolves
   the linked Canvas when the current workspace layout can be mapped. The Preview

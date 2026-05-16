@@ -1729,6 +1729,40 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ConvertsFormat2562CanvasToBgra8888()
+    {
+        byte[] rawPixels =
+        [
+            .. BitConverter.GetBytes(CreateRgba1010102Pixel(r: 1023, g: 512, b: 0, a: 3)),
+            .. BitConverter.GetBytes(CreateRgba1010102Pixel(r: 4, g: 8, b: 12, a: 1))
+        ];
+        byte[] bgraPixels =
+        [
+            0x00, 0x80, 0xff, 0xff,
+            0x03, 0x02, 0x01, 0x55
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 2, format: 2562));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(2562, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void DiagnosticsFactory_ReturnsStableExportDiagnostic()
     {
         var diagnostic = ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(2, "Script.lua");
@@ -2161,6 +2195,11 @@ public class ResourceDocumentServiceTests
             (byte)((colorBits >> 16) & 0xff),
             (byte)((colorBits >> 24) & 0xff)
         ];
+    }
+
+    private static uint CreateRgba1010102Pixel(uint r, uint g, uint b, uint a)
+    {
+        return (r & 0x3ff) | ((g & 0x3ff) << 10) | ((b & 0x3ff) << 20) | ((a & 0x03) << 30);
     }
 
     private static byte[] CreateCompressedInt32(int value)

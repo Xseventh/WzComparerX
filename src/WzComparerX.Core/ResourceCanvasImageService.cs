@@ -95,7 +95,7 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(canvas.CompressionKind, path));
         }
 
-        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 1026 and not 2050)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 1026 and not 2050 and not 2562)
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
@@ -115,6 +115,7 @@ public sealed class ResourceCanvasImageService
             513 => ConvertBgr565ToBgra8888(bitmap, path),
             1026 => ConvertDxt3ToBgra8888(bitmap, path),
             2050 => ConvertDxt5ToBgra8888(bitmap, path),
+            2562 => ConvertRgba1010102ToBgra8888(bitmap, path),
             2 => TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path),
             _ => throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(bitmap.Format, path))
         };
@@ -318,6 +319,23 @@ public sealed class ResourceCanvasImageService
         }
 
         destination[3] = byte.MaxValue;
+    }
+
+    private static byte[] ConvertRgba1010102ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex += 4)
+        {
+            var value = ReadUInt32LittleEndian(source.AsSpan(sourceIndex, 4));
+            var destinationIndex = sourceIndex;
+            destination[destinationIndex] = (byte)(((value >> 20) & 0x3ff) >> 2);
+            destination[destinationIndex + 1] = (byte)(((value >> 10) & 0x3ff) >> 2);
+            destination[destinationIndex + 2] = (byte)((value & 0x3ff) >> 2);
+            destination[destinationIndex + 3] = (byte)(((value >> 30) & 0x03) * 85);
+        }
+
+        return destination;
     }
 
     private static byte[] ConvertBgra1555ToBgra8888(WzImageCanvasBitmap bitmap, string? path)

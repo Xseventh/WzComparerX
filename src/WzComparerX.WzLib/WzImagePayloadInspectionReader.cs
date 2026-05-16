@@ -184,7 +184,7 @@ internal static class WzImagePayloadInspectionReader
             4098 => width * (height & ~3),
             4097 => ((width + 3) / 4) * ((height + 3) / 4) * 8,
             2304 => width * height,
-            6656 => width * height * 16,
+            4100 => width * height * 16,
             _ => (int?)null
         };
         if (perPageLength is null)
