@@ -64,6 +64,7 @@ public class WzImageCanvasPayloadDecoderTests
     [Theory]
     [InlineData(257)]
     [InlineData(513)]
+    [InlineData(769)]
     public void Decode_Returns16BitZlibRawPixels(int format)
     {
         byte[] pixels = [0x00, 0xfc, 0xe0, 0x07];
@@ -87,6 +88,93 @@ public class WzImageCanvasPayloadDecoderTests
         Assert.Equal(2, bitmap.Width);
         Assert.Equal(1, bitmap.Height);
         Assert.Equal(format, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
+    public void Decode_ReturnsFormat2304ZlibRawPixels()
+    {
+        byte[] pixels = [0x00, 0x80, 0xff];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 3,
+            Height: 1,
+            Format: 2304,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(3, bitmap.Width);
+        Assert.Equal(1, bitmap.Height);
+        Assert.Equal(2304, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
+    public void Decode_ReturnsFormat4097ZlibRawBlocks()
+    {
+        byte[] pixels = [0x00, 0xf8, 0x00, 0x00, 0xe4, 0x00, 0x00, 0x00];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 4,
+            Height: 4,
+            Format: 4097,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(4, bitmap.Width);
+        Assert.Equal(4, bitmap.Height);
+        Assert.Equal(4097, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
+    public void Decode_ReturnsFormat4100ZlibRawPixels()
+    {
+        byte[] pixels =
+        [
+            .. BitConverter.GetBytes(1f),
+            .. BitConverter.GetBytes(0.5f),
+            .. BitConverter.GetBytes(0f),
+            .. BitConverter.GetBytes(1f)
+        ];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 4100,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(1, bitmap.Width);
+        Assert.Equal(1, bitmap.Height);
+        Assert.Equal(4100, bitmap.Format);
         Assert.Equal(pixels, bitmap.Pixels);
     }
 

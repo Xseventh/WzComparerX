@@ -95,7 +95,7 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(canvas.CompressionKind, path));
         }
 
-        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 1026 and not 2050 and not 2562)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 769 and not 1026 and not 2050 and not 2304 and not 2562 and not 4097 and not 4100)
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
@@ -113,9 +113,13 @@ public sealed class ResourceCanvasImageService
             1 => ConvertBgra4444ToBgra8888(bitmap, path),
             257 => ConvertBgra1555ToBgra8888(bitmap, path),
             513 => ConvertBgr565ToBgra8888(bitmap, path),
+            769 => ConvertR16ToBgra8888(bitmap, path),
             1026 => ConvertDxt3ToBgra8888(bitmap, path),
             2050 => ConvertDxt5ToBgra8888(bitmap, path),
+            2304 => ConvertA8ToBgra8888(bitmap, path),
             2562 => ConvertRgba1010102ToBgra8888(bitmap, path),
+            4097 => ConvertDxt1ToBgra8888(bitmap, path),
+            4100 => ConvertRgba32FloatToBgra8888(bitmap, path),
             2 => TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path),
             _ => throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(bitmap.Format, path))
         };
@@ -179,6 +183,54 @@ public sealed class ResourceCanvasImageService
                         destination[destinationOffset + 1] = colorTable[colorOffset + 1];
                         destination[destinationOffset + 2] = colorTable[colorOffset + 2];
                         destination[destinationOffset + 3] = alphaTable[blockPixel];
+                    }
+                }
+            }
+        }
+
+        return destination;
+    }
+
+    private static byte[] ConvertDxt1ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var blocksWide = (bitmap.Width + 3) / 4;
+        var blocksHigh = (bitmap.Height + 3) / 4;
+        var source = TrimOrCopy(bitmap.Pixels, checked(blocksWide * blocksHigh * 8), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        Span<byte> colorTable = stackalloc byte[16];
+
+        for (var blockY = 0; blockY < blocksHigh; blockY++)
+        {
+            for (var blockX = 0; blockX < blocksWide; blockX++)
+            {
+                var block = source.AsSpan(((blockY * blocksWide) + blockX) * 8, 8);
+                BuildDxt1ColorTable(block, colorTable);
+                var colorBits = ReadUInt32LittleEndian(block[4..8]);
+
+                for (var y = 0; y < 4; y++)
+                {
+                    var destinationY = (blockY * 4) + y;
+                    if (destinationY >= bitmap.Height)
+                    {
+                        continue;
+                    }
+
+                    for (var x = 0; x < 4; x++)
+                    {
+                        var destinationX = (blockX * 4) + x;
+                        if (destinationX >= bitmap.Width)
+                        {
+                            continue;
+                        }
+
+                        var blockPixel = (y * 4) + x;
+                        var colorIndex = (int)((colorBits >> (blockPixel * 2)) & 0x03);
+                        var colorOffset = colorIndex * 4;
+                        var destinationOffset = ((destinationY * bitmap.Width) + destinationX) * 4;
+                        destination[destinationOffset] = colorTable[colorOffset];
+                        destination[destinationOffset + 1] = colorTable[colorOffset + 1];
+                        destination[destinationOffset + 2] = colorTable[colorOffset + 2];
+                        destination[destinationOffset + 3] = colorTable[colorOffset + 3];
                     }
                 }
             }
@@ -296,6 +348,28 @@ public sealed class ResourceCanvasImageService
         }
     }
 
+    private static void BuildDxt1ColorTable(ReadOnlySpan<byte> block, Span<byte> colorTable)
+    {
+        var color0 = ReadUInt16LittleEndian(block[0..2]);
+        var color1 = ReadUInt16LittleEndian(block[2..4]);
+        WriteRgb565AsBgra(color0, colorTable[0..4]);
+        WriteRgb565AsBgra(color1, colorTable[4..8]);
+
+        if (color0 > color1)
+        {
+            InterpolateBgra(colorTable[0..4], colorTable[4..8], colorTable[8..12], firstWeight: 2, secondWeight: 1, divisor: 3, bias: 1);
+            InterpolateBgra(colorTable[0..4], colorTable[4..8], colorTable[12..16], firstWeight: 1, secondWeight: 2, divisor: 3, bias: 1);
+        }
+        else
+        {
+            InterpolateBgra(colorTable[0..4], colorTable[4..8], colorTable[8..12], firstWeight: 1, secondWeight: 1, divisor: 2, bias: 0);
+            colorTable[12] = 0;
+            colorTable[13] = 0;
+            colorTable[14] = 0;
+            colorTable[15] = 0;
+        }
+    }
+
     private static void WriteRgb565AsBgra(ushort value, Span<byte> destination)
     {
         destination[0] = Expand5To8(value & 0x1f);
@@ -333,6 +407,59 @@ public sealed class ResourceCanvasImageService
             destination[destinationIndex + 1] = (byte)(((value >> 10) & 0x3ff) >> 2);
             destination[destinationIndex + 2] = (byte)((value & 0x3ff) >> 2);
             destination[destinationIndex + 3] = (byte)(((value >> 30) & 0x03) * 85);
+        }
+
+        return destination;
+    }
+
+    private static byte[] ConvertR16ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 2), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex += 2)
+        {
+            var value = ReadUInt16LittleEndian(source.AsSpan(sourceIndex, 2));
+            var destinationIndex = (sourceIndex / 2) * 4;
+            destination[destinationIndex] = 0;
+            destination[destinationIndex + 1] = 0;
+            destination[destinationIndex + 2] = Expand16To8(value);
+            destination[destinationIndex + 3] = byte.MaxValue;
+        }
+
+        return destination;
+    }
+
+    private static byte[] ConvertA8ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex++)
+        {
+            var destinationIndex = sourceIndex * 4;
+            destination[destinationIndex] = byte.MaxValue;
+            destination[destinationIndex + 1] = byte.MaxValue;
+            destination[destinationIndex + 2] = byte.MaxValue;
+            destination[destinationIndex + 3] = source[sourceIndex];
+        }
+
+        return destination;
+    }
+
+    private static byte[] ConvertRgba32FloatToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 16), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex += 16)
+        {
+            var r = ReadSingleLittleEndian(source.AsSpan(sourceIndex, 4));
+            var g = ReadSingleLittleEndian(source.AsSpan(sourceIndex + 4, 4));
+            var b = ReadSingleLittleEndian(source.AsSpan(sourceIndex + 8, 4));
+            var a = ReadSingleLittleEndian(source.AsSpan(sourceIndex + 12, 4));
+            var destinationIndex = (sourceIndex / 16) * 4;
+            destination[destinationIndex] = FloatToByte(b);
+            destination[destinationIndex + 1] = FloatToByte(g);
+            destination[destinationIndex + 2] = FloatToByte(r);
+            destination[destinationIndex + 3] = FloatToByte(a);
         }
 
         return destination;
@@ -382,6 +509,11 @@ public sealed class ResourceCanvasImageService
         return (byte)((value << 2) | (value >> 4));
     }
 
+    private static byte Expand16To8(ushort value)
+    {
+        return (byte)(((value * 255) + 32767) / 65535);
+    }
+
     private static ushort ReadUInt16LittleEndian(ReadOnlySpan<byte> bytes)
     {
         return (ushort)(bytes[0] | (bytes[1] << 8));
@@ -390,6 +522,26 @@ public sealed class ResourceCanvasImageService
     private static uint ReadUInt32LittleEndian(ReadOnlySpan<byte> bytes)
     {
         return (uint)(bytes[0] | (bytes[1] << 8) | (bytes[2] << 16) | (bytes[3] << 24));
+    }
+
+    private static float ReadSingleLittleEndian(ReadOnlySpan<byte> bytes)
+    {
+        return BitConverter.Int32BitsToSingle((int)ReadUInt32LittleEndian(bytes));
+    }
+
+    private static byte FloatToByte(float value)
+    {
+        if (float.IsNaN(value) || value <= 0)
+        {
+            return 0;
+        }
+
+        if (value >= 1)
+        {
+            return byte.MaxValue;
+        }
+
+        return (byte)((value * byte.MaxValue) + 0.5f);
     }
 
     private static ulong ReadUInt48LittleEndian(ReadOnlySpan<byte> bytes)

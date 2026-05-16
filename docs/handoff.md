@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+c1ecd07 Preview RGBA1010102 zlib canvases
 b91152a Preview DXT3 zlib canvases
 1ff6fb1 Preview DXT5 zlib canvases
 307e83c Preview 16-bit zlib canvases
@@ -212,8 +213,9 @@ surface is now `inspect` and `inspect --debug`.
 
 Canvas pixel decoding has the first narrow direct-zlib raw-byte export slice for
 format `2` / `2562`, while the Avalonia viewer can convert direct-zlib
-`ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`), `ARGB8888` (`2`),
-`RGBA1010102` (`2562`), and `DXT3` (`1026`) / `DXT5` (`2050`) Canvas payloads
+`ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`), `R16` (`769`),
+`ARGB8888` (`2`), `A8` (`2304`), `RGBA1010102` (`2562`), `DXT3` (`1026`),
+`DXT5` (`2050`), `DXT1` (`4097`), and `RGBA32Float` (`4100`) Canvas payloads
 to BGRA8888 preview pixels.
 PNG export and broader Canvas format coverage remain later work.
 RawData/Video/Sound payload decoding is not implemented yet. Lua image entries report script length and a
@@ -294,10 +296,11 @@ M4 completed:
   selection: selecting a Canvas node previews that exact value, root Canvas IMG
   objects use the same path, and `source` / `_inlink` / `_outlink` string nodes
   resolve to linked Canvas values when the workspace path can be mapped. The
-  preview path uses the current direct-zlib `1` / `257` / `513` / `2` /
-  `2562` / `1026` / `2050` viewer slices through `ResourceCanvasImageService`. Auto display
-  scale enlarges small bitmaps with capped integer scaling and shrinks very
-  large bitmaps proportionally, while manual `1x`, `2x`, `4x`, `8x`, and
+  preview path uses the current direct-zlib `1` / `257` / `513` / `769` / `2`
+  / `2304` / `2562` / `1026` / `2050` / `4097` / `4100` viewer slices through
+  `ResourceCanvasImageService`. Auto display scale enlarges small bitmaps with
+  capped integer scaling and shrinks very large bitmaps proportionally, while
+  manual `1x`, `2x`, `4x`, `8x`, and
   `16x` buttons remain
   exact.
 - The UI has a basic activity log for load, inspection, and error events.

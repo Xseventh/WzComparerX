@@ -1651,6 +1651,37 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ConvertsFormat769CanvasToBgra8888()
+    {
+        byte[] rawPixels = [0x00, 0x00, 0x00, 0x80, 0xff, 0xff];
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0x00, 0xff,
+            0x00, 0x00, 0x80, 0xff,
+            0x00, 0x00, 0xff, 0xff
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 3, format: 769));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(769, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task CanvasImageService_ConvertsFormat2050CanvasToBgra8888()
     {
         const ulong alphaBits = 0 | (1UL << 3) | (6UL << 6) | (7UL << 9);
@@ -1719,6 +1750,143 @@ public class ResourceDocumentServiceTests
                 new ResourceInspectionOptions(WzStringEncryptionKind.None));
 
             Assert.Equal(1026, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ConvertsFormat2304CanvasToBgra8888()
+    {
+        byte[] rawPixels = [0x00, 0x80, 0xff];
+        byte[] bgraPixels =
+        [
+            0xff, 0xff, 0xff, 0x00,
+            0xff, 0xff, 0xff, 0x80,
+            0xff, 0xff, 0xff, 0xff
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 3, format: 2304));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(2304, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ConvertsFormat4097CanvasToBgra8888()
+    {
+        const uint colorBits = 0 | (1u << 2) | (2u << 4) | (3u << 6);
+        var rawPixels = CreateDxt1Block(
+            color0: 0xf800,
+            color1: 0x07e0,
+            colorBits: colorBits);
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0xff, 0xff,
+            0x00, 0xff, 0x00, 0xff,
+            0x00, 0x55, 0xaa, 0xff,
+            0x00, 0xaa, 0x55, 0xff
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 4, height: 1, format: 4097));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(4097, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ConvertsFormat4097TransparentColorIndexToBgra8888()
+    {
+        const uint colorBits = 0 | (1u << 2) | (2u << 4) | (3u << 6);
+        var rawPixels = CreateDxt1Block(
+            color0: 0x0000,
+            color1: 0xffff,
+            colorBits: colorBits);
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0x00, 0xff,
+            0xff, 0xff, 0xff, 0xff,
+            0x7f, 0x7f, 0x7f, 0xff,
+            0x00, 0x00, 0x00, 0x00
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 4, height: 1, format: 4097));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(4097, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ConvertsFormat4100CanvasToBgra8888()
+    {
+        byte[] rawPixels =
+        [
+            .. CreateRgba32FloatPixel(r: 1f, g: 0.5f, b: 0f, a: 1f),
+            .. CreateRgba32FloatPixel(r: 0.25f, g: 0f, b: 1f, a: 0.5f)
+        ];
+        byte[] bgraPixels =
+        [
+            0x00, 0x80, 0xff, 0xff,
+            0xff, 0x00, 0x40, 0x80
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 2, format: 4100));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(4100, document.Format);
             Assert.Equal("bgra8888", document.PixelFormat);
             Assert.Equal(bgraPixels, document.Pixels);
         }
@@ -2194,6 +2362,35 @@ public class ResourceDocumentServiceTests
             (byte)((colorBits >> 8) & 0xff),
             (byte)((colorBits >> 16) & 0xff),
             (byte)((colorBits >> 24) & 0xff)
+        ];
+    }
+
+    private static byte[] CreateDxt1Block(
+        ushort color0 = 0xf800,
+        ushort color1 = 0,
+        uint colorBits = 0)
+    {
+        return
+        [
+            (byte)(color0 & 0xff),
+            (byte)(color0 >> 8),
+            (byte)(color1 & 0xff),
+            (byte)(color1 >> 8),
+            (byte)(colorBits & 0xff),
+            (byte)((colorBits >> 8) & 0xff),
+            (byte)((colorBits >> 16) & 0xff),
+            (byte)((colorBits >> 24) & 0xff)
+        ];
+    }
+
+    private static byte[] CreateRgba32FloatPixel(float r, float g, float b, float a)
+    {
+        return
+        [
+            .. BitConverter.GetBytes(r),
+            .. BitConverter.GetBytes(g),
+            .. BitConverter.GetBytes(b),
+            .. BitConverter.GetBytes(a)
         ];
     }
 

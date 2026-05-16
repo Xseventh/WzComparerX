@@ -14,7 +14,7 @@ public sealed class WzImageCanvasPayloadDecoder
             throw new NotSupportedException($"Unsupported Canvas compression kind: {canvas.CompressionKind}.");
         }
 
-        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 1026 and not 2050 and not 2562)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 769 and not 1026 and not 2050 and not 2304 and not 2562 and not 4097 and not 4100)
         {
             throw new NotSupportedException($"Unsupported Canvas format: {canvas.Format}.");
         }
