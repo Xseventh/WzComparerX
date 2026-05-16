@@ -304,8 +304,8 @@ For each migrated feature, record:
   - Synthetic `.mn` stream generated with the same fixture to lock WC's shared
     MS loader path for both extensions.
   - Optional local MapleStoryNA `Data/Packs/*.ms` smoke files discovered through
-    the external-client smoke harness. Use `WCX_CLIENT_DATA_DIRS` for one or
-    more client `Data` directories.
+    the external-client smoke harness. Use `WCX_CLIENT_DATA_DIR` for a client
+    `Data` directory.
 - Test coverage added:
   - WzLib tests for v2/Snow header and entry table inspection.
   - WzLib tests for v4/ChaCha20 header and entry table inspection.

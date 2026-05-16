@@ -178,8 +178,8 @@ data did not expose a direct text IMG smoke sample in the scanned WZ files.
 payload length, and payload offset. Audio payload decoding is not implemented.
 
 M5 added optional Core smoke tests behind a unified external-client smoke
-entrypoint. `WCX_CLIENT_DATA_DIRS` can point at one or more client `Data`
-directories. On the local GMS client these tests inspect representative package roots for `Character`,
+entrypoint. `WCX_CLIENT_DATA_DIR` points at a client `Data` directory. On the
+local GMS client these tests inspect representative package roots for `Character`,
 `Effect`, `Item`, `Mob`, `Npc`, `Skill`, `Sound`, `String`, and `UI` without
 parser errors. They also validate the `Data/Map/Map/Map1/Map1.wz` package group:
 `100000000.img` is merged from `Map1_000.wz` and keeps its true source package
@@ -238,7 +238,7 @@ committed. `Item_000.wz` uses the modern 0x44-byte envelope and inspects as
 lists four root IMG entries, and `String_000.wz` lists 26 root IMG entries;
 `ItemSellPriceStandard.img` and `Eqp.img` both validate that modern PKG2 image
 offsets feed the normal IMG inspection path. TODO: once a complete KMS client is
-available, extend the same external-client smoke harness via `WCX_CLIENT_DATA_DIRS`
+available, extend the same external-client smoke harness via `WCX_CLIENT_DATA_DIR`
 to cover this modern PKG2 behavior across representative KMS package families.
 
 WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory

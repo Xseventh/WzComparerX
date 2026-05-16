@@ -2,10 +2,10 @@
 
 - Added `ExternalClientSmokeData` as the shared test harness entry for optional
   local client smoke tests.
-- Added `WCX_CLIENT_DATA_DIRS` for one or more client `Data` directories.
-- Removed region-specific external smoke variables; use labels such as
-  `gms=<path>` and `kms=<path>` inside `WCX_CLIENT_DATA_DIRS` when multiple
-  clients need to be identified in one run.
+- Added `WCX_CLIENT_DATA_DIR` for one client `Data` directory.
+- Removed region-specific external smoke variables. Region/client family is not
+  part of the smoke-test input; parser behavior should be selected from the
+  file header/container shape.
 - Moved Core smoke tests from `ResourceInspectionGmsSmokeTests` to
   `ResourceInspectionExternalClientSmokeTests`, with capability-style file
   discovery instead of assuming every configured client is GMS.
@@ -13,13 +13,13 @@
 - Kept KMS full-client smoke as a TODO until a complete KMS client is available;
   future KMS cases should extend the same external-client harness instead of
   adding a separate region-specific test runner.
-- Added deterministic tests for external-client path parsing so multi-client
-  labels, unlabeled paths, missing directories, and duplicate paths stay stable
-  without mutating process environment variables during xUnit runs.
+- Added deterministic tests for external-client path parsing so valid,
+  missing, and empty paths stay stable without mutating process environment
+  variables during xUnit runs.
 
 Verification:
 
 - `dotnet build WzComparerX.slnx --no-restore -m:1 -p:UseSharedCompilation=false`
 - `dotnet test WzComparerX.slnx --no-build -m:1`
-- `WCX_CLIENT_DATA_DIRS=<local GMS Data directory> dotnet test tests/WzComparerX.Core.Tests/WzComparerX.Core.Tests.csproj --no-build -m:1 --filter FullyQualifiedName~ResourceInspectionExternalClientSmokeTests`
-- `WCX_CLIENT_DATA_DIRS=<local GMS Data directory> dotnet test tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj --no-build -m:1 --filter FullyQualifiedName~MainWindow_OptionalExternalClientMapPackageGroupSmoke`
+- `WCX_CLIENT_DATA_DIR=<local GMS Data directory> dotnet test tests/WzComparerX.Core.Tests/WzComparerX.Core.Tests.csproj --no-build -m:1 --filter FullyQualifiedName~ResourceInspectionExternalClientSmokeTests`
+- `WCX_CLIENT_DATA_DIR=<local GMS Data directory> dotnet test tests/WzComparerX.App.Tests/WzComparerX.App.Tests.csproj --no-build -m:1 --filter FullyQualifiedName~MainWindow_OptionalExternalClientMapPackageGroupSmoke`

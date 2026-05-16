@@ -369,8 +369,8 @@ Local GMS smoke status:
   `/private/tmp/wcx-gms-ui-smoke-2026-05-01/` during the run and are not
   committed.
 - M5 optional Core smoke tests now use a unified external-client entrypoint:
-  `WCX_CLIENT_DATA_DIRS` can point at one or more client `Data` directories.
-  The current tests validate whichever supported file families are discovered,
+  `WCX_CLIENT_DATA_DIR` points at a client `Data` directory. The current tests
+  validate whichever supported file families are discovered,
   including representative package roots, `Map1.wz` package-group image
   identity, and `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved target
   identity for the local GMS layout. The original GMS smoke run is recorded in

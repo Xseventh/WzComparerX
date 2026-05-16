@@ -5,59 +5,31 @@ namespace WzComparerX.Core.Tests;
 public class ExternalClientSmokeDataTests
 {
     [Fact]
-    public void ParseDataDirectories_ReturnsLabeledDirectories()
-    {
-        using var first = TemporaryDirectory.Create();
-        using var second = TemporaryDirectory.Create();
-        var value = string.Join(
-            Path.PathSeparator,
-            $"gms={first.Path}",
-            $"kms={second.Path}");
-
-        var directories = ExternalClientSmokeData.ParseDataDirectories(value);
-
-        Assert.Collection(
-            directories,
-            directory =>
-            {
-                Assert.Equal("gms", directory.Label);
-                Assert.Equal(Path.GetFullPath(first.Path), directory.Path);
-            },
-            directory =>
-            {
-                Assert.Equal("kms", directory.Label);
-                Assert.Equal(Path.GetFullPath(second.Path), directory.Path);
-            });
-    }
-
-    [Fact]
-    public void ParseDataDirectories_UsesClientLabelForUnlabeledDirectory()
+    public void ParseDataDirectory_ReturnsFullPathForExistingDirectory()
     {
         using var directory = TemporaryDirectory.Create();
 
-        var directories = ExternalClientSmokeData.ParseDataDirectories(directory.Path);
+        var parsed = ExternalClientSmokeData.ParseDataDirectory(directory.Path);
 
-        var parsed = Assert.Single(directories);
-        Assert.Equal("client", parsed.Label);
-        Assert.Equal(Path.GetFullPath(directory.Path), parsed.Path);
+        Assert.Equal(Path.GetFullPath(directory.Path), parsed);
     }
 
     [Fact]
-    public void ParseDataDirectories_IgnoresMissingAndDuplicateDirectories()
+    public void ParseDataDirectory_IgnoresMissingDirectory()
     {
-        using var directory = TemporaryDirectory.Create();
         var missing = Path.Combine(Path.GetTempPath(), $"wcx-missing-{Guid.NewGuid():N}");
-        var value = string.Join(
-            Path.PathSeparator,
-            $"first={directory.Path}",
-            $"missing={missing}",
-            $"duplicate={directory.Path}");
 
-        var directories = ExternalClientSmokeData.ParseDataDirectories(value);
+        var parsed = ExternalClientSmokeData.ParseDataDirectory(missing);
 
-        var parsed = Assert.Single(directories);
-        Assert.Equal("first", parsed.Label);
-        Assert.Equal(Path.GetFullPath(directory.Path), parsed.Path);
+        Assert.Null(parsed);
+    }
+
+    [Fact]
+    public void ParseDataDirectory_IgnoresEmptyValue()
+    {
+        var parsed = ExternalClientSmokeData.ParseDataDirectory("  ");
+
+        Assert.Null(parsed);
     }
 
     private sealed class TemporaryDirectory : IDisposable
