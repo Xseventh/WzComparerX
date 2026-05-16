@@ -27,6 +27,17 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+a59e4dd Use singular external client data variable
+3f75f77 Lock external client path parsing
+01f85ea Keep one external client smoke variable
+b9db110 Unify external client smoke entry
+7bb810e Defer optional KMS smoke tests
+9288f2e Add optional KMS PKG2 smoke tests
+a107b16 Lock modern PKG2 CLI diagnostics
+5c6449a Use null modern PKG2 WZ version
+800b555 Add modern PKG2 header support
+1e67d01 Support PKG2 KMST1200 directory inspection
+9299cf0 Expand GMS parser smoke coverage
 8647e80 Expand GMS IMG smoke coverage
 129ae95 Update handoff after IMG scalar fixtures
 6d55a2c Lock IMG scalar inspection fixtures

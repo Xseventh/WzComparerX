@@ -750,6 +750,7 @@ public class ResourceDocumentServiceTests
 
             var back = Assert.Single(inspection.Root.Children, child => child.Name == "Back");
             Assert.Empty(back.Children);
+            Assert.Null(back.Diagnostics);
         }
         finally
         {
