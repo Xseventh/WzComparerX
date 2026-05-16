@@ -131,6 +131,49 @@ public class WzDirectoryInspectionReaderTests
     }
 
     [Fact]
+    public void Read_ExpandedDirectoryEntryCountReturnsLargePkg1Table()
+    {
+        var bytes = CreatePkg1WithExpandedDirectoryEntryCount(130);
+        var headerReader = new WzPackageHeaderReader();
+        var inspectionReader = new WzDirectoryInspectionReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Large.wz");
+
+        var inspection = inspectionReader.Read(stream, header);
+
+        Assert.Equal(130, inspection.EntryCount);
+        Assert.Equal(130, inspection.Entries.Count);
+        Assert.All(inspection.Entries, entry => Assert.Equal(WzDirectoryEntryKind.Image, entry.Kind));
+        Assert.Equal(0, inspection.Entries[0].Index);
+        Assert.Equal("entry000.img", inspection.Entries[0].Name);
+        Assert.Equal("entry000.img", inspection.Entries[0].Path);
+        Assert.Equal(129, inspection.Entries[^1].Index);
+        Assert.Equal("entry129.img", inspection.Entries[^1].Name);
+        Assert.Equal("entry129.img", inspection.Entries[^1].Path);
+    }
+
+    [Fact]
+    public void Read_InvalidPkg1HashOffsetsLeaveEncryptedVersionUndetected()
+    {
+        var bytes = CreatePkg1WithInvalidEncryptedVersionHashOffset();
+        var headerReader = new WzPackageHeaderReader();
+        var inspectionReader = new WzDirectoryInspectionReader(
+            headerReader,
+            new WzStringDecryptor(WzStringEncryptionKind.None));
+        using var stream = new MemoryStream(bytes);
+        var header = headerReader.Read(stream, "Broken.wz");
+
+        var inspection = inspectionReader.Read(stream, header);
+
+        Assert.Equal(1, inspection.EntryCount);
+        Assert.Null(inspection.WzVersion);
+        Assert.Null(inspection.HashVersion);
+        Assert.Null(inspection.Entries[0].Offset);
+    }
+
+    [Fact]
     public void Read_ReturnsRecursiveDirectoryEntries()
     {
         var bytes = CreatePkg1WithNestedDirectoryEntries();
@@ -294,6 +337,40 @@ public class WzDirectoryInspectionReaderTests
         return [.. header, .. encryptedVersion, .. directoryData];
     }
 
+    private static byte[] CreatePkg1WithExpandedDirectoryEntryCount(int entryCount)
+    {
+        using var directoryData = new MemoryStream();
+        WriteCompressedInt32(directoryData, entryCount);
+        for (var i = 0; i < entryCount; i++)
+        {
+            directoryData.WriteByte(0x04);
+            WriteWzAsciiString(directoryData, $"entry{i:000}.img");
+            WriteCompressedInt32(directoryData, 0);
+            WriteCompressedInt32(directoryData, 0);
+            WriteUInt32LittleEndian(directoryData, 0);
+        }
+
+        var directoryBytes = directoryData.ToArray();
+        var header = CreateHeader("PKG1", string.Empty, dataSize: directoryBytes.Length);
+        return [.. header, .. directoryBytes];
+    }
+
+    private static byte[] CreatePkg1WithInvalidEncryptedVersionHashOffset()
+    {
+        byte[] encryptedVersion = [0x20, 0x00];
+        using var directoryData = new MemoryStream();
+        WriteCompressedInt32(directoryData, 1);
+        directoryData.WriteByte(0x04);
+        WriteWzAsciiString(directoryData, "bad.img");
+        WriteCompressedInt32(directoryData, 64);
+        WriteCompressedInt32(directoryData, 0);
+        WriteUInt32LittleEndian(directoryData, 0);
+
+        var directoryBytes = directoryData.ToArray();
+        var header = CreateHeader("PKG1", string.Empty, dataSize: encryptedVersion.Length + directoryBytes.Length);
+        return [.. header, .. encryptedVersion, .. directoryBytes];
+    }
+
     private static byte[] CreatePkg1WithNestedDirectoryEntries()
     {
         byte[] encryptedVersion = [0x7b, 0x00];
@@ -320,5 +397,47 @@ public class WzDirectoryInspectionReaderTests
         BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(12, sizeof(int)), headerSize);
         copyrightBytes.CopyTo(bytes.AsSpan(16));
         return bytes;
+    }
+
+    private static void WriteCompressedInt32(Stream stream, int value)
+    {
+        if (value is > sbyte.MinValue and <= sbyte.MaxValue)
+        {
+            stream.WriteByte(unchecked((byte)(sbyte)value));
+            return;
+        }
+
+        stream.WriteByte(unchecked((byte)sbyte.MinValue));
+        Span<byte> bytes = stackalloc byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32LittleEndian(bytes, value);
+        stream.Write(bytes);
+    }
+
+    private static void WriteUInt32LittleEndian(Stream stream, uint value)
+    {
+        Span<byte> bytes = stackalloc byte[sizeof(uint)];
+        BinaryPrimitives.WriteUInt32LittleEndian(bytes, value);
+        stream.Write(bytes);
+    }
+
+    private static void WriteWzAsciiString(Stream stream, string value)
+    {
+        var bytes = Encoding.Latin1.GetBytes(value);
+        if (bytes.Length <= sbyte.MaxValue)
+        {
+            stream.WriteByte(unchecked((byte)(sbyte)-bytes.Length));
+        }
+        else
+        {
+            stream.WriteByte(unchecked((byte)sbyte.MinValue));
+            Span<byte> lengthBytes = stackalloc byte[sizeof(int)];
+            BinaryPrimitives.WriteInt32LittleEndian(lengthBytes, bytes.Length);
+            stream.Write(lengthBytes);
+        }
+
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            stream.WriteByte((byte)(bytes[i] ^ (byte)(0xAA + i)));
+        }
     }
 }
