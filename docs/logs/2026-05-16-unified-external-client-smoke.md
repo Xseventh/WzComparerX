@@ -13,6 +13,9 @@
 - Kept KMS full-client smoke as a TODO until a complete KMS client is available;
   future KMS cases should extend the same external-client harness instead of
   adding a separate region-specific test runner.
+- Added deterministic tests for external-client path parsing so multi-client
+  labels, unlabeled paths, missing directories, and duplicate paths stay stable
+  without mutating process environment variables during xUnit runs.
 
 Verification:
 

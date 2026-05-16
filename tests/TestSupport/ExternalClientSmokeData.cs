@@ -6,10 +6,15 @@ internal static class ExternalClientSmokeData
 
     public static IReadOnlyList<ExternalClientDataDirectory> GetDataDirectories()
     {
+        return ParseDataDirectories(Environment.GetEnvironmentVariable(ClientDataDirectoriesVariable));
+    }
+
+    public static IReadOnlyList<ExternalClientDataDirectory> ParseDataDirectories(string? value)
+    {
         var directories = new List<ExternalClientDataDirectory>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        AddList(directories, seen, Environment.GetEnvironmentVariable(ClientDataDirectoriesVariable));
+        AddList(directories, seen, value);
 
         return directories;
     }
