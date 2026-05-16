@@ -291,16 +291,16 @@ App 层应调用 Core service，不应重新实现 WZ / IMG parser。
 - 小 fixture 放在 `fixtures/synthetic/`。
 - expected output 放在 `fixtures/expected/`。
 - 真实客户端文件不能提交进仓库，只能做本地 smoke 并记录路径类别和结果摘要。
-- 外部客户端 smoke 使用统一入口 `WCX_CLIENT_DATA_DIRS`，也兼容旧的
-  `WCX_GMS_DATA_DIR`。`ResourceInspectionExternalClientSmokeTests` 会按目录中
-  实际存在的文件能力运行代表性 WZ package、Map package group/link identity、
-  `Data/Packs/*.ms` directory-table 和代表性 image payload inspection。
+- 外部客户端 smoke 只使用统一入口 `WCX_CLIENT_DATA_DIRS`。
+  `ResourceInspectionExternalClientSmokeTests` 会按目录中实际存在的文件能力运行
+  代表性 WZ package、Map package group/link identity、`Data/Packs/*.ms`
+  directory-table 和代表性 image payload inspection。
   多客户端可用系统 path separator 分隔，也可以写成 `gms=<path>` /
   `kms=<path>` 形式方便日志和后续扩展。
 - TODO：等完整 KMS 客户端可用后，在同一个 external client smoke harness 里
-  补 `WCX_KMS_DATA_DIR` / `WCX_CLIENT_DATA_DIRS` 覆盖；届时增加 modern PKG2
-  header variant、root IMG directory table、选中 IMG payload extraction，以及
-  更多 KMS package families。
+  继续通过 `WCX_CLIENT_DATA_DIRS` 补 KMS 覆盖；届时增加 modern PKG2 header
+  variant、root IMG directory table、选中 IMG payload extraction，以及更多 KMS
+  package families。
 - M4 UI 行为测试放在 `WzComparerX.App.Tests`，不要塞进 Core tests。
 - UI 可视回归优先使用 Avalonia Headless 和可选截图产物。
 - 后续涉及 App/UI 或浏览器工作流的迭代，尽量额外跑 Headless 子集：

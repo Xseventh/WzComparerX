@@ -3,8 +3,6 @@ namespace WzComparerX.Tests;
 internal static class ExternalClientSmokeData
 {
     public const string ClientDataDirectoriesVariable = "WCX_CLIENT_DATA_DIRS";
-    public const string GmsDataDirectoryVariable = "WCX_GMS_DATA_DIR";
-    public const string KmsDataDirectoryVariable = "WCX_KMS_DATA_DIR";
 
     public static IReadOnlyList<ExternalClientDataDirectory> GetDataDirectories()
     {
@@ -12,8 +10,6 @@ internal static class ExternalClientSmokeData
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         AddList(directories, seen, Environment.GetEnvironmentVariable(ClientDataDirectoriesVariable));
-        AddSingle(directories, seen, "gms", Environment.GetEnvironmentVariable(GmsDataDirectoryVariable));
-        AddSingle(directories, seen, "kms", Environment.GetEnvironmentVariable(KmsDataDirectoryVariable));
 
         return directories;
     }

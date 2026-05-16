@@ -2,8 +2,10 @@
 
 - Added `ExternalClientSmokeData` as the shared test harness entry for optional
   local client smoke tests.
-- Added `WCX_CLIENT_DATA_DIRS` for one or more client `Data` directories, while
-  keeping `WCX_GMS_DATA_DIR` as a compatibility alias.
+- Added `WCX_CLIENT_DATA_DIRS` for one or more client `Data` directories.
+- Removed region-specific external smoke variables; use labels such as
+  `gms=<path>` and `kms=<path>` inside `WCX_CLIENT_DATA_DIRS` when multiple
+  clients need to be identified in one run.
 - Moved Core smoke tests from `ResourceInspectionGmsSmokeTests` to
   `ResourceInspectionExternalClientSmokeTests`, with capability-style file
   discovery instead of assuming every configured client is GMS.
