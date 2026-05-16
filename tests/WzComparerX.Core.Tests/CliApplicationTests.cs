@@ -236,6 +236,69 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task HeaderModernKmsPkg2_EmitsHeaderVariant()
+    {
+        var path = WriteTemporaryModernPkg2File(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))));
+
+        try
+        {
+            var result = await RunCliAsync("header", path);
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("source: <wz>", output);
+            Assert.Contains("format: pkg2", output);
+            Assert.Contains("signature: PKG2", output);
+            Assert.Contains("valid: true", output);
+            Assert.Contains("headerSize: 68", output);
+            Assert.Contains("directoryStartPosition: 68", output);
+            Assert.Contains("pkg2HeaderVariant: modern", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task InspectDebugModernKmsPkg2Directory_EmitsProfileWithoutWzVersion()
+    {
+        var path = WriteTemporaryModernPkg2File(
+            new Pkg2PackageFixture.Entry(
+                "ItemOption.img",
+                Pkg2PackageFixture.CreateTextImage(("name", "item"))),
+            new Pkg2PackageFixture.Entry(
+                "SkillOption.img",
+                Pkg2PackageFixture.CreateTextImage(("reqLevel", "12"))));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--debug", "--key", "none", path);
+            var output = NormalizePath(result.Output, path, "<wz>");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Contains("format: pkg2", output);
+            Assert.Contains("entryCount: 2", output);
+            Assert.Contains("formatProfile: pkg2_modern_kms", output);
+            Assert.Contains("hashVersion: 2967082738", output);
+            Assert.Contains("pkg2HeaderVariant: modern", output);
+            Assert.Contains("ItemOption.img [image]", output);
+            Assert.Contains("SkillOption.img [image]", output);
+            Assert.DoesNotContain("wzVersion:", output);
+            Assert.DoesNotContain("wcx.package.pkg2.directoryUnsupported", output);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugMsContainer_ReturnsUnsupportedDiagnostic()
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-ms-{Guid.NewGuid():N}.ms");
@@ -1215,6 +1278,13 @@ public class CliApplicationTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-pkg2-{Guid.NewGuid():N}.wz");
         File.WriteAllBytes(path, Pkg2PackageFixture.CreateKmst1200(entries));
+        return path;
+    }
+
+    private static string WriteTemporaryModernPkg2File(params Pkg2PackageFixture.Entry[] entries)
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-cli-modern-pkg2-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, Pkg2PackageFixture.CreateModernKms(entries));
         return path;
     }
 

@@ -155,7 +155,7 @@ For each migrated feature, record:
   - Inspect nested `Shape2D#Vector2D`, `Shape2D#Convex2D`, `UOL`, Canvas
     metadata, RawData metadata, Canvas#Video metadata, and Sound_DX8 metadata
 
-### PKG2 KMST1199/1200 Directory Inspection
+### PKG2 KMST1199/1200 And Modern KMS Directory Inspection
 
 - WC source files referenced:
   - `WzComparerR2.WzLib/Wz_File.cs`
@@ -168,25 +168,37 @@ For each migrated feature, record:
   - `WzComparerR2.WzLib/Compatibility/WzVersionVerifier.cs`
 - WC behavior preserved:
   - Read PKG2 encrypted entry counts and offset counts.
+  - Recognize modern KMS 0x44-byte PKG2 header envelopes that scatter `hash1`,
+    check value, and data size instead of using the older literal `PKG2`
+    header layout.
   - Decode KMST1199/1200 first-entry directory names with the PKG2 UTF-16
     directory string key derived from `hash1` and `hashVersion`.
+  - Decode modern KMS first-entry directory names with the same PKG2 UTF-16
+    string mechanism and the fixed observed hash version; WCX leaves
+    `wzVersion` unset for this profile because the envelope does not expose a
+    traditional WZ version.
   - Decode later names in the same directory level through the normal
     PKG1-style string reader.
-  - Decrypt KMST1199/1200 entry counts and calculate image offsets with WC's
-    `Pkg2OffsetCalcV3` formula.
+  - Decrypt KMST1199/1200 and modern KMS entry counts and calculate image
+    offsets with WC's `Pkg2OffsetCalcV3` formula.
   - Project PKG2 image entries through the same Core inspection identity and
     IMG extraction path as PKG1 images.
 - Fixture or sample used:
-  - Synthetic `pkg2_kmst1200` package bytes generated in
+  - Synthetic `pkg2_kmst1200` and modern KMS package bytes generated in
     `tests/TestSupport/Pkg2PackageFixture.cs`.
   - User-supplied local KMS/KMST-style `Item_000.wz` sample in `~/Downloads`
     for manual smoke only; the file is not committed.
+  - User-supplied local modern KMS samples under `~/Downloads/new_kms/` for
+    manual smoke only; the files are not committed.
 - Test coverage added:
   - WzLib synthetic directory inspection test for KMST1200 names, profile, hash
     version, and image offsets.
+  - WzLib/Core synthetic coverage for modern KMS header reading, directory
+    profile selection, nullable WZ version, and image offsets.
   - Core inspection tests for synthetic PKG2 directory projection and image
     payload inspection.
-  - CLI debug smoke test for synthetic PKG2 directory output.
+  - CLI debug smoke tests for synthetic KMST1200 and modern KMS directory
+    output, including `pkg2HeaderVariant: modern`.
 - Known unsupported cases:
   - KMST1196-1198 legacy PKG2 profiles are still unsupported.
   - Unsupported PKG2 profile/container shapes return

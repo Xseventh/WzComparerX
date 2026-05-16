@@ -57,7 +57,7 @@ the code.
 
 ## WZ Header Detection
 
-Initial WCX support covers only package header detection:
+Initial WCX support covers package header detection:
 
 - `PKG1` and `PKG2` signatures are recognized.
 - Header fields are little-endian, matching WC's `Wz_File.GetHeader` path:
@@ -65,17 +65,25 @@ Initial WCX support covers only package header detection:
 - PKG1 directory data starts after the two-byte encrypted version unless WC's
   missing-encver heuristic detects a removed encrypted-version field.
 - PKG2 stores two `UInt32` hash fields immediately after the copyright area.
+- Modern KMS PKG2 samples can use a 0x44-byte envelope without a literal
+  `PKG2` ASCII signature. WCX gathers `hash1`, the V4-style check value, and
+  data size from the scattered envelope positions, marks
+  `pkg2HeaderVariant: modern`, and starts directory parsing at `0x44`.
 
-PKG2 directory support now has a first WC-aligned KMST1199/1200 slice:
+PKG2 directory support now has WC-aligned KMST1199/1200 and modern KMS slices:
 
 - The directory table starts with a compressed encrypted entry count.
 - KMST1199/1200 entry counts are decrypted from `hash1`, `hashVersion`, and
   WC's mixed hash formula.
+- Modern KMS entry counts and offsets use the same fixed hash version currently
+  observed in KMS samples, but WCX leaves `wzVersion` unset because the modern
+  envelope does not expose a traditional WZ version field.
 - Each directory level stores entry names/sizes/checksums first, followed by a
   second compressed count and one hashed offset per entry.
 - The first entry name in each directory level uses WC's PKG2 UTF-16 directory
   string key; subsequent names use the normal PKG1-style string reader.
-- KMST1199/1200 image offsets use WC's `Pkg2OffsetCalcV3` formula.
+- KMST1199/1200 and modern KMS image offsets use WC's `Pkg2OffsetCalcV3`
+  formula.
 
 Legacy KMST1196-1198 PKG2 profiles remain unsupported until a representative
 sample or tighter WC reference slice is available. Unsupported PKG2 profiles
@@ -220,6 +228,15 @@ for non-first directory entries. `inspect --debug` now lists root image entries
 `ThothSearchOption.img`; `inspect --depth 1 ... SkillOption.img` validates that
 the calculated PKG2 image offset feeds the normal IMG inspection path and
 exposes top-level `skill`, `socket`, and `inc` objects.
+
+A user-supplied modern KMS PKG2 sample set at local path category
+`~/Downloads/new_kms/` is also used for manual smoke only and must not be
+committed. `Item_000.wz` uses the modern 0x44-byte envelope and inspects as
+`formatProfile = pkg2_modern_kms`, `pkg2HeaderVariant = modern`,
+`hashVersion = 0xb0da16f2`, with no synthetic `wzVersion`. `inspect --debug`
+lists four root IMG entries, and `String_000.wz` lists 26 root IMG entries;
+`ItemSellPriceStandard.img` and `Eqp.img` both validate that modern PKG2 image
+offsets feed the normal IMG inspection path.
 
 WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
 tables through the normal `inspect` path. The directory slice reads header
