@@ -95,7 +95,7 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(canvas.CompressionKind, path));
         }
 
-        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 2050)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 1026 and not 2050)
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
@@ -113,6 +113,7 @@ public sealed class ResourceCanvasImageService
             1 => ConvertBgra4444ToBgra8888(bitmap, path),
             257 => ConvertBgra1555ToBgra8888(bitmap, path),
             513 => ConvertBgr565ToBgra8888(bitmap, path),
+            1026 => ConvertDxt3ToBgra8888(bitmap, path),
             2050 => ConvertDxt5ToBgra8888(bitmap, path),
             2 => TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path),
             _ => throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(bitmap.Format, path))
@@ -130,6 +131,56 @@ public sealed class ResourceCanvasImageService
             var high = value & 0xf0;
             destination[i * 2] = (byte)(low | (low << 4));
             destination[(i * 2) + 1] = (byte)(high | (high >> 4));
+        }
+
+        return destination;
+    }
+
+    private static byte[] ConvertDxt3ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    {
+        var blocksWide = (bitmap.Width + 3) / 4;
+        var blocksHigh = (bitmap.Height + 3) / 4;
+        var source = TrimOrCopy(bitmap.Pixels, checked(blocksWide * blocksHigh * 16), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+        Span<byte> alphaTable = stackalloc byte[16];
+        Span<byte> colorTable = stackalloc byte[16];
+
+        for (var blockY = 0; blockY < blocksHigh; blockY++)
+        {
+            for (var blockX = 0; blockX < blocksWide; blockX++)
+            {
+                var block = source.AsSpan(((blockY * blocksWide) + blockX) * 16, 16);
+                BuildDxt3AlphaTable(block[..8], alphaTable);
+                BuildDxtColorTable(block, colorTable);
+                var colorBits = ReadUInt32LittleEndian(block[12..16]);
+
+                for (var y = 0; y < 4; y++)
+                {
+                    var destinationY = (blockY * 4) + y;
+                    if (destinationY >= bitmap.Height)
+                    {
+                        continue;
+                    }
+
+                    for (var x = 0; x < 4; x++)
+                    {
+                        var destinationX = (blockX * 4) + x;
+                        if (destinationX >= bitmap.Width)
+                        {
+                            continue;
+                        }
+
+                        var blockPixel = (y * 4) + x;
+                        var colorIndex = (int)((colorBits >> (blockPixel * 2)) & 0x03);
+                        var colorOffset = colorIndex * 4;
+                        var destinationOffset = ((destinationY * bitmap.Width) + destinationX) * 4;
+                        destination[destinationOffset] = colorTable[colorOffset];
+                        destination[destinationOffset + 1] = colorTable[colorOffset + 1];
+                        destination[destinationOffset + 2] = colorTable[colorOffset + 2];
+                        destination[destinationOffset + 3] = alphaTable[blockPixel];
+                    }
+                }
+            }
         }
 
         return destination;
@@ -185,6 +236,18 @@ public sealed class ResourceCanvasImageService
         }
 
         return destination;
+    }
+
+    private static void BuildDxt3AlphaTable(ReadOnlySpan<byte> block, Span<byte> alphaTable)
+    {
+        for (var i = 0; i < 16; i += 2)
+        {
+            var value = block[i / 2];
+            var low = value & 0x0f;
+            var high = value >> 4;
+            alphaTable[i] = (byte)(low | (low << 4));
+            alphaTable[i + 1] = (byte)(high | (high << 4));
+        }
     }
 
     private static void BuildDxt5AlphaTable(byte alpha0, byte alpha1, Span<byte> alphaTable)

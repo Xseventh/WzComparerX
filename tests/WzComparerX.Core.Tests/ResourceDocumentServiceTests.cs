@@ -1691,6 +1691,44 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ConvertsFormat1026CanvasToBgra8888()
+    {
+        const ulong alphaNibbles = 0 | (1UL << 4) | (8UL << 8) | (15UL << 12);
+        const uint colorBits = 0 | (1u << 2) | (2u << 4) | (3u << 6);
+        var rawPixels = CreateDxt3Block(
+            alphaNibbles: alphaNibbles,
+            color0: 0xf800,
+            color1: 0x07e0,
+            colorBits: colorBits);
+        byte[] bgraPixels =
+        [
+            0x00, 0x00, 0xff, 0x00,
+            0x00, 0xff, 0x00, 0x11,
+            0x00, 0x55, 0xaa, 0x88,
+            0x00, 0xaa, 0x55, 0xff
+        ];
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 4, height: 1, format: 1026));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(1026, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(bgraPixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void DiagnosticsFactory_ReturnsStableExportDiagnostic()
     {
         var diagnostic = ResourceInspectionDiagnostics.ExportLuaMultipleBlocks(2, "Script.lua");
@@ -2087,6 +2125,33 @@ public class ResourceDocumentServiceTests
             (byte)((alphaBits >> 24) & 0xff),
             (byte)((alphaBits >> 32) & 0xff),
             (byte)((alphaBits >> 40) & 0xff),
+            (byte)(color0 & 0xff),
+            (byte)(color0 >> 8),
+            (byte)(color1 & 0xff),
+            (byte)(color1 >> 8),
+            (byte)(colorBits & 0xff),
+            (byte)((colorBits >> 8) & 0xff),
+            (byte)((colorBits >> 16) & 0xff),
+            (byte)((colorBits >> 24) & 0xff)
+        ];
+    }
+
+    private static byte[] CreateDxt3Block(
+        ulong alphaNibbles = ulong.MaxValue,
+        ushort color0 = 0xf800,
+        ushort color1 = 0,
+        uint colorBits = 0)
+    {
+        return
+        [
+            (byte)(alphaNibbles & 0xff),
+            (byte)((alphaNibbles >> 8) & 0xff),
+            (byte)((alphaNibbles >> 16) & 0xff),
+            (byte)((alphaNibbles >> 24) & 0xff),
+            (byte)((alphaNibbles >> 32) & 0xff),
+            (byte)((alphaNibbles >> 40) & 0xff),
+            (byte)((alphaNibbles >> 48) & 0xff),
+            (byte)((alphaNibbles >> 56) & 0xff),
             (byte)(color0 & 0xff),
             (byte)(color0 >> 8),
             (byte)(color1 & 0xff),
