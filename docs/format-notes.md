@@ -236,9 +236,9 @@ committed. `Item_000.wz` uses the modern 0x44-byte envelope and inspects as
 `hashVersion = 0xb0da16f2`, with no synthetic `wzVersion`. `inspect --debug`
 lists four root IMG entries, and `String_000.wz` lists 26 root IMG entries;
 `ItemSellPriceStandard.img` and `Eqp.img` both validate that modern PKG2 image
-offsets feed the normal IMG inspection path. Setting `WCX_KMS_DATA_DIR` to this
-directory enables optional Core smoke tests for the same modern PKG2 behavior;
-without the environment variable, those tests skip external file access.
+offsets feed the normal IMG inspection path. TODO: once a complete KMS client is
+available, add a `WCX_KMS_DATA_DIR` optional Core smoke suite that covers this
+modern PKG2 behavior across representative KMS package families.
 
 WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
 tables through the normal `inspect` path. The directory slice reads header

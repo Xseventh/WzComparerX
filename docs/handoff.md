@@ -401,9 +401,9 @@ Local GMS smoke status:
   is also smoke-only and is not committed. WCX detects `Item_000.wz` and
   `String_000.wz` as `pkg2_modern_kms`, lists four and 26 root IMG entries
   respectively, and confirms `ItemSellPriceStandard.img` / `Eqp.img` flow into
-  the shared IMG reader. Setting `WCX_KMS_DATA_DIR` to this sample directory
-  enables optional Core smoke coverage in `ResourceInspectionKmsSmokeTests`;
-  without the environment variable, the tests do not read external files.
+  the shared IMG reader. TODO: add a `WCX_KMS_DATA_DIR` optional Core smoke
+  suite after a complete KMS client is available, rather than relying on this
+  small ad-hoc sample set.
 - `wcx.package.ms.imageUnsupported` now means an `.ms` / `.mn` image entry was
   found but the implemented v2/v4 payload extraction or downstream IMG reader
   could not inspect it; unsupported container shapes still return
