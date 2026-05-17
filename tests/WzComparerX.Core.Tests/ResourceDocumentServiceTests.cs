@@ -1343,6 +1343,18 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public void DiagnosticsFactory_ReturnsStableImageEntryNotFoundDiagnostic()
+    {
+        var diagnostic = ResourceInspectionDiagnostics.ImageEntryNotFound("Missing.img");
+
+        Assert.Equal(ResourceDiagnosticSeverities.Error, diagnostic.Severity);
+        Assert.Equal("Image entry not found: Missing.img.", diagnostic.Message);
+        Assert.Equal("Missing.img", diagnostic.Path);
+        Assert.Equal(ResourceDiagnosticCodes.ImageEntryNotFound, diagnostic.Code);
+        Assert.Equal(ResourceDiagnosticSources.Inspection, diagnostic.Source);
+    }
+
+    [Fact]
     public async Task CanvasImageService_LoadsSelectedCanvasPixels()
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff, 0x40, 0x50, 0x60, 0xff];

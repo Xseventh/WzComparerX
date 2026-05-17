@@ -91,7 +91,7 @@ internal static class WzImageInspectionLoader
             }
         }
 
-        throw new InvalidDataException($"Image entry not found: {selector}.");
+        throw new ResourceInspectionException(ResourceInspectionDiagnostics.ImageEntryNotFound(selector));
     }
 }
 

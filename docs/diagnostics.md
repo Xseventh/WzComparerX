@@ -60,6 +60,7 @@ Current examples:
 - `wcx.package.pkg2.directoryUnsupported`
 - `wcx.package.ms.directoryUnsupported`
 - `wcx.package.ms.imageUnsupported`
+- `wcx.inspection.image.notFound`
 - `wcx.export.lua.multipleBlocks`
 - `wcx.export.unsupported`
 - `wcx.export.canvas.compressionUnsupported`
@@ -82,6 +83,8 @@ both `.ms` and `.mn` files.
 `wcx.package.ms.imageUnsupported` means an image entry was found, but the
 implemented v2/v4 payload extraction or the downstream IMG reader could not
 produce an inspection tree for that entry.
+`wcx.inspection.image.notFound` means the requested IMG selector was not present
+in the inspected package or package group.
 
 ## Severities
 

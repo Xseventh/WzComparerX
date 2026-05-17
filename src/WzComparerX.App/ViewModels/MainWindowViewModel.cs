@@ -387,6 +387,19 @@ public partial class MainWindowViewModel : ViewModelBase
             ImageContentStatus = ex.Message;
             AddActivity("error", ImageContentStatus);
         }
+        catch (ResourceInspectionException ex)
+        {
+            if (requestId != imageContentRequestId)
+            {
+                return;
+            }
+
+            ClearImageContent("Select an IMG resource.");
+            ImageContentStatus = ex.Message;
+            SelectedDiagnostics.Add(ResourceDiagnosticViewModel.FromDiagnostic(ex.Diagnostic));
+            OnPropertyChanged(nameof(HasDiagnostics));
+            AddActivity("error", ImageContentStatus);
+        }
     }
 
     private void ClearImageContent(string status)
@@ -532,6 +545,18 @@ public partial class MainWindowViewModel : ViewModelBase
             AddActivity("success", CanvasPreviewStatus);
         }
         catch (ResourceCanvasImageException ex)
+        {
+            if (!IsCurrentCanvasPreviewRequest(node, requestId))
+            {
+                return;
+            }
+
+            CanvasPreviewStatus = ex.Message;
+            SelectedDiagnostics.Add(ResourceDiagnosticViewModel.FromDiagnostic(ex.Diagnostic));
+            OnPropertyChanged(nameof(HasDiagnostics));
+            AddActivity("error", $"Canvas preview failed: {ex.Message}");
+        }
+        catch (ResourceInspectionException ex)
         {
             if (!IsCurrentCanvasPreviewRequest(node, requestId))
             {

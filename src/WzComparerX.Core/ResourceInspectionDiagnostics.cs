@@ -104,6 +104,16 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Inspection);
     }
 
+    public static ResourceInspectionDiagnostic ImageEntryNotFound(string selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Image entry not found: {selector}.",
+            selector,
+            ResourceDiagnosticCodes.ImageEntryNotFound,
+            ResourceDiagnosticSources.Inspection);
+    }
+
     public static ResourceInspectionDiagnostic ExportLuaMultipleBlocks(int blockCount, string? selector)
     {
         return new ResourceInspectionDiagnostic(

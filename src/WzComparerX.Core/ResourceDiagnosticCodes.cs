@@ -12,6 +12,7 @@ public static class ResourceDiagnosticCodes
     public const string SplitPackageLinkUnresolved = "wcx.package.link.unresolved";
     public const string PackageGroupShardMissing = "wcx.package.group.shardMissing";
     public const string PackageGroupShardInvalid = "wcx.package.group.shardInvalid";
+    public const string ImageEntryNotFound = "wcx.inspection.image.notFound";
     public const string ExportLuaMultipleBlocks = "wcx.export.lua.multipleBlocks";
     public const string ExportUnsupported = "wcx.export.unsupported";
     public const string ExportCanvasCompressionUnsupported = "wcx.export.canvas.compressionUnsupported";

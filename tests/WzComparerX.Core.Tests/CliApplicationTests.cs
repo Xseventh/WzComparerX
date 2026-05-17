@@ -165,6 +165,32 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task InspectMissingImage_ReturnsStableDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile(
+            "Canvas.img",
+            CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1));
+
+        try
+        {
+            var result = await RunCliAsync("inspect", "--key", "none", path, "Missing.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(
+                """
+                error [wcx.inspection.image.notFound]: Image entry not found: Missing.img. (Missing.img)
+
+                """.ReplaceLineEndings(),
+                result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebugPkg2Directory_ReturnsUnsupportedDiagnostic()
     {
         var path = WriteTemporaryPkg2File();

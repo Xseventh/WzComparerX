@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+1f3e2db Record Lua text sample scan
 ea6ccc8 Add real Video metadata smoke
 6d50d36 Guard linked image identity
 31bfc34 Add real Convex2D smoke coverage
@@ -338,6 +339,9 @@ M4 completed:
   diagnostics on the package root when a declared numbered shard is missing or
   cannot be loaded: `wcx.package.group.shardMissing` and
   `wcx.package.group.shardInvalid`.
+- Missing IMG selectors now emit the stable inspection diagnostic
+  `wcx.inspection.image.notFound` through CLI/Core/App surfaces instead of
+  leaking raw `Image entry not found` exception text.
 - PKG2 has KMST1199/1200 and modern KMS directory/profile/offset slices.
   Synthetic `pkg2_kmst1200` and modern KMS fixtures cover directory entries,
   CLI output, and image payload inspection. Modern KMS 0x44-byte envelope
