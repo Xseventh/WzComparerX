@@ -6,13 +6,18 @@ namespace WzComparerX.App.ViewModels;
 
 public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
 {
-    private const int MaxScale = 16;
+    public const double DefaultScale = 1;
+    public const double MinScale = 0.01;
+    public const double MaxScale = 16;
+
     private const double ViewportFillRatio = 0.9;
 
-    private int? manualScale;
-    private double autoScale;
+    private double scale;
 
-    public ResourceCanvasPreviewViewModel(ResourceCanvasImageDocument document, Bitmap? bitmap)
+    public ResourceCanvasPreviewViewModel(
+        ResourceCanvasImageDocument document,
+        Bitmap? bitmap,
+        double initialScale = DefaultScale)
     {
         SourcePath = document.SourcePath;
         Selector = document.Selector;
@@ -21,7 +26,7 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
         Height = document.Height;
         Format = document.Format;
         Bitmap = bitmap;
-        autoScale = CalculateFallbackAutoScale(document.Width, document.Height);
+        scale = NormalizeScale(initialScale);
     }
 
     public string SourcePath { get; }
@@ -36,15 +41,13 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
 
     public int Format { get; }
 
-    public double AutoScale => autoScale;
-
-    public double Scale => manualScale ?? AutoScale;
+    public double Scale => scale;
 
     public double DisplayWidth => Width * Scale;
 
     public double DisplayHeight => Height * Scale;
 
-    public string ScaleLabel => manualScale is null ? $"Auto ({FormatScale(Scale)})" : $"{Scale:0}x";
+    public string ScaleLabel => FormatScale(Scale);
 
     public Bitmap? Bitmap { get; }
 
@@ -57,64 +60,34 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
         Bitmap?.Dispose();
     }
 
-    public void SetScale(int? scale)
+    public void SetScale(double scale)
     {
-        manualScale = scale is null ? null : Math.Clamp(scale.Value, 1, MaxScale);
+        this.scale = NormalizeScale(scale);
         OnPropertyChanged(nameof(Scale));
         OnPropertyChanged(nameof(DisplayWidth));
         OnPropertyChanged(nameof(DisplayHeight));
         OnPropertyChanged(nameof(ScaleLabel));
     }
 
-    public void SetViewportSize(double width, double height)
+    public double CalculateViewportFitScale(double viewportWidth, double viewportHeight)
     {
-        if (width <= 0 || height <= 0)
+        if (viewportWidth <= 0 || viewportHeight <= 0)
         {
-            return;
+            return DefaultScale;
         }
 
-        var nextAutoScale = CalculateViewportAutoScale(Width, Height, width, height);
-        if (Math.Abs(nextAutoScale - autoScale) < 0.0001)
-        {
-            return;
-        }
-
-        autoScale = nextAutoScale;
-        OnPropertyChanged(nameof(AutoScale));
-        if (manualScale is null)
-        {
-            OnPropertyChanged(nameof(Scale));
-            OnPropertyChanged(nameof(DisplayWidth));
-            OnPropertyChanged(nameof(DisplayHeight));
-            OnPropertyChanged(nameof(ScaleLabel));
-        }
+        return CalculateViewportFitScale(Width, Height, viewportWidth, viewportHeight);
     }
 
-    private static double CalculateFallbackAutoScale(int width, int height)
+    public static double CalculateViewportFitScale(
+        int imageWidth,
+        int imageHeight,
+        double viewportWidth,
+        double viewportHeight)
     {
-        var longestSide = Math.Max(width, height);
-        if (longestSide <= 0)
+        if (imageWidth <= 0 || imageHeight <= 0 || viewportWidth <= 0 || viewportHeight <= 0)
         {
-            return 1;
-        }
-
-        const int targetSmallLongestSide = 320;
-        const int shrinkThresholdLongestSide = 1024;
-        const int targetLargeLongestSide = 960;
-        if (longestSide > shrinkThresholdLongestSide)
-        {
-            return (double)targetLargeLongestSide / longestSide;
-        }
-
-        var integerScale = Math.Floor((double)targetSmallLongestSide / longestSide);
-        return Math.Clamp(integerScale, 1, MaxScale);
-    }
-
-    private static double CalculateViewportAutoScale(int imageWidth, int imageHeight, double viewportWidth, double viewportHeight)
-    {
-        if (imageWidth <= 0 || imageHeight <= 0)
-        {
-            return 1;
+            return DefaultScale;
         }
 
         var targetWidth = Math.Max(1, viewportWidth * ViewportFillRatio);
@@ -122,17 +95,37 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
         var fitScale = Math.Min(targetWidth / imageWidth, targetHeight / imageHeight);
         if (fitScale >= 1)
         {
-            return Math.Clamp(Math.Floor(fitScale), 1, MaxScale);
+            return NormalizeScale(Math.Floor(fitScale));
         }
 
-        return Math.Clamp(fitScale, 0.01, 1);
+        return NormalizeScale(fitScale);
+    }
+
+    private static double NormalizeScale(double value)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value))
+        {
+            return DefaultScale;
+        }
+
+        return Math.Clamp(value, MinScale, MaxScale);
     }
 
     private static string FormatScale(double scale)
     {
+        if (Math.Abs(scale - 0.25) < 0.0001)
+        {
+            return "0.25x";
+        }
+
+        if (Math.Abs(scale - 0.5) < 0.0001)
+        {
+            return "0.5x";
+        }
+
         if (scale >= 1)
         {
-            return scale.ToString("0", CultureInfo.InvariantCulture) + "x";
+            return scale.ToString("0.##", CultureInfo.InvariantCulture) + "x";
         }
 
         var percent = Math.Max(1, (int)Math.Round(scale * 100, MidpointRounding.AwayFromZero));

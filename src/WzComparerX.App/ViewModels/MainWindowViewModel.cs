@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WzComparerX.App.Services;
@@ -17,6 +18,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private int imageContentRequestId;
     private double canvasPreviewViewportWidth;
     private double canvasPreviewViewportHeight;
+    private double canvasPreviewScale = ResourceCanvasPreviewViewModel.DefaultScale;
     private ResourceImageSelectorTarget? currentImageContentTarget;
 
     [ObservableProperty]
@@ -464,14 +466,22 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (string.Equals(scale, "auto", StringComparison.OrdinalIgnoreCase))
         {
-            CanvasPreview.SetScale(null);
+            canvasPreviewScale = CanvasPreview.CalculateViewportFitScale(
+                canvasPreviewViewportWidth,
+                canvasPreviewViewportHeight);
+            CanvasPreview.SetScale(canvasPreviewScale);
             return;
         }
 
         var normalizedScale = scale?.Trim().TrimEnd('x', 'X');
-        if (int.TryParse(normalizedScale, out var parsedScale))
+        if (double.TryParse(
+            normalizedScale,
+            NumberStyles.Float,
+            CultureInfo.InvariantCulture,
+            out var parsedScale))
         {
             CanvasPreview.SetScale(parsedScale);
+            canvasPreviewScale = CanvasPreview.Scale;
         }
     }
 
@@ -490,7 +500,6 @@ public partial class MainWindowViewModel : ViewModelBase
 
         canvasPreviewViewportWidth = width;
         canvasPreviewViewportHeight = height;
-        CanvasPreview?.SetViewportSize(width, height);
     }
 
     private async Task LoadCanvasPreviewAsync(
@@ -584,9 +593,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ReplaceCanvasPreview(ResourceCanvasPreviewViewModel? preview)
     {
         var previous = CanvasPreview;
-        if (preview is not null && canvasPreviewViewportWidth > 0 && canvasPreviewViewportHeight > 0)
+        if (preview is not null)
         {
-            preview.SetViewportSize(canvasPreviewViewportWidth, canvasPreviewViewportHeight);
+            preview.SetScale(canvasPreviewScale);
         }
 
         CanvasPreview = preview;

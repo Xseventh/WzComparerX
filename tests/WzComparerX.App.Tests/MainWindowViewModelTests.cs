@@ -594,7 +594,7 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public void CanvasPreviewViewModel_ScalesSmallImagesForDisplay()
+    public void CanvasPreviewViewModel_DefaultsToOneToOneScale()
     {
         var document = new ResourceCanvasImageDocument(
             SourcePath: "Canvas.wz",
@@ -607,14 +607,14 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        Assert.Equal(4d, preview.Scale);
-        Assert.Equal("Auto (4x)", preview.ScaleLabel);
-        Assert.Equal(224d, preview.DisplayWidth);
-        Assert.Equal(280d, preview.DisplayHeight);
+        Assert.Equal(1d, preview.Scale);
+        Assert.Equal("1x", preview.ScaleLabel);
+        Assert.Equal(56d, preview.DisplayWidth);
+        Assert.Equal(70d, preview.DisplayHeight);
     }
 
     [Fact]
-    public void CanvasPreviewViewModel_FitsAutoScaleToPreviewViewport()
+    public void CanvasPreviewViewModel_CalculatesViewportFitScaleWithoutApplyingIt()
     {
         var document = new ResourceCanvasImageDocument(
             SourcePath: "Canvas.wz",
@@ -627,16 +627,17 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        preview.SetViewportSize(width: 300, height: 220);
+        var fitScale = preview.CalculateViewportFitScale(viewportWidth: 300, viewportHeight: 220);
 
-        Assert.Equal(2d, preview.Scale);
-        Assert.Equal("Auto (2x)", preview.ScaleLabel);
-        Assert.Equal(112d, preview.DisplayWidth);
-        Assert.Equal(140d, preview.DisplayHeight);
+        Assert.Equal(2d, fitScale);
+        Assert.Equal(1d, preview.Scale);
+        Assert.Equal("1x", preview.ScaleLabel);
+        Assert.Equal(56d, preview.DisplayWidth);
+        Assert.Equal(70d, preview.DisplayHeight);
     }
 
     [Fact]
-    public void CanvasPreviewViewModel_AllowsManualDisplayScale()
+    public void CanvasPreviewViewModel_AllowsManualFractionalDisplayScale()
     {
         var document = new ResourceCanvasImageDocument(
             SourcePath: "Canvas.wz",
@@ -649,13 +650,19 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        Assert.Equal(3d, preview.Scale);
-        Assert.Equal("Auto (3x)", preview.ScaleLabel);
+        preview.SetScale(0.25);
 
-        preview.SetViewportSize(width: 360, height: 180);
+        Assert.Equal(0.25d, preview.Scale);
+        Assert.Equal("0.25x", preview.ScaleLabel);
+        Assert.Equal(24d, preview.DisplayWidth);
+        Assert.Equal(15d, preview.DisplayHeight);
 
-        Assert.Equal(2d, preview.Scale);
-        Assert.Equal("Auto (2x)", preview.ScaleLabel);
+        preview.SetScale(0.5);
+
+        Assert.Equal(0.5d, preview.Scale);
+        Assert.Equal("0.5x", preview.ScaleLabel);
+        Assert.Equal(48d, preview.DisplayWidth);
+        Assert.Equal(30d, preview.DisplayHeight);
 
         preview.SetScale(8);
 
@@ -664,14 +671,14 @@ public class MainWindowViewModelTests
         Assert.Equal(768d, preview.DisplayWidth);
         Assert.Equal(480d, preview.DisplayHeight);
 
-        preview.SetScale(null);
+        preview.SetScale(0.001);
 
-        Assert.Equal(2d, preview.Scale);
-        Assert.Equal("Auto (2x)", preview.ScaleLabel);
+        Assert.Equal(0.01d, preview.Scale);
+        Assert.Equal("1%", preview.ScaleLabel);
     }
 
     [Fact]
-    public void CanvasPreviewViewModel_ShrinksLargeImagesInAutoMode()
+    public void CanvasPreviewViewModel_CalculatesLargeImageViewportFitScale()
     {
         var document = new ResourceCanvasImageDocument(
             SourcePath: "Map.wz",
@@ -684,41 +691,11 @@ public class MainWindowViewModelTests
             Pixels: []);
         var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
 
-        Assert.Equal(0.46875d, preview.Scale, precision: 5);
-        Assert.Equal("Auto (47%)", preview.ScaleLabel);
-        Assert.Equal(960d, preview.DisplayWidth);
-        Assert.Equal(480d, preview.DisplayHeight);
-
-        preview.SetScale(1);
-
-        Assert.Equal(1d, preview.Scale);
-        Assert.Equal("1x", preview.ScaleLabel);
-        Assert.Equal(2048d, preview.DisplayWidth);
-
-        preview.SetScale(null);
-
-        Assert.Equal(0.46875d, preview.Scale, precision: 5);
-        Assert.Equal("Auto (47%)", preview.ScaleLabel);
-    }
-
-    [Fact]
-    public void CanvasPreviewViewModel_ShrinksLargeImagesToPreviewViewport()
-    {
-        var document = new ResourceCanvasImageDocument(
-            SourcePath: "Map.wz",
-            Selector: "LargeMap.img",
-            ValuePath: "miniMap/canvas",
-            Width: 2048,
-            Height: 1024,
-            Format: 1,
-            PixelFormat: "bgra8888",
-            Pixels: []);
-        var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
-
-        preview.SetViewportSize(width: 800, height: 400);
+        var fitScale = preview.CalculateViewportFitScale(viewportWidth: 800, viewportHeight: 400);
+        preview.SetScale(fitScale);
 
         Assert.Equal(0.3515625d, preview.Scale, precision: 6);
-        Assert.Equal("Auto (35%)", preview.ScaleLabel);
+        Assert.Equal("35%", preview.ScaleLabel);
         Assert.Equal(720d, preview.DisplayWidth);
         Assert.Equal(360d, preview.DisplayHeight);
     }
@@ -742,16 +719,30 @@ public class MainWindowViewModelTests
             viewModel.SelectedImageContentNode = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children);
             await WaitForCanvasPreviewAsync(viewModel);
 
-            viewModel.SetCanvasPreviewScaleCommand.Execute("4");
+            viewModel.SetCanvasPreviewScaleCommand.Execute("0.5");
 
-            Assert.Equal(4d, viewModel.CanvasPreview?.Scale);
-            Assert.Equal("4x", viewModel.CanvasPreview?.ScaleLabel);
-            Assert.Equal(8d, viewModel.CanvasPreview?.DisplayWidth);
+            Assert.Equal(0.5d, viewModel.CanvasPreview?.Scale);
+            Assert.Equal("0.5x", viewModel.CanvasPreview?.ScaleLabel);
+            Assert.Equal(1d, viewModel.CanvasPreview?.DisplayWidth);
+
+            await viewModel.LoadCanvasPreviewAsync(viewModel.SelectedImageContentNode);
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.Equal(0.5d, viewModel.CanvasPreview?.Scale);
+            Assert.Equal("0.5x", viewModel.CanvasPreview?.ScaleLabel);
+
+            viewModel.SetCanvasPreviewViewport(width: 300, height: 220);
 
             viewModel.SetCanvasPreviewScaleCommand.Execute("auto");
 
             Assert.Equal(16d, viewModel.CanvasPreview?.Scale);
-            Assert.Equal("Auto (16x)", viewModel.CanvasPreview?.ScaleLabel);
+            Assert.Equal("16x", viewModel.CanvasPreview?.ScaleLabel);
+
+            await viewModel.LoadCanvasPreviewAsync(viewModel.SelectedImageContentNode);
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.Equal(16d, viewModel.CanvasPreview?.Scale);
+            Assert.Equal("16x", viewModel.CanvasPreview?.ScaleLabel);
         }
         finally
         {

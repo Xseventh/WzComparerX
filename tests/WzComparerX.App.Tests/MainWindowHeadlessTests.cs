@@ -416,12 +416,12 @@ public class MainWindowHeadlessTests
                 Assert.NotNull(image);
                 Assert.NotNull(image.Source);
                 Assert.Equal("Loaded Canvas preview: Canvas.img/icon (2x1)", status?.Text);
-                Assert.Equal("Auto (16x)", scale?.Text);
+                Assert.Equal("1x", scale?.Text);
                 Assert.NotNull(autoButton);
                 Assert.True(viewModel.HasCanvasPreview);
                 Assert.Equal(2, viewModel.CanvasPreview?.Width);
                 Assert.Equal(1, viewModel.CanvasPreview?.Height);
-                Assert.Equal(16d, viewModel.CanvasPreview?.Scale);
+                Assert.Equal(1d, viewModel.CanvasPreview?.Scale);
                 AssertPngCanBeSaved(frame);
                 SaveScreenshotArtifact(frame, "main-window-canvas-preview-1100x720.png");
             }
@@ -454,7 +454,6 @@ public class MainWindowHeadlessTests
             CanvasPreview = new ResourceCanvasPreviewViewModel(document, bitmap: null),
             CanvasPreviewStatus = "Loaded Canvas preview: LargeMap.img/miniMap/canvas (2048x1024)"
         };
-        var fallbackScale = viewModel.CanvasPreview.Scale;
         var window = CreateWindow(viewModel, width: 900, height: 640);
 
         try
@@ -462,14 +461,22 @@ public class MainWindowHeadlessTests
             var tabControl = window.FindControl<TabControl>("DetailsTabControl");
             Assert.NotNull(tabControl);
             tabControl.SelectedIndex = 2;
-            using var frame = CaptureFrame(window);
+            using var initialFrame = CaptureFrame(window);
             var scrollViewer = window.FindControl<ScrollViewer>("CanvasPreviewScrollViewer");
 
             Assert.NotNull(scrollViewer);
-            Assert.True(viewModel.CanvasPreview.Scale < fallbackScale);
-            Assert.True(viewModel.CanvasPreview.DisplayWidth <= (scrollViewer.Bounds.Width * 0.91) + 1);
-            Assert.True(viewModel.CanvasPreview.DisplayHeight <= (scrollViewer.Bounds.Height * 0.91) + 1);
-            Assert.StartsWith("Auto (", viewModel.CanvasPreview.ScaleLabel, StringComparison.Ordinal);
+            Assert.Equal(1d, viewModel.CanvasPreview.Scale);
+            var previewViewportWidth = scrollViewer.Bounds.Width;
+            var previewViewportHeight = scrollViewer.Bounds.Height;
+            viewModel.SetCanvasPreviewViewport(previewViewportWidth, previewViewportHeight);
+
+            viewModel.SetCanvasPreviewScaleCommand.Execute("auto");
+            using var frame = CaptureFrame(window);
+
+            Assert.True(viewModel.CanvasPreview.Scale < 1);
+            Assert.True(viewModel.CanvasPreview.DisplayWidth <= (previewViewportWidth * 0.91) + 1);
+            Assert.True(viewModel.CanvasPreview.DisplayHeight <= (previewViewportHeight * 0.91) + 1);
+            Assert.DoesNotContain("Auto", viewModel.CanvasPreview.ScaleLabel, StringComparison.Ordinal);
             AssertPngCanBeSaved(frame);
             SaveScreenshotArtifact(frame, "main-window-canvas-preview-auto-viewport-900x640.png");
         }

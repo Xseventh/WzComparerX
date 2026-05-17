@@ -175,6 +175,12 @@
                                             Content="Auto"
                                             Command="{Binding SetCanvasPreviewScaleCommand}"
                                             CommandParameter="auto"/>
+                                    <Button Content="0.25x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="0.25"/>
+                                    <Button Content="0.5x"
+                                            Command="{Binding SetCanvasPreviewScaleCommand}"
+                                            CommandParameter="0.5"/>
                                     <Button Content="1x"
                                             Command="{Binding SetCanvasPreviewScaleCommand}"
                                             CommandParameter="1"/>
