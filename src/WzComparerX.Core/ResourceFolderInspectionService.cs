@@ -128,12 +128,17 @@ public sealed class ResourceFolderInspectionService
 
     private static bool IsResourcePackagePath(string path)
     {
-        return IsWzPath(path) || IsMsContainerPath(path);
+        return (IsWzPath(path) && !IsListFilePath(path)) || IsMsContainerPath(path);
     }
 
     private static bool IsWzPath(string path)
     {
         return string.Equals(Path.GetExtension(path), ".wz", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsListFilePath(string path)
+    {
+        return string.Equals(Path.GetFileName(path), "List.wz", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsMsContainerPath(string path)

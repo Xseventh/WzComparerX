@@ -217,7 +217,9 @@ it decodes no-op/KMS/GMS string-list records, excludes the `dummy` sentinel, and
 projects the decoded list through `inspect` as `format: listwz`. This is still
 only the observable helper-file slice; it is not yet wired into PKG1 string
 key/profile detection, and real `List.wz` smoke still waits for an older-client
-sample.
+sample. Folder inspection skips `List.wz` so client folder browsing does not
+misreport this helper as an invalid WZ package; open `List.wz` directly with
+`inspect` when its decoded entries are needed.
 
 A user-supplied KMS/KMST-style PKG2 sample at local path category
 `~/Downloads/Item_000.wz` is used for manual smoke only and must not be

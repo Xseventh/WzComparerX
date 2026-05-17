@@ -416,9 +416,10 @@ Local GMS smoke status:
   older-client sample.
   `List.wz` now has a first-slice WzLib reader and Core `inspect` projection
   for no-op/KMS/GMS string-list records. It remains a helper file rather than a
-  package tree, is not yet wired into PKG1 string key/profile selection, and
-  still needs real older-client smoke because the current local GMS install
-  lacks a sample.
+  package tree; folder inspection skips it rather than surfacing it as an
+  invalid WZ package. It is not yet wired into PKG1 string key/profile
+  selection, and still needs real older-client smoke because the current local
+  GMS install lacks a sample.
 - A user-supplied local KMS/KMST-style PKG2 sample at `~/Downloads/Item_000.wz`
   is used for manual smoke only and is not committed. WCX detects it as
   `pkg2_kmst1200` with `hashVersion = 0xb0da16f2`, lists root images

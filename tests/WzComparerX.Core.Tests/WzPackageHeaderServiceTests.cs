@@ -205,6 +205,37 @@ public class WzPackageHeaderServiceTests
     }
 
     [Fact]
+    public async Task InspectFolder_SkipsListWzHelperFile()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-folder-listwz-inspection-");
+        var wzPath = Path.Combine(directory.FullName, "Base.wz");
+        var listPath = Path.Combine(directory.FullName, "List.wz");
+        File.WriteAllBytes(wzPath, CreatePkg1(copyright: "Copyright", encryptedVersionBytes: [0x7b, 0x00]));
+        await File.WriteAllBytesAsync(
+            listPath,
+            WzListFileFixture.Create(
+                WzStringEncryptionKind.None,
+                "dummy",
+                "Base/Character.wz"));
+        var service = new ResourceFolderInspectionService();
+
+        try
+        {
+            var document = await service.InspectAsync(directory.FullName);
+
+            Assert.Equal("folder", document.Format);
+            Assert.Equal("1 packages", document.Root.DisplayValue);
+            var package = Assert.Single(document.Root.Children);
+            Assert.Equal("Base.wz", package.Name);
+            Assert.DoesNotContain(document.Root.Children, child => child.Name == "List.wz");
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task InspectDebug_FormatsDirectoryDiagnostics()
     {
         var path = WriteTemporaryPkg1DirectoryFile();
