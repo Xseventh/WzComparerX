@@ -230,6 +230,9 @@ M4 完成后已经开始低风险架构整理：
   `Cursor/0/0/_outlink` 到 `UI/_Canvas/_Canvas_000.wz` 的 Canvas preview
   解析路径；对应 Avalonia Headless smoke 会从 Resources 选中 `Basic.img`，
   再从 IMG Content 选中 `_outlink` 并验证 Preview 出图。
+- 本地 GMS UI RawData smoke 覆盖了 `UI/UI_000.wz` / `Login.img` 中
+  `ClassSelect/back/1/110/skeleton.skel` 的 RawData metadata 和稳定
+  unsupported payload diagnostic。
 - 本地 GMS Vector smoke 覆盖了 `Character/Character_000.wz` 的角色锚点
   Vector，以及 `Packs/Mob_00000.ms` 通过 MS image payload 路径解析出的
   Mob frame Vector。Convex2D 目前仍只有 synthetic fixture 覆盖，等待真实样本。

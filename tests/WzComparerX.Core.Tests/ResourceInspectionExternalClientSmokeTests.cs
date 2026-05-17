@@ -467,6 +467,40 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalExternalClientUiImage_ReadsRawDataMetadata()
+    {
+        var uiPath = ExternalClientSmokeData.FindFirstFile("UI", "UI_000.wz");
+        if (uiPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            uiPath,
+            "Login.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 6,
+                IncludeDebugMetadata: true));
+
+        var rawData = AssertNode(inspection.Root, "ClassSelect/back/1/110/skeleton.skel", "rawData");
+
+        Assert.Equal("version=1, dataLength=58688, dataOffset=15358714", rawData.DisplayValue);
+        Assert.Equal("Login.img", rawData.Identity?.ImageSelector);
+        Assert.Equal("ClassSelect/back/1/110/skeleton.skel", rawData.Identity?.ValuePath);
+        Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "rawData"));
+        Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 1));
+        Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 58688));
+        Assert.Contains(rawData.Diagnostics ?? [], diagnostic =>
+            diagnostic.Code == ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported &&
+            diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
+            diagnostic.Source == ResourceDiagnosticSources.Parser &&
+            diagnostic.Path == "ClassSelect/back/1/110/skeleton.skel");
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
     public async Task CanvasOptionalExternalClientSkillImage_PreviewsBc7Canvas()
     {
         var skillCanvasPath = ExternalClientSmokeData.FindFirstFile("Skill", "_Canvas", "_Canvas_097.wz");

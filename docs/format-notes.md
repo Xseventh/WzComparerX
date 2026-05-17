@@ -207,6 +207,11 @@ UI link smoke now covers `Data/UI/UI_000.wz` selector `Basic.img`:
 `UI/_Canvas/Basic.img/Cursor/0/0` through
 `Data/UI/_Canvas/_Canvas_000.wz`, and the Canvas preview service loads the
 linked 24x28 format-1 direct-zlib pixels.
+UI RawData smoke now covers `Data/UI/UI_000.wz` selector `Login.img`:
+`ClassSelect/back/1/110/skeleton.skel` inspects as RawData version `1`,
+data length `58688`, and data offset `15358714`, with the stable
+`wcx.payload.rawData.unsupported` info diagnostic for unsupported payload
+decoding.
 Vector smoke now covers two real-client paths without committing client data:
 `Data/Character/Character_000.wz` selector `00002000.img` exposes
 `walk1/0/body/origin` as `(19, 32)` and `walk1/0/arm/origin` as `(6, 8)`,

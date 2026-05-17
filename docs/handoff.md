@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+e580ba9 Add real Vector smoke coverage
 7e424ed Add UI outlink App smoke
 9872b75 Add UI canvas outlink smoke
 aa53306 Refresh handoff recent commits
@@ -426,6 +427,10 @@ Local GMS smoke status:
   `UI_000.wz`, selects `Basic.img`, selects the `_outlink` from IMG Content,
   and verifies the Preview tab renders the linked Canvas without App-layer link
   resolution drift.
+- Optional local GMS UI RawData smoke covers `UI/UI_000.wz` selector
+  `Login.img`, path `ClassSelect/back/1/110/skeleton.skel`, preserving RawData
+  version, data length, data offset, identity value path, and the stable
+  `wcx.payload.rawData.unsupported` info diagnostic.
 - Optional local GMS Vector smoke now covers
   `Character/Character_000.wz` selector `00002000.img`
   (`walk1/0/body/origin`, `walk1/0/arm/origin`) and
