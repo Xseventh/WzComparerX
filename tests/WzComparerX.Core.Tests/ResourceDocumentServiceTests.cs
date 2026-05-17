@@ -569,10 +569,15 @@ public class ResourceDocumentServiceTests
             var canvasPackage = Assert.Single(canvas.Children, child => child.Name == "_Canvas.wz");
             Assert.Equal("package", canvasPackage.Kind);
             Assert.Equal(canvasPackagePath, canvasPackage.Path);
-            Assert.Contains(canvasPackage.Children, child => child.Name == "Canvas.img" && child.Kind == "image");
+            var canvasImage = Assert.Single(canvasPackage.Children, child => child.Name == "Canvas.img");
+            Assert.Equal("image", canvasImage.Kind);
+            Assert.Equal(canvasPackagePath, canvasImage.Identity?.PackagePath);
+            Assert.Equal("Canvas.img", canvasImage.Identity?.ImageSelector);
             var shardImage = Assert.Single(primaryPackage.Children, child => child.Name == "BasicEff.img");
             Assert.Equal("image", shardImage.Kind);
             Assert.Equal($"{effectShardPath}/BasicEff.img", shardImage.Path);
+            Assert.Equal(effectShardPath, shardImage.Identity?.PackagePath);
+            Assert.Equal("BasicEff.img", shardImage.Identity?.ImageSelector);
         }
         finally
         {

@@ -27,6 +27,8 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+31bfc34 Add real Convex2D smoke coverage
+e95e094 Extract inspection value projection
 2185d4c Add UI RawData smoke coverage
 e580ba9 Add real Vector smoke coverage
 7e424ed Add UI outlink App smoke
