@@ -212,6 +212,11 @@ UI RawData smoke now covers `Data/UI/UI_000.wz` selector `Login.img`:
 data length `58688`, and data offset `15358714`, with the stable
 `wcx.payload.rawData.unsupported` info diagnostic for unsupported payload
 decoding.
+UI Canvas#Video smoke now covers `Data/UI/UI_000.wz` selector
+`UIGachapon.img`: `royalStyle/openvideo/intro` inspects as video metadata with
+unknown value `1`, data length `1943143`, and data offset `27488749`, with the
+stable `wcx.payload.video.unsupported` info diagnostic for unsupported payload
+decoding.
 Vector smoke now covers two real-client paths without committing client data:
 `Data/Character/Character_000.wz` selector `00002000.img` exposes
 `walk1/0/body/origin` as `(19, 32)` and `walk1/0/arm/origin` as `(6, 8)`,

@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+6d50d36 Guard linked image identity
 31bfc34 Add real Convex2D smoke coverage
 e95e094 Extract inspection value projection
 2185d4c Add UI RawData smoke coverage
@@ -438,6 +439,10 @@ Local GMS smoke status:
   `Login.img`, path `ClassSelect/back/1/110/skeleton.skel`, preserving RawData
   version, data length, data offset, identity value path, and the stable
   `wcx.payload.rawData.unsupported` info diagnostic.
+- Optional local GMS UI Canvas#Video smoke covers `UI/UI_000.wz` selector
+  `UIGachapon.img`, path `royalStyle/openvideo/intro`, preserving video
+  metadata, identity value path, and the stable
+  `wcx.payload.video.unsupported` info diagnostic.
 - Optional local GMS Vector smoke now covers
   `Character/Character_000.wz` selector `00002000.img`
   (`walk1/0/body/origin`, `walk1/0/arm/origin`) and

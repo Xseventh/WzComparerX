@@ -237,6 +237,9 @@ M4 完成后已经开始低风险架构整理：
 - 本地 GMS UI RawData smoke 覆盖了 `UI/UI_000.wz` / `Login.img` 中
   `ClassSelect/back/1/110/skeleton.skel` 的 RawData metadata 和稳定
   unsupported payload diagnostic。
+- 本地 GMS UI Canvas#Video smoke 覆盖了 `UI/UI_000.wz` / `UIGachapon.img`
+  中 `royalStyle/openvideo/intro` 的 video payload metadata 和稳定
+  unsupported payload diagnostic。
 - 本地 GMS Vector smoke 覆盖了 `Character/Character_000.wz` 的角色锚点
   Vector，以及 `Packs/Mob_00000.ms` 通过 MS image payload 路径解析出的
   Mob frame Vector。Convex2D smoke 覆盖了 `UI/UI_000.wz` / `RunnerGame.img`

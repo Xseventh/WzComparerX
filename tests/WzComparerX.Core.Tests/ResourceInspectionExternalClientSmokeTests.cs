@@ -529,6 +529,40 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalExternalClientUiImage_ReadsVideoMetadata()
+    {
+        var uiPath = ExternalClientSmokeData.FindFirstFile("UI", "UI_000.wz");
+        if (uiPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            uiPath,
+            "UIGachapon.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 5,
+                IncludeDebugMetadata: true));
+
+        var video = AssertNode(inspection.Root, "royalStyle/openvideo/intro", "video");
+
+        Assert.Equal("unknown=1, dataLength=1943143, dataOffset=27488749", video.DisplayValue);
+        Assert.Equal("UIGachapon.img", video.Identity?.ImageSelector);
+        Assert.Equal("royalStyle/openvideo/intro", video.Identity?.ValuePath);
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "video"));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "unknown" && Equals(item.Value, 1));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 1943143));
+        Assert.Contains(video.Diagnostics ?? [], diagnostic =>
+            diagnostic.Code == ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported &&
+            diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
+            diagnostic.Source == ResourceDiagnosticSources.Parser &&
+            diagnostic.Path == "royalStyle/openvideo/intro");
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
     public async Task CanvasOptionalExternalClientSkillImage_PreviewsBc7Canvas()
     {
         var skillCanvasPath = ExternalClientSmokeData.FindFirstFile("Skill", "_Canvas", "_Canvas_097.wz");
