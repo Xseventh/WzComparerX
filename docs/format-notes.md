@@ -258,6 +258,12 @@ inspect successfully as directory tables and `Packs/Skill_00002.ms` ->
 `.mn` is currently fixture-covered only because the local client has no `.mn`
 sample.
 
+Although `.ms` and `.mn` share the same WC loader path, WCX preserves the actual
+container extension in Core inspection output: `.ms` reports `format: ms` and
+`containerKind: ms`, while `.mn` reports `format: mn` and `containerKind: mn`.
+The unsupported diagnostic code remains `wcx.package.ms.directoryUnsupported`
+because the same MS/MN container reader owns both shapes.
+
 Canvas preview now uses the same MS/MN image payload path as `inspect`. Synthetic
 coverage verifies direct MS Canvas payloads and same-container MS `_outlink`
 resolution. A local GMS smoke run also verified `Packs/Mob_00000.ms` selector

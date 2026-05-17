@@ -346,6 +346,7 @@ public class CliApplicationTests
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Empty, result.Error);
             Assert.Contains("format: ms", result.Output);
+            Assert.Contains("containerKind: ms", result.Output);
             Assert.Contains("version: 4", result.Output);
             Assert.Contains("entryCount: 1", result.Output);
             Assert.Contains("1000.img [image]", result.Output);
@@ -468,7 +469,8 @@ public class CliApplicationTests
 
             Assert.Equal(0, result.ExitCode);
             Assert.Equal(string.Empty, result.Error);
-            Assert.Contains("format: ms", result.Output);
+            Assert.Contains("format: mn", result.Output);
+            Assert.Contains("containerKind: mn", result.Output);
             Assert.Contains("version: 4", result.Output);
             Assert.Contains("entryCount: 1", result.Output);
             Assert.Contains("1000.img [image]", result.Output);

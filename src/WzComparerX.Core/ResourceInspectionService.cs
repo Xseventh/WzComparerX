@@ -38,12 +38,12 @@ public sealed class ResourceInspectionService
             return await InspectListFileAsync(path, options, cancellationToken);
         }
 
-        if (IsMsContainerPath(path) && selector is not null)
+        if (MsMnContainerKind.IsPath(path) && selector is not null)
         {
             return await InspectMsImageAsync(path, selector, options, cancellationToken);
         }
 
-        if (IsMsContainerPath(path))
+        if (MsMnContainerKind.IsPath(path))
         {
             return await InspectMsContainerAsync(path, options, cancellationToken);
         }
@@ -197,6 +197,7 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options)
     {
         var fullPath = Path.GetFullPath(path);
+        var containerKind = MsMnContainerKind.FromPath(fullPath);
         var rootName = Path.GetFileName(fullPath);
         if (string.IsNullOrWhiteSpace(rootName))
         {
@@ -208,13 +209,13 @@ public sealed class ResourceInspectionService
             rootName,
             "package",
             rootName,
-            "ms",
+            containerKind,
             Identity: new ResourceInspectionIdentity(PackagePath: fullPath));
         return new ResourceInspectionDocument(
             fullPath,
-            "ms",
+            containerKind,
             root,
-            options.IncludeDebugMetadata ? [new ResourceInspectionMetadata("containerKind", "ms")] : null,
+            options.IncludeDebugMetadata ? [new ResourceInspectionMetadata("containerKind", containerKind)] : null,
             [diagnostic]);
     }
 
@@ -276,11 +277,12 @@ public sealed class ResourceInspectionService
                     };
                 }
 
+                var containerKind = MsMnContainerKind.FromPath(inspection.Header.SourcePath);
                 return new ResourceInspectionDocument(
                     inspection.Header.SourcePath,
-                    "ms",
+                    containerKind,
                     root,
-                    options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null,
+                    options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection, containerKind) : null,
                     root.Diagnostics);
             }
             catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
@@ -301,11 +303,12 @@ public sealed class ResourceInspectionService
         ResourceInspectionOptions options)
     {
         var imagePath = entry?.Path ?? selector;
+        var containerKind = MsMnContainerKind.FromPath(inspection.Header.SourcePath);
         var root = new ResourceInspectionNode(
             Path.GetFileName(imagePath),
             "image",
             imagePath,
-            "ms",
+            containerKind,
             DebugMetadata: options.IncludeDebugMetadata && entry is not null
                 ? BuildMsEntryMetadata(entry)
                 : null,
@@ -315,9 +318,9 @@ public sealed class ResourceInspectionService
                 ImageSelector: imagePath));
         return new ResourceInspectionDocument(
             inspection.Header.SourcePath,
-            "ms",
+            containerKind,
             root,
-            options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null,
+            options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection, containerKind) : null,
             root.Diagnostics);
     }
 
@@ -325,6 +328,7 @@ public sealed class ResourceInspectionService
         WzMsContainerInspection inspection,
         ResourceInspectionOptions options)
     {
+        var containerKind = MsMnContainerKind.FromPath(inspection.Header.SourcePath);
         var rootName = Path.GetFileName(inspection.Header.SourcePath);
         if (string.IsNullOrWhiteSpace(rootName))
         {
@@ -335,7 +339,7 @@ public sealed class ResourceInspectionService
             rootName,
             "package",
             rootName,
-            "ms",
+            containerKind,
             new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath));
         foreach (var entry in inspection.Entries)
         {
@@ -357,16 +361,9 @@ public sealed class ResourceInspectionService
 
         return new ResourceInspectionDocument(
             inspection.Header.SourcePath,
-            "ms",
+            containerKind,
             builder.ToNode(),
-            options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection) : null);
-    }
-
-    private static bool IsMsContainerPath(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
+            options.IncludeDebugMetadata ? BuildMsDocumentMetadata(inspection, containerKind) : null);
     }
 
     private static bool IsListFilePath(string path)
@@ -649,11 +646,12 @@ public sealed class ResourceInspectionService
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildMsDocumentMetadata(
-        WzMsContainerInspection inspection)
+        WzMsContainerInspection inspection,
+        string containerKind)
     {
         return
         [
-            new("containerKind", "ms"),
+            new("containerKind", containerKind),
             new("version", inspection.Header.Version),
             new("entryCount", inspection.Header.EntryCount),
             new("headerHash", inspection.Header.HeaderHash),

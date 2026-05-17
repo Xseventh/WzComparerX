@@ -67,13 +67,14 @@ public sealed class ResourceFolderInspectionService
             return ProjectWzPackage(header);
         }
 
-        return await InspectMsPackageAsync(path, cancellationToken);
+        return await InspectMsMnPackageAsync(path, cancellationToken);
     }
 
-    private async Task<ResourceInspectionNode> InspectMsPackageAsync(
+    private async Task<ResourceInspectionNode> InspectMsMnPackageAsync(
         string path,
         CancellationToken cancellationToken)
     {
+        var containerKind = MsMnContainerKind.FromPath(path);
         try
         {
             var inspection = await msContainerReader.ReadAsync(path, cancellationToken);
@@ -81,8 +82,8 @@ public sealed class ResourceFolderInspectionService
                 Path.GetFileName(inspection.Header.SourcePath),
                 "package",
                 inspection.Header.SourcePath,
-                "ms",
-                DebugMetadata: BuildMsPackageMetadata(inspection),
+                containerKind,
+                DebugMetadata: BuildMsPackageMetadata(inspection, containerKind),
                 Identity: new ResourceInspectionIdentity(PackagePath: inspection.Header.SourcePath));
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or EndOfStreamException)
@@ -97,8 +98,8 @@ public sealed class ResourceFolderInspectionService
                 DebugMetadata:
                 [
                     new ResourceInspectionMetadata("valid", false),
-                    new ResourceInspectionMetadata("format", "ms"),
-                    new ResourceInspectionMetadata("containerKind", "ms")
+                    new ResourceInspectionMetadata("format", containerKind),
+                    new ResourceInspectionMetadata("containerKind", containerKind)
                 ],
                 Diagnostics: [diagnostic],
                 Identity: new ResourceInspectionIdentity(PackagePath: fullPath));
@@ -128,7 +129,7 @@ public sealed class ResourceFolderInspectionService
 
     private static bool IsResourcePackagePath(string path)
     {
-        return (IsWzPath(path) && !IsListFilePath(path)) || IsMsContainerPath(path);
+        return (IsWzPath(path) && !IsListFilePath(path)) || MsMnContainerKind.IsPath(path);
     }
 
     private static bool IsWzPath(string path)
@@ -139,13 +140,6 @@ public sealed class ResourceFolderInspectionService
     private static bool IsListFilePath(string path)
     {
         return string.Equals(Path.GetFileName(path), "List.wz", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsMsContainerPath(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildPackageMetadata(WzPackageHeader header)
@@ -162,13 +156,14 @@ public sealed class ResourceFolderInspectionService
     }
 
     private static IReadOnlyList<ResourceInspectionMetadata> BuildMsPackageMetadata(
-        WzMsContainerInspection inspection)
+        WzMsContainerInspection inspection,
+        string containerKind)
     {
         return
         [
             new ResourceInspectionMetadata("valid", true),
-            new ResourceInspectionMetadata("format", "ms"),
-            new ResourceInspectionMetadata("containerKind", "ms"),
+            new ResourceInspectionMetadata("format", containerKind),
+            new ResourceInspectionMetadata("containerKind", containerKind),
             new ResourceInspectionMetadata("version", inspection.Header.Version),
             new ResourceInspectionMetadata("entryCount", inspection.Header.EntryCount),
             new ResourceInspectionMetadata("fileSize", inspection.Header.FileSize),

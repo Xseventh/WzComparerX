@@ -184,8 +184,9 @@ public class WzPackageHeaderServiceTests
                 package =>
                 {
                     Assert.Equal("Quest_00001.mn", package.Name);
-                    Assert.Equal("ms", package.DisplayValue);
+                    Assert.Equal("mn", package.DisplayValue);
                     Assert.Equal(mnPath, package.Identity?.PackagePath);
+                    Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "containerKind" && Equals(item.Value, "mn"));
                     Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
                     Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 1));
                 },
@@ -194,6 +195,7 @@ public class WzPackageHeaderServiceTests
                     Assert.Equal("Skill_00002.ms", package.Name);
                     Assert.Equal("ms", package.DisplayValue);
                     Assert.Equal(msPath, package.Identity?.PackagePath);
+                    Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "containerKind" && Equals(item.Value, "ms"));
                     Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
                     Assert.Contains(package.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 1));
                 });

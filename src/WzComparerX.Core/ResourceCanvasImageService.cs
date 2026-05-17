@@ -815,7 +815,7 @@ public sealed class ResourceCanvasImageService
             ResourceInspectionOptions options,
             CancellationToken cancellationToken)
         {
-            if (IsMsContainerPath(path))
+            if (MsMnContainerKind.IsPath(path))
             {
                 var msContext = await WzMsImageInspectionLoader.LoadAsync(
                     path,
@@ -895,13 +895,6 @@ public sealed class ResourceCanvasImageService
         {
             return ownedContext?.DisposeAsync() ?? ValueTask.CompletedTask;
         }
-    }
-
-    private static bool IsMsContainerPath(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
     }
 
 }

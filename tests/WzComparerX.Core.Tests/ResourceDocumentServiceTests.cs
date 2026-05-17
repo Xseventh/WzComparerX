@@ -379,12 +379,13 @@ public class ResourceDocumentServiceTests
                 null,
                 new ResourceInspectionOptions(WzStringEncryptionKind.None, IncludeDebugMetadata: true));
 
-            Assert.Equal("ms", inspection.Format);
+            Assert.Equal("mn", inspection.Format);
             Assert.Null(inspection.Diagnostics);
             Assert.Equal(Path.GetFileName(path), inspection.Root.Name);
             Assert.Equal("package", inspection.Root.Kind);
-            Assert.Equal("ms", inspection.Root.DisplayValue);
+            Assert.Equal("mn", inspection.Root.DisplayValue);
             Assert.Equal(path, inspection.Root.Identity?.PackagePath);
+            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "containerKind" && Equals(item.Value, "mn"));
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 4));
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "entryCount" && Equals(item.Value, 1));
 

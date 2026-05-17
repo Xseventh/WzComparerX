@@ -96,7 +96,7 @@ public static class ResourceInspectionLinkResolver
         var valuePath = imageIndex + 1 < parts.Length ? string.Join('/', parts[(imageIndex + 1)..]) : null;
         var packageSegments = parts[..imageIndex];
         var logicalImageSelector = string.Join('/', parts[..(imageIndex + 1)]);
-        if (IsMsContainerPath(currentPackagePath))
+        if (MsMnContainerKind.IsPath(currentPackagePath))
         {
             var currentMsTarget = await TryResolveImageInMsContainerAsync(
                 currentPackagePath,
@@ -283,7 +283,7 @@ public static class ResourceInspectionLinkResolver
 
         var prefix = packageSegments[0];
         foreach (var path in Directory.EnumerateFiles(packsRoot)
-                     .Where(IsMsContainerPath)
+                     .Where(MsMnContainerKind.IsPath)
                      .Where(path => IsLogicalMsContainerCandidate(path, prefix))
                      .Order(StringComparer.OrdinalIgnoreCase))
         {
@@ -296,13 +296,6 @@ public static class ResourceInspectionLinkResolver
         var fileName = Path.GetFileNameWithoutExtension(path);
         return string.Equals(fileName, prefix, StringComparison.OrdinalIgnoreCase) ||
             fileName.StartsWith(prefix + "_", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool IsMsContainerPath(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return string.Equals(extension, ".ms", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(extension, ".mn", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string? FindDataRoot(string path)

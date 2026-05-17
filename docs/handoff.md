@@ -408,9 +408,11 @@ Local GMS smoke status:
   no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
   `Data/Packs/*.ms` files exist. `.ms` / `.mn` v2/Snow and v4/ChaCha20
   container directory tables now inspect through Core, folder inspection lists
-  `.ms` / `.mn` packages alongside `.wz`, and `.ms` / `.mn` image payloads can
-  be extracted into the existing IMG inspection path. Optional GMS smoke covers
-  all local `Data/Packs/*.ms` directory tables and verifies
+  `.ms` / `.mn` packages alongside `.wz`, `inspect` / folder output preserves
+  the actual container kind (`ms` or `mn`) even though both share the same WC
+  loader path, and `.ms` / `.mn` image payloads can be extracted into the
+  existing IMG inspection path. Optional GMS smoke covers all local
+  `Data/Packs/*.ms` directory tables and verifies
   `Packs/Skill_00002.ms` -> `Skill/15500.img` extraction; synthetic `.mn`
   fixtures lock the same WC loader path while real `.mn` smoke waits for an
   older-client sample.
