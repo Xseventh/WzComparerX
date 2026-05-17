@@ -501,6 +501,34 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalExternalClientUiImage_ReadsConvex2DMetadata()
+    {
+        var uiPath = ExternalClientSmokeData.FindFirstFile("UI", "UI_000.wz");
+        if (uiPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            uiPath,
+            "RunnerGame.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 8,
+                IncludeDebugMetadata: true));
+
+        var convex = AssertNode(inspection.Root, "RunnerGameUI/Object/0/Tile/0/foothold", "convex");
+
+        Assert.Equal("points=4 [(-39, 0), (-39, -25), (39, -25), (39, 0)]", convex.DisplayValue);
+        Assert.Equal("RunnerGame.img", convex.Identity?.ImageSelector);
+        Assert.Equal("RunnerGameUI/Object/0/Tile/0/foothold", convex.Identity?.ValuePath);
+        Assert.Contains(convex.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "convex"));
+        Assert.Contains(convex.DebugMetadata ?? [], item => item.Name == "pointCount" && Equals(item.Value, 4));
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
     public async Task CanvasOptionalExternalClientSkillImage_PreviewsBc7Canvas()
     {
         var skillCanvasPath = ExternalClientSmokeData.FindFirstFile("Skill", "_Canvas", "_Canvas_097.wz");

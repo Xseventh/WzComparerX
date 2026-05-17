@@ -440,8 +440,9 @@ Local GMS smoke status:
   `Character/Character_000.wz` selector `00002000.img`
   (`walk1/0/body/origin`, `walk1/0/arm/origin`) and
   `Packs/Mob_00000.ms` selector `Mob/1150000.img`
-  (`move/0/origin`, `lt`, `rb`, `head`). Convex2D remains synthetic-fixture
-  covered while a real-client sample is still unknown.
+  (`move/0/origin`, `lt`, `rb`, `head`). Convex2D smoke covers
+  `UI/UI_000.wz` selector `RunnerGame.img`, path
+  `RunnerGameUI/Object/0/Tile/0/foothold`, with four polygon points.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

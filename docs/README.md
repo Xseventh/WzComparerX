@@ -239,7 +239,8 @@ M4 完成后已经开始低风险架构整理：
   unsupported payload diagnostic。
 - 本地 GMS Vector smoke 覆盖了 `Character/Character_000.wz` 的角色锚点
   Vector，以及 `Packs/Mob_00000.ms` 通过 MS image payload 路径解析出的
-  Mob frame Vector。Convex2D 目前仍只有 synthetic fixture 覆盖，等待真实样本。
+  Mob frame Vector。Convex2D smoke 覆盖了 `UI/UI_000.wz` / `RunnerGame.img`
+  中 `RunnerGameUI/Object/0/Tile/0/foothold` 的四点 polygon metadata。
 - Canvas preview 的 direct-zlib viewer matrix 已覆盖 `BC7` (`4098`)。
   本地 GMS `Skill/_Canvas/_Canvas_097.wz` / `6414.img` smoke 验证了
   `skill/64141504/effect/1` 的 BC7 预览路径。
