@@ -27,6 +27,8 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+9872b75 Add UI canvas outlink smoke
+aa53306 Refresh handoff recent commits
 c4df81d Resolve package group image selectors
 da76f30 Use full viewport for Canvas preview auto scale
 247060a Make Canvas preview scale fixed
@@ -419,7 +421,10 @@ Local GMS smoke status:
 - Optional local GMS UI link smoke now covers `UI/UI_000.wz` selector
   `Basic.img`: `Cursor/0/0/_outlink` resolves through
   `UI/_Canvas/_Canvas_000.wz` and the Canvas preview service loads the linked
-  24x28 format-1 direct-zlib pixels.
+  24x28 format-1 direct-zlib pixels. A matching Avalonia Headless smoke opens
+  `UI_000.wz`, selects `Basic.img`, selects the `_outlink` from IMG Content,
+  and verifies the Preview tab renders the linked Canvas without App-layer link
+  resolution drift.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

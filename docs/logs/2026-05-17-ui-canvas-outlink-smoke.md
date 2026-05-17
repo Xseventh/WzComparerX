@@ -30,4 +30,5 @@ local GMS `Data` directory:
 dotnet test tests/WzComparerX.Core.Tests/WzComparerX.Core.Tests.csproj -m:1 --filter "FullyQualifiedName~InspectOptionalExternalClientUiImage_ResolvesCanvasOutlinkIdentity|FullyQualifiedName~CanvasOptionalExternalClientUiImage_ResolvesOutlinkPreview"
 ```
 
-Both targeted tests passed. The full build/test pass is expected before commit.
+Both targeted tests passed. Full solution build/test and the App Headless subset
+also passed before commit.

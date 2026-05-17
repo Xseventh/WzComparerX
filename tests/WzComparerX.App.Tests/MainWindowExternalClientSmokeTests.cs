@@ -155,6 +155,72 @@ public class MainWindowExternalClientSmokeTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task MainWindow_OptionalExternalClientUiOutlinkCanvasSmoke()
+    {
+        var uiPath = ExternalClientSmokeData.FindFirstFile("UI", "UI_000.wz");
+        if (uiPath is null)
+        {
+            return;
+        }
+
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "auto"
+        };
+
+        await viewModel.OpenPathAsync(uiPath);
+        var window = CreateWindow(viewModel, width: 1280, height: 800);
+
+        try
+        {
+            var root = Assert.Single(viewModel.RootNodes);
+            Assert.Equal("UI_000.wz", root.Name);
+            Assert.Equal("package", root.Kind);
+
+            var image = Flatten(root)
+                .FirstOrDefault(node => node.Name == "Basic.img");
+            Assert.NotNull(image);
+            viewModel.SelectedNode = image;
+            await WaitForImageContentAsync(viewModel);
+
+            var imageRoot = Assert.Single(viewModel.ImageContentNodes);
+            Assert.Equal("Basic.img", imageRoot.Path);
+            var outlink = Flatten(imageRoot)
+                .FirstOrDefault(node =>
+                    node is { Name: "_outlink", Kind: "string" } &&
+                    string.Equals(node.Path, "Cursor/0/0/_outlink", StringComparison.Ordinal));
+            Assert.NotNull(outlink);
+            Assert.Contains("UI/_Canvas/Basic.img/Cursor/0/0", outlink.DisplayValue, StringComparison.Ordinal);
+
+            viewModel.SelectedImageContentNode = outlink;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            var tabControl = window.FindControl<TabControl>("DetailsTabControl");
+            Assert.NotNull(tabControl);
+            tabControl.SelectedIndex = 2;
+
+            using (var frame = CaptureFrame(window))
+            {
+                SaveScreenshotArtifact(frame, "gms-ui-basic-outlink-canvas-preview.png");
+                AssertPngCanBeSaved(frame);
+            }
+
+            Assert.Equal(24, viewModel.CanvasPreview?.Width);
+            Assert.Equal(28, viewModel.CanvasPreview?.Height);
+            Assert.Equal("Basic.img", viewModel.CanvasPreview?.Selector);
+            Assert.Equal("Cursor/0/0", viewModel.CanvasPreview?.ValuePath);
+            Assert.DoesNotContain(viewModel.ActivityLog, item =>
+                item.Kind == "error" &&
+                item.Message.Contains("Canvas preview failed", StringComparison.Ordinal));
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            window.Close();
+        }
+    }
+
     private static MainWindow CreateWindow(
         MainWindowViewModel viewModel,
         double width,

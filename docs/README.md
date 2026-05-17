@@ -228,7 +228,8 @@ M4 完成后已经开始低风险架构整理：
   logical path 解析到当前 MS container 或匹配的 WZ package group。
 - 本地 GMS UI smoke 也覆盖了 `UI/UI_000.wz` / `Basic.img` 中
   `Cursor/0/0/_outlink` 到 `UI/_Canvas/_Canvas_000.wz` 的 Canvas preview
-  解析路径。
+  解析路径；对应 Avalonia Headless smoke 会从 Resources 选中 `Basic.img`，
+  再从 IMG Content 选中 `_outlink` 并验证 Preview 出图。
 - Canvas preview 的 direct-zlib viewer matrix 已覆盖 `BC7` (`4098`)。
   本地 GMS `Skill/_Canvas/_Canvas_097.wz` / `6414.img` smoke 验证了
   `skill/64141504/effect/1` 的 BC7 预览路径。
