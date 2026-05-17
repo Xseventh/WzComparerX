@@ -416,6 +416,10 @@ Local GMS smoke status:
   `Eqp/Weapon`, and `Eqp/Accessory`, while `Item/Item_000.wz` selector
   `SkillOption.img` exposes `skill`, `socket`, `inc`, and representative
   `skillId` / `reqLevel` int32 values.
+- Optional local GMS UI link smoke now covers `UI/UI_000.wz` selector
+  `Basic.img`: `Cursor/0/0/_outlink` resolves through
+  `UI/_Canvas/_Canvas_000.wz` and the Canvas preview service loads the linked
+  24x28 format-1 direct-zlib pixels.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
   client entry is found.

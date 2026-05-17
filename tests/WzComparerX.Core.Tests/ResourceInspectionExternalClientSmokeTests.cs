@@ -343,6 +343,68 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalExternalClientUiImage_ResolvesCanvasOutlinkIdentity()
+    {
+        var uiPath = ExternalClientSmokeData.FindFirstFile("UI", "UI_000.wz");
+        if (uiPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            uiPath,
+            "Basic.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 4,
+                IncludeDebugMetadata: true));
+
+        var outlink = Flatten(inspection.Root)
+            .FirstOrDefault(node =>
+                node is { Name: "_outlink", Kind: "string" } &&
+                string.Equals(node.Identity?.LinkedTarget, "UI/_Canvas/Basic.img/Cursor/0/0", StringComparison.Ordinal));
+
+        Assert.NotNull(outlink);
+        Assert.NotNull(outlink.Identity?.ResolvedLinkedTarget);
+        Assert.EndsWith(
+            Path.Combine("UI", "_Canvas", "_Canvas_000.wz"),
+            outlink.Identity.ResolvedLinkedTarget.PackagePath,
+            StringComparison.Ordinal);
+        Assert.Equal("Basic.img", outlink.Identity.ResolvedLinkedTarget.ImageSelector);
+        Assert.Equal("Cursor/0/0", outlink.Identity.ResolvedLinkedTarget.ValuePath);
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
+    public async Task CanvasOptionalExternalClientUiImage_ResolvesOutlinkPreview()
+    {
+        var uiPath = ExternalClientSmokeData.FindFirstFile("UI", "UI_000.wz");
+        if (uiPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceCanvasImageService();
+        var document = await service.LoadAsync(
+            uiPath,
+            "Basic.img",
+            "Cursor/0/0/_outlink",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.EndsWith(
+            Path.Combine("UI", "_Canvas", "_Canvas_000.wz"),
+            document.SourcePath,
+            StringComparison.Ordinal);
+        Assert.Equal("Basic.img", document.Selector);
+        Assert.Equal("Cursor/0/0", document.ValuePath);
+        Assert.Equal(24, document.Width);
+        Assert.Equal(28, document.Height);
+        Assert.Equal(1, document.Format);
+        Assert.NotEmpty(document.Pixels);
+    }
+
+    [Fact]
     public async Task CanvasOptionalExternalClientSkillImage_PreviewsBc7Canvas()
     {
         var skillCanvasPath = ExternalClientSmokeData.FindFirstFile("Skill", "_Canvas", "_Canvas_097.wz");

@@ -202,6 +202,11 @@ shapes without committing client data: `Data/String/String_000.wz` selector
 and `Data/Item/Item_000.wz` selector `SkillOption.img` exposes top-level
 `skill`, `socket`, and `inc` objects plus representative `skillId` and
 `reqLevel` int32 values.
+UI link smoke now covers `Data/UI/UI_000.wz` selector `Basic.img`:
+`Cursor/0/0/_outlink` resolves the logical target
+`UI/_Canvas/Basic.img/Cursor/0/0` through
+`Data/UI/_Canvas/_Canvas_000.wz`, and the Canvas preview service loads the
+linked 24x28 format-1 direct-zlib pixels.
 These tests read local files only and do not commit client data.
 
 A later M5 local inventory scan found 780 `.wz` files under the local GMS
