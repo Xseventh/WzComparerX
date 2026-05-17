@@ -343,6 +343,31 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task CanvasOptionalExternalClientSkillImage_PreviewsBc7Canvas()
+    {
+        var skillCanvasPath = ExternalClientSmokeData.FindFirstFile("Skill", "_Canvas", "_Canvas_097.wz");
+        if (skillCanvasPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceCanvasImageService();
+        var document = await service.LoadAsync(
+            skillCanvasPath,
+            "6414.img",
+            "skill/64141504/effect/1",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.Equal(skillCanvasPath, document.SourcePath);
+        Assert.Equal("6414.img", document.Selector);
+        Assert.Equal("skill/64141504/effect/1", document.ValuePath);
+        Assert.Equal(4098, document.Format);
+        Assert.Equal(224, document.Width);
+        Assert.Equal(224, document.Height);
+        Assert.NotEmpty(document.Pixels);
+    }
+
+    [Fact]
     public async Task InspectOptionalExternalClientSoundImage_ReadsSoundPayloadMetadata()
     {
         var soundPath = ExternalClientSmokeData.FindFirstFile("Sound", "Sound_000.wz");

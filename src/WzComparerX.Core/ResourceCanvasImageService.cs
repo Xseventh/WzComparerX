@@ -79,11 +79,11 @@ public sealed class ResourceCanvasImageService
                 target.SourcePath,
                 target.Selector,
                 target.Path,
-                bitmap.Width,
-                bitmap.Height,
+                pixels.Width,
+                pixels.Height,
                 bitmap.Format,
                 "bgra8888",
-                pixels);
+                pixels.Pixels);
         }
     }
 
@@ -95,7 +95,7 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(canvas.CompressionKind, path));
         }
 
-        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 769 and not 1026 and not 2050 and not 2304 and not 2562 and not 4097 and not 4100)
+        if (canvas.Format is not 1 and not 2 and not 257 and not 513 and not 769 and not 1026 and not 2050 and not 2304 and not 2562 and not 4097 and not 4098 and not 4100)
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
@@ -106,9 +106,15 @@ public sealed class ResourceCanvasImageService
         }
     }
 
-    private static byte[] ConvertToBgra8888(WzImageCanvasBitmap bitmap, string? path)
+    private static CanvasPixelBuffer ConvertToBgra8888(WzImageCanvasBitmap bitmap, string? path)
     {
-        return bitmap.Format switch
+        if (bitmap.Format == 4098)
+        {
+            var decoded = ResourceCanvasBc7Decoder.ConvertToBgra8888(bitmap, path);
+            return new CanvasPixelBuffer(decoded.Width, decoded.Height, decoded.Pixels);
+        }
+
+        var pixels = bitmap.Format switch
         {
             1 => ConvertBgra4444ToBgra8888(bitmap, path),
             257 => ConvertBgra1555ToBgra8888(bitmap, path),
@@ -123,7 +129,11 @@ public sealed class ResourceCanvasImageService
             2 => TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 4), path),
             _ => throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(bitmap.Format, path))
         };
+
+        return new CanvasPixelBuffer(bitmap.Width, bitmap.Height, pixels);
     }
+
+    private sealed record CanvasPixelBuffer(int Width, int Height, byte[] Pixels);
 
     private static byte[] ConvertBgra4444ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
     {

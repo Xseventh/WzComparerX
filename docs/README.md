@@ -133,7 +133,7 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - Canvas preview tab for the current direct-zlib `ARGB4444` (`1`),
   `ARGB1555` (`257`), `RGB565` (`513`), `R16` (`769`), `ARGB8888` (`2`),
   `A8` (`2304`), `RGBA1010102` (`2562`), `DXT3` (`1026`), `DXT5`
-  (`2050`), `DXT1` (`4097`), and `RGBA32Float` (`4100`) slices,
+  (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and `RGBA32Float` (`4100`) slices,
   following the selected IMG Content node. Selecting Canvas nodes previews that
   exact value; selecting `source` / `_inlink` / `_outlink` string nodes resolves
   the linked Canvas when the current workspace layout can be mapped. The Preview
@@ -219,6 +219,9 @@ M4 完成后已经开始低风险架构整理：
 - Canvas preview 现在也能通过同一条 MS/MN payload 路径预览 `.ms` / `.mn`
   IMG 内的 direct Canvas，并能把 `.ms` IMG 内的 `_outlink` 按 WC-style
   logical path 解析到当前 MS container 或匹配的 WZ package group。
+- Canvas preview 的 direct-zlib viewer matrix 已覆盖 `BC7` (`4098`)。
+  本地 GMS `Skill/_Canvas/_Canvas_097.wz` / `6414.img` smoke 验证了
+  `skill/64141504/effect/1` 的 BC7 预览路径。
 - Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。

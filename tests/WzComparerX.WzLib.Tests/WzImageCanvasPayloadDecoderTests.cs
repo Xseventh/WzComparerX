@@ -146,6 +146,33 @@ public class WzImageCanvasPayloadDecoderTests
     }
 
     [Fact]
+    public void Decode_ReturnsFormat4098ZlibRawBlocks()
+    {
+        var pixels = CreateBc7Mode6Block();
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 4,
+            Height: 4,
+            Format: 4098,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(4, bitmap.Width);
+        Assert.Equal(4, bitmap.Height);
+        Assert.Equal(4098, bitmap.Format);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
     public void Decode_ReturnsFormat4100ZlibRawPixels()
     {
         byte[] pixels =
@@ -366,5 +393,18 @@ public class WzImageCanvasPayloadDecoderTests
             (byte)((colorBits >> 16) & 0xff),
             (byte)((colorBits >> 24) & 0xff)
         ];
+    }
+
+    private static byte[] CreateBc7Mode6Block()
+    {
+        const ulong low =
+            1UL << 6
+            | 127UL << 7
+            | 127UL << 14
+            | 127UL << 49
+            | 127UL << 56;
+        const ulong high = 0;
+
+        return [.. BitConverter.GetBytes(low), .. BitConverter.GetBytes(high)];
     }
 }

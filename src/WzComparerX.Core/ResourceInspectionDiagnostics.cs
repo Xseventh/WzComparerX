@@ -229,7 +229,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            $"Canvas preview currently supports formats 1, 2, 257, 513, 769, 1026, 2050, 2304, 2562, 4097, and 4100 only; found format {format}.",
+            $"Canvas preview currently supports formats 1, 2, 257, 513, 769, 1026, 2050, 2304, 2562, 4097, 4098, and 4100 only; found format {format}.",
             selector,
             ResourceDiagnosticCodes.CanvasPreviewFormatUnsupported,
             ResourceDiagnosticSources.Viewer);
