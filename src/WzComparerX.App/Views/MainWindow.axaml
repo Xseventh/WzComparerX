@@ -196,7 +196,8 @@
                                         BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
                                         BorderThickness="1"
                                         Padding="8">
-                                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                    <ScrollViewer x:Name="CanvasPreviewScrollViewer"
+                                                  HorizontalScrollBarVisibility="Auto"
                                                   VerticalScrollBarVisibility="Auto">
                                         <Image x:Name="CanvasPreviewImage"
                                                Source="{Binding CanvasPreview.Bitmap}"

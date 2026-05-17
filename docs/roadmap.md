@@ -155,9 +155,10 @@ Tasks:
   `RGBA32Float` (`4100`), and WC's `RGB565 scale=4` expansion decoder slices.
   Preview now follows IMG Content selection: Canvas nodes preview exact values, root Canvas IMG objects
   share the same viewer path, and `source` / `_inlink` / `_outlink` strings can
-  resolve linked Canvas values. Small bitmaps are displayed with capped integer
-  scaling, very large bitmaps shrink in `Auto`, and explicit `1x`, `2x`, `4x`,
-  `8x`, and `16x` controls remain available.
+  resolve linked Canvas values. Auto display scale fits the current Preview
+  viewport, using capped integer enlargement when possible and fractional shrink
+  for large bitmaps; explicit `1x`, `2x`, `4x`, `8x`, and `16x` controls remain
+  available.
 - Log/task panel. Started with a deterministic activity log for UI load,
   inspection, and error events.
 - UI test harness. Started with `WzComparerX.App.Tests` using Avalonia Headless

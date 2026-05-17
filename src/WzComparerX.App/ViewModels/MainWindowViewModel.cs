@@ -15,6 +15,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel> canvasPreviewFactory;
     private int canvasPreviewRequestId;
     private int imageContentRequestId;
+    private double canvasPreviewViewportWidth;
+    private double canvasPreviewViewportHeight;
     private ResourceImageSelectorTarget? currentImageContentTarget;
 
     [ObservableProperty]
@@ -473,6 +475,24 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    public void SetCanvasPreviewViewport(double width, double height)
+    {
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
+
+        if (Math.Abs(width - canvasPreviewViewportWidth) < 0.5 &&
+            Math.Abs(height - canvasPreviewViewportHeight) < 0.5)
+        {
+            return;
+        }
+
+        canvasPreviewViewportWidth = width;
+        canvasPreviewViewportHeight = height;
+        CanvasPreview?.SetViewportSize(width, height);
+    }
+
     private async Task LoadCanvasPreviewAsync(
         ResourceInspectionNodeViewModel node,
         ResourceImageSelectorTarget target,
@@ -564,6 +584,11 @@ public partial class MainWindowViewModel : ViewModelBase
     private void ReplaceCanvasPreview(ResourceCanvasPreviewViewModel? preview)
     {
         var previous = CanvasPreview;
+        if (preview is not null && canvasPreviewViewportWidth > 0 && canvasPreviewViewportHeight > 0)
+        {
+            preview.SetViewportSize(canvasPreviewViewportWidth, canvasPreviewViewportHeight);
+        }
+
         CanvasPreview = preview;
         previous?.Dispose();
     }

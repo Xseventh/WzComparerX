@@ -11,6 +11,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        CanvasPreviewScrollViewer.PropertyChanged += (_, _) => UpdateCanvasPreviewViewport();
+        DataContextChanged += (_, _) => UpdateCanvasPreviewViewport();
     }
 
     private async void OpenResourceFileMenuItem_OnClick(object? sender, RoutedEventArgs e)
@@ -70,5 +72,16 @@ public partial class MainWindow : Window
         {
             await viewModel.ActivateSelectedNodeAsync();
         }
+    }
+
+    private void UpdateCanvasPreviewViewport()
+    {
+        if (DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        var bounds = CanvasPreviewScrollViewer.Bounds;
+        viewModel.SetCanvasPreviewViewport(bounds.Width, bounds.Height);
     }
 }

@@ -614,6 +614,28 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public void CanvasPreviewViewModel_FitsAutoScaleToPreviewViewport()
+    {
+        var document = new ResourceCanvasImageDocument(
+            SourcePath: "Canvas.wz",
+            Selector: "Canvas.img",
+            ValuePath: "stand/0",
+            Width: 56,
+            Height: 70,
+            Format: 1,
+            PixelFormat: "bgra8888",
+            Pixels: []);
+        var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
+
+        preview.SetViewportSize(width: 300, height: 220);
+
+        Assert.Equal(2d, preview.Scale);
+        Assert.Equal("Auto (2x)", preview.ScaleLabel);
+        Assert.Equal(112d, preview.DisplayWidth);
+        Assert.Equal(140d, preview.DisplayHeight);
+    }
+
+    [Fact]
     public void CanvasPreviewViewModel_AllowsManualDisplayScale()
     {
         var document = new ResourceCanvasImageDocument(
@@ -630,6 +652,11 @@ public class MainWindowViewModelTests
         Assert.Equal(3d, preview.Scale);
         Assert.Equal("Auto (3x)", preview.ScaleLabel);
 
+        preview.SetViewportSize(width: 360, height: 180);
+
+        Assert.Equal(2d, preview.Scale);
+        Assert.Equal("Auto (2x)", preview.ScaleLabel);
+
         preview.SetScale(8);
 
         Assert.Equal(8d, preview.Scale);
@@ -639,8 +666,8 @@ public class MainWindowViewModelTests
 
         preview.SetScale(null);
 
-        Assert.Equal(3d, preview.Scale);
-        Assert.Equal("Auto (3x)", preview.ScaleLabel);
+        Assert.Equal(2d, preview.Scale);
+        Assert.Equal("Auto (2x)", preview.ScaleLabel);
     }
 
     [Fact]
@@ -672,6 +699,28 @@ public class MainWindowViewModelTests
 
         Assert.Equal(0.46875d, preview.Scale, precision: 5);
         Assert.Equal("Auto (47%)", preview.ScaleLabel);
+    }
+
+    [Fact]
+    public void CanvasPreviewViewModel_ShrinksLargeImagesToPreviewViewport()
+    {
+        var document = new ResourceCanvasImageDocument(
+            SourcePath: "Map.wz",
+            Selector: "LargeMap.img",
+            ValuePath: "miniMap/canvas",
+            Width: 2048,
+            Height: 1024,
+            Format: 1,
+            PixelFormat: "bgra8888",
+            Pixels: []);
+        var preview = new ResourceCanvasPreviewViewModel(document, bitmap: null);
+
+        preview.SetViewportSize(width: 800, height: 400);
+
+        Assert.Equal(0.3515625d, preview.Scale, precision: 6);
+        Assert.Equal("Auto (35%)", preview.ScaleLabel);
+        Assert.Equal(720d, preview.DisplayWidth);
+        Assert.Equal(360d, preview.DisplayHeight);
     }
 
     [Fact]

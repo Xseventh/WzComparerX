@@ -10,6 +10,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using WzComparerX.App.ViewModels;
 using WzComparerX.App.Views;
+using WzComparerX.Core;
 
 namespace WzComparerX.App.Tests;
 
@@ -433,6 +434,49 @@ public class MainWindowHeadlessTests
         {
             viewModel.CanvasPreview?.Dispose();
             File.Delete(packagePath);
+        }
+    }
+
+    [AvaloniaFact]
+    public void MainWindow_UpdatesCanvasPreviewAutoScaleFromViewportInHeadless()
+    {
+        var document = new ResourceCanvasImageDocument(
+            SourcePath: "Map.wz",
+            Selector: "LargeMap.img",
+            ValuePath: "miniMap/canvas",
+            Width: 2048,
+            Height: 1024,
+            Format: 1,
+            PixelFormat: "bgra8888",
+            Pixels: []);
+        var viewModel = new MainWindowViewModel
+        {
+            CanvasPreview = new ResourceCanvasPreviewViewModel(document, bitmap: null),
+            CanvasPreviewStatus = "Loaded Canvas preview: LargeMap.img/miniMap/canvas (2048x1024)"
+        };
+        var fallbackScale = viewModel.CanvasPreview.Scale;
+        var window = CreateWindow(viewModel, width: 900, height: 640);
+
+        try
+        {
+            var tabControl = window.FindControl<TabControl>("DetailsTabControl");
+            Assert.NotNull(tabControl);
+            tabControl.SelectedIndex = 2;
+            using var frame = CaptureFrame(window);
+            var scrollViewer = window.FindControl<ScrollViewer>("CanvasPreviewScrollViewer");
+
+            Assert.NotNull(scrollViewer);
+            Assert.True(viewModel.CanvasPreview.Scale < fallbackScale);
+            Assert.True(viewModel.CanvasPreview.DisplayWidth <= (scrollViewer.Bounds.Width * 0.91) + 1);
+            Assert.True(viewModel.CanvasPreview.DisplayHeight <= (scrollViewer.Bounds.Height * 0.91) + 1);
+            Assert.StartsWith("Auto (", viewModel.CanvasPreview.ScaleLabel, StringComparison.Ordinal);
+            AssertPngCanBeSaved(frame);
+            SaveScreenshotArtifact(frame, "main-window-canvas-preview-auto-viewport-900x640.png");
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            window.Close();
         }
     }
 
