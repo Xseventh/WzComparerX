@@ -442,7 +442,10 @@ Local GMS smoke status:
   MS `_outlink` resolution; optional local GMS smoke covers
   `Packs/Mob_00000.ms` selector `Mob/1150000.img`, value
   `move/0/_outlink`, which resolves the logical Canvas target through the
-  current workspace.
+  current workspace. A matching Avalonia Headless smoke now opens the same
+  `.ms` container, selects the IMG, selects the `_outlink`, and verifies the
+  Preview tab renders the linked Canvas without an App-layer "Invalid WZ
+  package" regression.
 - Optional local GMS smoke also covers deeper WZ IMG families:
   `Character/Character_000.wz` selector `00002000.img` resolves
   `walk1/0/body/_outlink` through `Character/_Canvas/_Canvas_000.wz` and loads

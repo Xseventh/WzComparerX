@@ -90,6 +90,71 @@ public class MainWindowExternalClientSmokeTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task MainWindow_OptionalExternalClientMsOutlinkCanvasSmoke()
+    {
+        var msPath = ExternalClientSmokeData.FindFirstFile("Packs", "Mob_00000.ms");
+        if (msPath is null)
+        {
+            return;
+        }
+
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "auto"
+        };
+
+        await viewModel.OpenPathAsync(msPath);
+        var window = CreateWindow(viewModel, width: 1280, height: 800);
+
+        try
+        {
+            var root = Assert.Single(viewModel.RootNodes);
+            Assert.Equal("Mob_00000.ms", root.Name);
+            Assert.Equal("package", root.Kind);
+
+            var image = Flatten(root)
+                .FirstOrDefault(node => node.Name == "1150000.img");
+            Assert.NotNull(image);
+            viewModel.SelectedNode = image;
+            await WaitForImageContentAsync(viewModel);
+
+            var imageRoot = Assert.Single(viewModel.ImageContentNodes);
+            Assert.Equal("Mob/1150000.img", imageRoot.Path);
+            var outlink = Flatten(imageRoot)
+                .FirstOrDefault(node =>
+                    node is { Name: "_outlink", Kind: "string" } &&
+                    string.Equals(node.Path, "move/0/_outlink", StringComparison.Ordinal));
+            Assert.NotNull(outlink);
+
+            viewModel.SelectedImageContentNode = outlink;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            var tabControl = window.FindControl<TabControl>("DetailsTabControl");
+            Assert.NotNull(tabControl);
+            tabControl.SelectedIndex = 2;
+
+            using (var frame = CaptureFrame(window))
+            {
+                SaveScreenshotArtifact(frame, "gms-ms-outlink-canvas-preview.png");
+                AssertPngCanBeSaved(frame);
+            }
+
+            Assert.True(viewModel.CanvasPreview?.Width > 0);
+            Assert.True(viewModel.CanvasPreview?.Height > 0);
+            Assert.EndsWith("1150000.img", viewModel.CanvasPreview?.Selector, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("move/0", viewModel.CanvasPreview?.ValuePath);
+            Assert.DoesNotContain(viewModel.ActivityLog, item =>
+                item.Kind == "error" &&
+                item.Message.Contains("Canvas preview failed", StringComparison.Ordinal));
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            window.Close();
+        }
+    }
+
     private static MainWindow CreateWindow(
         MainWindowViewModel viewModel,
         double width,
