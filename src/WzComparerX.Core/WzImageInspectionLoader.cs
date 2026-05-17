@@ -17,17 +17,17 @@ internal static class WzImageInspectionLoader
             throw new InvalidDataException($"Invalid WZ package: {directoryInspection.Header.SourcePath}.");
         }
 
-        var entry = FindImageEntry(directoryInspection, selector);
-        var selectedStringKey = directoryInspection.StringEncryptionKind ?? stringKey ?? WzStringEncryptionKind.None;
-        await using var stream = File.OpenRead(path);
+        var target = await FindImageTargetAsync(path, directoryInspection, selector, stringKey, cancellationToken);
+        var selectedStringKey = target.DirectoryInspection.StringEncryptionKind ?? stringKey ?? WzStringEncryptionKind.None;
+        await using var stream = File.OpenRead(target.DirectoryInspection.Header.SourcePath);
         var imageReader = new WzImageInspectionReader(new WzStringDecryptor(selectedStringKey), maxPropertyDepth);
-        var inspection = imageReader.Read(stream, directoryInspection.Header, entry, selector);
+        var inspection = imageReader.Read(stream, target.DirectoryInspection.Header, target.Entry, selector);
         if (!inspection.IsValid)
         {
             throw new InvalidDataException($"Invalid WZ image selection: {selector}.");
         }
 
-        return new WzImageInspectionContext(directoryInspection, inspection, selectedStringKey);
+        return new WzImageInspectionContext(target.DirectoryInspection, inspection, selectedStringKey);
     }
 
     public static Task<WzDirectoryInspection> ReadDirectoryAsync(
@@ -67,14 +67,34 @@ internal static class WzImageInspectionLoader
         return null;
     }
 
-    private static WzDirectoryEntryInspection FindImageEntry(WzDirectoryInspection inspection, string selector)
+    private static async Task<WzImageInspectionTarget> FindImageTargetAsync(
+        string path,
+        WzDirectoryInspection directoryInspection,
+        string selector,
+        WzStringEncryptionKind? stringKey,
+        CancellationToken cancellationToken)
     {
-        var entry = TryFindImageEntry(inspection, selector);
+        var entry = TryFindImageEntry(directoryInspection, selector);
         if (entry is not null)
         {
-            return entry;
+            return new WzImageInspectionTarget(directoryInspection, entry);
+        }
+
+        var group = await WzPackageGroupInspectionLoader.LoadAsync(path, stringKey, cancellationToken);
+        foreach (var member in group.Members.Skip(1))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            entry = TryFindImageEntry(member.Inspection, selector);
+            if (entry is not null)
+            {
+                return new WzImageInspectionTarget(member.Inspection, entry);
+            }
         }
 
         throw new InvalidDataException($"Image entry not found: {selector}.");
     }
 }
+
+internal sealed record WzImageInspectionTarget(
+    WzDirectoryInspection DirectoryInspection,
+    WzDirectoryEntryInspection Entry);

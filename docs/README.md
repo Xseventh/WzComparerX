@@ -124,8 +124,9 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
 - Resources tree 和 IMG Content tree 分离：选中 image node 会按 WC 的
   `TryExtract()` 体验自动提取完整单个 IMG 到 IMG Content tree，Resources
   tree 保持 package / directory 结构。
-- `Load IMG` 只作为手动 selector / refresh 入口；资源树里选中 image
-  node 时会自动加载 IMG Content。
+- `Load IMG` 只作为手动 selector / refresh 入口；手动 selector 会按
+  WC-style package group 查找 numbered shard，资源树里选中 image node 时会
+  自动加载 IMG Content。
 - 双击 package / image node 触发对应 ViewModel 命令；package open 不再作为
   主工具栏按钮暴露。
 - Document metadata panel。
@@ -147,8 +148,9 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
   - 打开 `Map1.wz` 时如果旁边有 `Map1.ini`，会按 `LastWzIndex` 合并
     `Map1_000.wz...` 的目录项；
   - 没有 `.ini` 时会 fallback 连续枚举 `Name_000.wz`、`Name_001.wz`；
-  - merged shard 的 IMG node 仍保留原始 shard package target，供 App
-    正确提取 IMG；
+  - merged shard 的 IMG node 仍保留原始 shard package target；手动
+    `inspect` / `Load IMG` / Canvas export 也会从入口包 fallback 到同组
+    numbered shard；
   - `Base/Base.wz` 下的 `Effect` 可链接到 `Effect/Effect.wz` 和 `Effect/Effect_000.wz`；
   - `UI/UI.wz` 下的 `_Canvas` 可链接到 `UI/_Canvas/_Canvas.wz` 和编号 shard。
 

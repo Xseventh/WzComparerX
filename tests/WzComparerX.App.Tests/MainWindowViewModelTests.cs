@@ -273,6 +273,49 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task LoadImageAsync_LoadsManualSelectorFromPackageGroupShard()
+    {
+        var directory = Directory.CreateTempSubdirectory("wcx-app-grouped-manual-selector-");
+        var mapDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Map1"));
+        var entryPath = Path.Combine(mapDirectory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(mapDirectory.FullName, "Map1_000.wz");
+        var shardFixturePath = AppTestFixtures.MaterializeHexFixture("canvas-zlib.pkg1.hex", ".wz");
+        var viewModel = new MainWindowViewModel
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            File.WriteAllBytes(entryPath, AppTestFixtures.CreatePkg1());
+            File.Copy(shardFixturePath, shardPath);
+            await File.WriteAllTextAsync(
+                Path.Combine(mapDirectory.FullName, "Map1.ini"),
+                "LastWzIndex|0",
+                TestContext.Current.CancellationToken);
+
+            await viewModel.OpenPathAsync(entryPath);
+
+            viewModel.SelectorText = "Canvas.img";
+            Assert.True(viewModel.LoadImageCommand.CanExecute(null));
+            await viewModel.LoadImageAsync();
+
+            var inspectedImage = Assert.Single(viewModel.ImageContentNodes);
+            Assert.Equal(entryPath, viewModel.PathText);
+            Assert.Equal("Canvas.img", viewModel.SelectorText);
+            Assert.Equal("image", inspectedImage.Kind);
+            Assert.Equal("Canvas.img", inspectedImage.Name);
+            Assert.Equal("Property", inspectedImage.DisplayValue);
+            Assert.Contains(inspectedImage.Children, child => child.Name == "icon" && child.Kind == "canvas");
+        }
+        finally
+        {
+            File.Delete(shardFixturePath);
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SelectingImageNode_LoadsSelectedImageFromLinkedPackage()
     {
         var workspace = CreateLinkedCanvasWorkspace();

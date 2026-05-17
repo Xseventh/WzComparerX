@@ -113,7 +113,7 @@ public sealed class ResourceExportService
         }
 
         cancellationToken.ThrowIfCancellationRequested();
-        await using var stream = File.OpenRead(path);
+        await using var stream = File.OpenRead(inspection.Header.SourcePath);
         WzImageCanvasBitmap bitmap;
         try
         {

@@ -838,7 +838,7 @@ public sealed class ResourceCanvasImageService
             return new CanvasImageInspectionContext(
                 context.DirectoryInspection.Header.SourcePath,
                 context.ImageInspection,
-                File.OpenRead(path));
+                File.OpenRead(context.DirectoryInspection.Header.SourcePath));
         }
 
         public ValueTask DisposeAsync()

@@ -344,6 +344,9 @@ M4 completed:
   `MainWindowViewModel`: selected/manual selector resolution, current-target
   checks, and Core inspect calls now live in an App workflow helper. The view
   model still owns visible tree state, request ordering, and activity messages.
+  Manual selectors now flow through the Core package-group image loader, so
+  `Load IMG`, `inspect <entry.wz> <Image.img>`, Canvas preview, and Canvas
+  export can resolve numbered-shard IMG payloads from the entry package path.
 - Resource detail projection for document metadata, selected-node metadata, and
   selected diagnostics now lives in a small ViewModel helper, keeping panel
   formatting rules out of the main window orchestration.
@@ -355,6 +358,10 @@ M4 completed:
   path, image selector, and inside-IMG value path fields. Merged shard image
   identities point to their true source shard package. The current identity
   contract is documented in `docs/resource-identity.md`.
+- Core image inspection now falls back from an entry package to its loaded
+  numbered shards when the requested selector is not present in the entry
+  package. The returned inspection identity and source path still point at the
+  true shard package, which keeps resource identity and export streams aligned.
 - Link-like IMG values (`source`, `_inlink`, `_outlink`, `link`, and UOL) now
   populate normalized `Identity.LinkedTarget` and debug `linkKind` /
   `linkedTarget` metadata. `inspect --debug` can also populate

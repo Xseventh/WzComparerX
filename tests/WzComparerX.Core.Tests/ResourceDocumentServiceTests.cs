@@ -917,6 +917,18 @@ public class ResourceDocumentServiceTests
             Assert.Equal(shardPath, imageInspection.Root.Identity.PackagePath);
             Assert.Equal("Canvas.img", imageInspection.Root.Identity.ImageSelector);
             Assert.Contains(imageInspection.Root.Children, child => child.Name == "icon" && child.Kind == "canvas");
+
+            var groupedImageInspection = await service.InspectAsync(
+                entryPath,
+                selector: "Canvas.img",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None, MaxPropertyDepth: 2, IncludeDebugMetadata: true));
+
+            Assert.Equal(shardPath, groupedImageInspection.SourcePath);
+            Assert.Equal("Canvas.img", groupedImageInspection.Root.Name);
+            Assert.NotNull(groupedImageInspection.Root.Identity);
+            Assert.Equal(shardPath, groupedImageInspection.Root.Identity.PackagePath);
+            Assert.Equal("Canvas.img", groupedImageInspection.Root.Identity.ImageSelector);
+            Assert.Contains(groupedImageInspection.Root.Children, child => child.Name == "icon" && child.Kind == "canvas");
         }
         finally
         {
@@ -1353,6 +1365,71 @@ public class ResourceDocumentServiceTests
         finally
         {
             File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_LoadsPackageGroupShardCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var directory = Directory.CreateTempSubdirectory("wcx-canvas-package-group-");
+        var entryPath = Path.Combine(directory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(directory.FullName, "Map1_000.wz");
+        await File.WriteAllBytesAsync(entryPath, CreatePkg1DirectoryPackage([0x00]));
+        await File.WriteAllBytesAsync(shardPath, CreatePkg1ImagePackage("Canvas.img", CreateCanvasImage(pixels, width: 1)));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                entryPath,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(shardPath, document.SourcePath);
+            Assert.Equal("Canvas.img", document.Selector);
+            Assert.Null(document.ValuePath);
+            Assert.Equal(1, document.Width);
+            Assert.Equal(1, document.Height);
+            Assert.Equal(2, document.Format);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ExportCanvas_ReadsPackageGroupShardStream()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var directory = Directory.CreateTempSubdirectory("wcx-export-package-group-");
+        var entryPath = Path.Combine(directory.FullName, "Map1.wz");
+        var shardPath = Path.Combine(directory.FullName, "Map1_000.wz");
+        await File.WriteAllBytesAsync(entryPath, CreatePkg1DirectoryPackage([0x00]));
+        await File.WriteAllBytesAsync(shardPath, CreatePkg1ImagePackage("Canvas.img", CreateCanvasImage(pixels, width: 1)));
+        var service = new ResourceExportService();
+
+        try
+        {
+            var document = await service.ExportAsync(
+                entryPath,
+                "Canvas.img",
+                new ResourceExportOptions(
+                    ResourceExportKind.Canvas,
+                    StringKey: WzStringEncryptionKind.None));
+
+            Assert.Equal(shardPath, document.SourcePath);
+            Assert.Equal(ResourceExportKind.Canvas, document.Kind);
+            Assert.Equal("application/octet-stream", document.ContentType);
+            Assert.Equal(pixels, document.Content);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
         }
     }
 

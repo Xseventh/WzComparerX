@@ -143,10 +143,12 @@ Tasks:
   present, and entry packages merge numbered shards from `Name.ini` /
   `Name_000.wz...` while preserving each image node's original source package.
 - IMG selector workflow. The selector row now uses `Load IMG` only for manual
-  selectors or refreshes; selected image nodes auto-load IMG Content. UI
-  inspection follows WC's lazy/full IMG model: only the selected IMG is loaded,
-  and it is inspected as a complete IMG Content tree without replacing the
-  resource tree.
+  selectors or refreshes; manual selectors resolve through the same WC-style
+  package group layer as the resource tree, so entry packages can load IMG
+  payloads from numbered shards. Selected image nodes auto-load IMG Content.
+  UI inspection follows WC's lazy/full IMG model: only the selected IMG is
+  loaded, and it is inspected as a complete IMG Content tree without replacing
+  the resource tree.
 - Property panel. Started with selected-node metadata and diagnostics.
 - Canvas preview. Started with lazy Canvas value preview through Core using
   direct-zlib `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`), `R16`
@@ -241,6 +243,8 @@ Must support:
   - `.ini` `LastWzIndex` handling;
   - `Base/Base.wz` links into child packages;
   - linked image nodes preserve their true source package and value path;
+  - manual image selectors, Canvas preview, and Canvas export can resolve entry
+    package selectors to the true numbered shard source;
   - failed link resolution emits stable diagnostics.
 - IMG/resource values:
   - scalar values and nested `Property` traversal;
