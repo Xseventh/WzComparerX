@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+5e1adf0 Add image entry not found diagnostic
 1f3e2db Record Lua text sample scan
 ea6ccc8 Add real Video metadata smoke
 6d50d36 Guard linked image identity

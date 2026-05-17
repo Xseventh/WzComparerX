@@ -885,6 +885,28 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportMetadataMissingImage_ReturnsStableDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile(
+            "Canvas.img",
+            CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1));
+        var expectedError = await ReadExpectedFixtureAsync("export-image-not-found.stderr.txt");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "metadata", "--key", "none", path, "Missing.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(expectedError, result.Error);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task ExportJsonFlag_ReturnsUsageError()
     {
         var fixture = FixturePath("basic-tree.json");

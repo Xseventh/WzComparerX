@@ -1,0 +1,1 @@
+error [wcx.inspection.image.notFound]: Image entry not found: Missing.img. (Missing.img)
