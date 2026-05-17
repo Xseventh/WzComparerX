@@ -239,7 +239,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Error,
-            $"Canvas preview currently supports unscaled images only; found scale {scale}.",
+            $"Canvas preview currently supports unscaled images and RGB565 scale 4 images only; found scale {scale}.",
             selector,
             ResourceDiagnosticCodes.CanvasPreviewScaleUnsupported,
             ResourceDiagnosticSources.Viewer);

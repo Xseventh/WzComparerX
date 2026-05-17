@@ -92,12 +92,14 @@ converts direct-zlib `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`),
 `R16` (`769`), `ARGB8888` (`2`), `A8` (`2304`), `RGBA1010102` (`2562`),
 `DXT3` (`1026`), `DXT5` (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and
 `RGBA32Float` (`4100`) into BGRA8888 preview pixels. PNG export and broader Canvas format
-coverage are later user-facing image export work.
+coverage are later user-facing image export work. `RGB565` also supports WC's
+`scale=4` / `ActualScale=16` case by expanding each source pixel into a 16x16
+block, matching WC's `ImageCodec.ScalePixels` path.
 Canvas export now supports the explicit value selector described in
 `docs/canvas-export-selector-plan.md`.
 
 M4 note: the basic Avalonia preview reuses the same payload decoder and adds a
 small viewer conversion path for direct-zlib format `1` / `257` / `513` /
 `769` / `2` / `2304` / `2562` / `1026` / `2050` / `4097` / `4098` Canvas
-values. `4100` is also supported as a viewer conversion slice.
+values. `4100` and `513 scale=4` are also supported as viewer conversion slices.
 This does not change the current raw Canvas export contract.

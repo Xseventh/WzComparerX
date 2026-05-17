@@ -1651,6 +1651,56 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ConvertsFormat513Scale16CanvasToBgra8888()
+    {
+        byte[] rawPixels = [0x00, 0xf8, 0xe0, 0x07];
+        var expected = new byte[32 * 16 * 4];
+        for (var y = 0; y < 16; y++)
+        {
+            for (var x = 0; x < 32; x++)
+            {
+                var offset = ((y * 32) + x) * 4;
+                if (x < 16)
+                {
+                    expected[offset] = 0x00;
+                    expected[offset + 1] = 0x00;
+                    expected[offset + 2] = 0xff;
+                }
+                else
+                {
+                    expected[offset] = 0x00;
+                    expected[offset + 1] = 0xff;
+                    expected[offset + 2] = 0x00;
+                }
+
+                expected[offset + 3] = 0xff;
+            }
+        }
+
+        var path = WriteTemporaryPkg1ImageFile(CreateCanvasImage(rawPixels, width: 32, height: 16, format: 513, scale: 4));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                valueSelector: null,
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(513, document.Format);
+            Assert.Equal(32, document.Width);
+            Assert.Equal(16, document.Height);
+            Assert.Equal("bgra8888", document.PixelFormat);
+            Assert.Equal(expected, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task CanvasImageService_ConvertsFormat769CanvasToBgra8888()
     {
         byte[] rawPixels = [0x00, 0x00, 0x00, 0x80, 0xff, 0xff];
@@ -2189,7 +2239,7 @@ public class ResourceDocumentServiceTests
         return bytes.ToArray();
     }
 
-    private static byte[] CreateCanvasImage(byte[] pixels, int width, int height = 1, int format = 2)
+    private static byte[] CreateCanvasImage(byte[] pixels, int width, int height = 1, int format = 2, int scale = 0)
     {
         var payload = CreateDirectZlibPayload(pixels);
         return CreateImage(
@@ -2199,7 +2249,7 @@ public class ResourceDocumentServiceTests
             CreateCompressedInt32(width),
             CreateCompressedInt32(height),
             CreateCompressedInt32(format),
-            0x00,
+            (byte)scale,
             CreateCompressedInt32(1),
             CreateCompressedInt32(0),
             (byte)0x00,

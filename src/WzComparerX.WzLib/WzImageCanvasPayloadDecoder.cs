@@ -47,7 +47,7 @@ public sealed class WzImageCanvasPayloadDecoder
                 throw new InvalidDataException("Canvas payload contains more decompressed data than expected.");
             }
 
-            return new WzImageCanvasBitmap(canvas.Width, canvas.Height, canvas.Format, pixels);
+            return new WzImageCanvasBitmap(canvas.Width, canvas.Height, canvas.Format, canvas.Scale, pixels);
         }
         finally
         {

@@ -100,7 +100,7 @@ public sealed class ResourceCanvasImageService
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(canvas.Format, path));
         }
 
-        if (canvas.ActualScale != 1)
+        if (canvas.ActualScale != 1 && canvas is not { Format: 513, ActualScale: 16 })
         {
             throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewScaleUnsupported(canvas.Scale, path));
         }
@@ -494,6 +494,12 @@ public sealed class ResourceCanvasImageService
 
     private static byte[] ConvertBgr565ToBgra8888(WzImageCanvasBitmap bitmap, string? path)
     {
+        var actualScale = GetActualScale(bitmap.Scale);
+        if (actualScale == 16)
+        {
+            return ConvertScaledBgr565ToBgra8888(bitmap, path, actualScale);
+        }
+
         var source = TrimOrCopy(bitmap.Pixels, checked(bitmap.Width * bitmap.Height * 2), path);
         var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
         for (var sourceIndex = 0; sourceIndex < source.Length; sourceIndex += 2)
@@ -507,6 +513,53 @@ public sealed class ResourceCanvasImageService
         }
 
         return destination;
+    }
+
+    private static byte[] ConvertScaledBgr565ToBgra8888(WzImageCanvasBitmap bitmap, string? path, int actualScale)
+    {
+        if (bitmap.Width % actualScale != 0 || bitmap.Height % actualScale != 0)
+        {
+            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(path));
+        }
+
+        var sourceWidth = bitmap.Width / actualScale;
+        var sourceHeight = bitmap.Height / actualScale;
+        var source = TrimOrCopy(bitmap.Pixels, checked(sourceWidth * sourceHeight * 2), path);
+        var destination = new byte[checked(bitmap.Width * bitmap.Height * 4)];
+
+        for (var sourceY = 0; sourceY < sourceHeight; sourceY++)
+        {
+            for (var sourceX = 0; sourceX < sourceWidth; sourceX++)
+            {
+                var sourceIndex = ((sourceY * sourceWidth) + sourceX) * 2;
+                var value = source[sourceIndex] | (source[sourceIndex + 1] << 8);
+                var b = Expand5To8(value & 0x1f);
+                var g = Expand6To8((value >> 5) & 0x3f);
+                var r = Expand5To8((value >> 11) & 0x1f);
+                const byte a = byte.MaxValue;
+
+                var destinationX = sourceX * actualScale;
+                var destinationY = sourceY * actualScale;
+                for (var scaledY = 0; scaledY < actualScale; scaledY++)
+                {
+                    for (var scaledX = 0; scaledX < actualScale; scaledX++)
+                    {
+                        var destinationIndex = (((destinationY + scaledY) * bitmap.Width) + destinationX + scaledX) * 4;
+                        destination[destinationIndex] = b;
+                        destination[destinationIndex + 1] = g;
+                        destination[destinationIndex + 2] = r;
+                        destination[destinationIndex + 3] = a;
+                    }
+                }
+            }
+        }
+
+        return destination;
+    }
+
+    private static int GetActualScale(int scale)
+    {
+        return scale > 0 ? 1 << scale : 1;
     }
 
     private static byte Expand5To8(int value)

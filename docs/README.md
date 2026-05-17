@@ -134,7 +134,8 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
   `ARGB1555` (`257`), `RGB565` (`513`), `R16` (`769`), `ARGB8888` (`2`),
   `A8` (`2304`), `RGBA1010102` (`2562`), `DXT3` (`1026`), `DXT5`
   (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and `RGBA32Float` (`4100`) slices,
-  following the selected IMG Content node. Selecting Canvas nodes previews that
+  plus WC's `RGB565 scale=4` expansion path, following the selected IMG Content node.
+  Selecting Canvas nodes previews that
   exact value; selecting `source` / `_inlink` / `_outlink` string nodes resolves
   the linked Canvas when the current workspace layout can be mapped. The Preview
   tab exposes `Auto`, `1x`, `2x`, `4x`, `8x`, and `16x` display scale controls.

@@ -217,7 +217,8 @@ format `2` / `2562`, while the Avalonia viewer can convert direct-zlib
 `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`), `R16` (`769`),
 `ARGB8888` (`2`), `A8` (`2304`), `RGBA1010102` (`2562`), `DXT3` (`1026`),
 `DXT5` (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and `RGBA32Float` (`4100`) Canvas payloads
-to BGRA8888 preview pixels.
+to BGRA8888 preview pixels. `RGB565` also handles WC's `scale=4` /
+`ActualScale=16` path by repeating each source pixel into a 16x16 block.
 PNG export and broader Canvas format coverage remain later work.
 RawData/Video/Sound payload decoding is not implemented yet. Lua image entries report script length and a
 short UTF-8 snippet; `export --type lua` writes the full decoded script for

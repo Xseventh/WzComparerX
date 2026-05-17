@@ -92,6 +92,34 @@ public class WzImageCanvasPayloadDecoderTests
     }
 
     [Fact]
+    public void Decode_ReturnsScaledRgb565ZlibRawPixels()
+    {
+        byte[] pixels = [0x00, 0xf8, 0xe0, 0x07];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 32,
+            Height: 16,
+            Format: 513,
+            Scale: 4,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasPayloadDecoder();
+
+        var bitmap = decoder.Decode(stream, canvas);
+
+        Assert.Equal(32, bitmap.Width);
+        Assert.Equal(16, bitmap.Height);
+        Assert.Equal(513, bitmap.Format);
+        Assert.Equal(4, bitmap.Scale);
+        Assert.Equal(pixels, bitmap.Pixels);
+    }
+
+    [Fact]
     public void Decode_ReturnsFormat2304ZlibRawPixels()
     {
         byte[] pixels = [0x00, 0x80, 0xff];
