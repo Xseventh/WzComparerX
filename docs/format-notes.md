@@ -207,6 +207,13 @@ UI link smoke now covers `Data/UI/UI_000.wz` selector `Basic.img`:
 `UI/_Canvas/Basic.img/Cursor/0/0` through
 `Data/UI/_Canvas/_Canvas_000.wz`, and the Canvas preview service loads the
 linked 24x28 format-1 direct-zlib pixels.
+Vector smoke now covers two real-client paths without committing client data:
+`Data/Character/Character_000.wz` selector `00002000.img` exposes
+`walk1/0/body/origin` as `(19, 32)` and `walk1/0/arm/origin` as `(6, 8)`,
+while `Data/Packs/Mob_00000.ms` selector `Mob/1150000.img` exposes
+`move/0/origin`, `lt`, `rb`, and `head` Vector anchors through the MS image
+payload extraction path. Convex2D still has synthetic fixture coverage only
+until a concrete real-client sample is found.
 These tests read local files only and do not commit client data.
 
 A later M5 local inventory scan found 780 `.wz` files under the local GMS

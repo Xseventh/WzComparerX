@@ -143,6 +143,39 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalExternalClientMsPackImage_ReadsVectorAnchors()
+    {
+        var msPath = ExternalClientSmokeData.FindFirstFile("Packs", "Mob_00000.ms");
+        if (msPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            msPath,
+            "Mob/1150000.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 4,
+                IncludeDebugMetadata: true));
+
+        var origin = AssertNode(inspection.Root, "move/0/origin", "vector");
+        Assert.Equal("(36, 86)", origin.DisplayValue);
+        Assert.Equal("Mob/1150000.img", origin.Identity?.ImageSelector);
+        Assert.Equal("move/0/origin", origin.Identity?.ValuePath);
+
+        var lt = AssertNode(inspection.Root, "move/0/lt", "vector");
+        var rb = AssertNode(inspection.Root, "move/0/rb", "vector");
+        var head = AssertNode(inspection.Root, "move/0/head", "vector");
+
+        Assert.Equal("(-36, -83)", lt.DisplayValue);
+        Assert.Equal("(44, -8)", rb.DisplayValue);
+        Assert.Equal("(-18, -71)", head.DisplayValue);
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
     public async Task InspectOptionalExternalClientStringEqpImage_ReadsStringLinkerShape()
     {
         var stringPath = ExternalClientSmokeData.FindFirstFile("String", "String_000.wz");
@@ -316,6 +349,35 @@ public class ResourceInspectionExternalClientSmokeTests
     }
 
     [Fact]
+    public async Task InspectOptionalExternalClientCharacterImage_ReadsVectorAnchors()
+    {
+        var characterPath = ExternalClientSmokeData.FindFirstFile("Character", "Character_000.wz");
+        if (characterPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            characterPath,
+            "00002000.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 4,
+                IncludeDebugMetadata: true));
+
+        var bodyOrigin = AssertNode(inspection.Root, "walk1/0/body/origin", "vector");
+        var armOrigin = AssertNode(inspection.Root, "walk1/0/arm/origin", "vector");
+
+        Assert.Equal("(19, 32)", bodyOrigin.DisplayValue);
+        Assert.Equal("00002000.img", bodyOrigin.Identity?.ImageSelector);
+        Assert.Equal("walk1/0/body/origin", bodyOrigin.Identity?.ValuePath);
+        Assert.Equal("(6, 8)", armOrigin.DisplayValue);
+        Assert.Equal("walk1/0/arm/origin", armOrigin.Identity?.ValuePath);
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
     public async Task CanvasOptionalExternalClientCharacterImage_ResolvesOutlinkPreview()
     {
         var characterPath = ExternalClientSmokeData.FindFirstFile("Character", "Character_000.wz");
@@ -469,6 +531,16 @@ public class ResourceInspectionExternalClientSmokeTests
                 yield return descendant;
             }
         }
+    }
+
+    private static ResourceInspectionNode AssertNode(ResourceInspectionNode root, string path, string kind)
+    {
+        var node = Flatten(root)
+            .FirstOrDefault(node => string.Equals(node.Path, path, StringComparison.Ordinal));
+
+        Assert.NotNull(node);
+        Assert.Equal(kind, node.Kind);
+        return node;
     }
 
     private static void AssertNoErrorDiagnostics(ResourceInspectionDocument document)
