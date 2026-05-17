@@ -10,7 +10,7 @@ public sealed class ResourceCanvasPreviewViewModel : ViewModelBase, IDisposable
     public const double MinScale = 0.01;
     public const double MaxScale = 16;
 
-    private const double ViewportFillRatio = 0.9;
+    private const double ViewportFillRatio = 1.0;
 
     private double scale;
 

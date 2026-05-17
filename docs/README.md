@@ -139,9 +139,9 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
   exact value; selecting `source` / `_inlink` / `_outlink` string nodes resolves
   the linked Canvas when the current workspace layout can be mapped. The Preview
   tab exposes `Auto`, `0.25x`, `0.5x`, `1x`, `2x`, `4x`, `8x`, and `16x`
-  display scale controls. Preview defaults to `1x`; `Auto` fits the current
-  Preview viewport once and stores that fixed scale for subsequent images until
-  the user changes scale again.
+  display scale controls. Preview defaults to `1x`; `Auto` fits the full
+  current Preview viewport once and stores that fixed scale for subsequent
+  images until the user changes scale again.
 - Activity log panel。
 - 对 GMS split-package 布局做 WC-style package group 合并，例如：
   - 打开 `Map1.wz` 时如果旁边有 `Map1.ini`，会按 `LastWzIndex` 合并

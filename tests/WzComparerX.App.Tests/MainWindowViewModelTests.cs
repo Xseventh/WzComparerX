@@ -629,7 +629,7 @@ public class MainWindowViewModelTests
 
         var fitScale = preview.CalculateViewportFitScale(viewportWidth: 300, viewportHeight: 220);
 
-        Assert.Equal(2d, fitScale);
+        Assert.Equal(3d, fitScale);
         Assert.Equal(1d, preview.Scale);
         Assert.Equal("1x", preview.ScaleLabel);
         Assert.Equal(56d, preview.DisplayWidth);
@@ -694,10 +694,10 @@ public class MainWindowViewModelTests
         var fitScale = preview.CalculateViewportFitScale(viewportWidth: 800, viewportHeight: 400);
         preview.SetScale(fitScale);
 
-        Assert.Equal(0.3515625d, preview.Scale, precision: 6);
-        Assert.Equal("35%", preview.ScaleLabel);
-        Assert.Equal(720d, preview.DisplayWidth);
-        Assert.Equal(360d, preview.DisplayHeight);
+        Assert.Equal(0.390625d, preview.Scale, precision: 6);
+        Assert.Equal("39%", preview.ScaleLabel);
+        Assert.Equal(800d, preview.DisplayWidth);
+        Assert.Equal(400d, preview.DisplayHeight);
     }
 
     [Fact]

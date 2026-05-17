@@ -155,7 +155,7 @@ Tasks:
   `RGBA32Float` (`4100`), and WC's `RGB565 scale=4` expansion decoder slices.
   Preview now follows IMG Content selection: Canvas nodes preview exact values, root Canvas IMG objects
   share the same viewer path, and `source` / `_inlink` / `_outlink` strings can
-  resolve linked Canvas values. Preview defaults to `1x`; `Auto` fits the
+  resolve linked Canvas values. Preview defaults to `1x`; `Auto` fits the full
   current Preview viewport once and stores that fixed scale for subsequent
   images until the user changes scale again. Explicit `0.25x`, `0.5x`, `1x`,
   `2x`, `4x`, `8x`, and `16x` controls remain available.

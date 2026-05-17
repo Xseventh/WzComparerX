@@ -474,8 +474,8 @@ public class MainWindowHeadlessTests
             using var frame = CaptureFrame(window);
 
             Assert.True(viewModel.CanvasPreview.Scale < 1);
-            Assert.True(viewModel.CanvasPreview.DisplayWidth <= (previewViewportWidth * 0.91) + 1);
-            Assert.True(viewModel.CanvasPreview.DisplayHeight <= (previewViewportHeight * 0.91) + 1);
+            Assert.True(viewModel.CanvasPreview.DisplayWidth <= previewViewportWidth + 1);
+            Assert.True(viewModel.CanvasPreview.DisplayHeight <= previewViewportHeight + 1);
             Assert.DoesNotContain("Auto", viewModel.CanvasPreview.ScaleLabel, StringComparison.Ordinal);
             AssertPngCanBeSaved(frame);
             SaveScreenshotArtifact(frame, "main-window-canvas-preview-auto-viewport-900x640.png");
