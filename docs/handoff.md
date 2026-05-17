@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+ea6ccc8 Add real Video metadata smoke
 6d50d36 Guard linked image identity
 31bfc34 Add real Convex2D smoke coverage
 e95e094 Extract inspection value projection
@@ -452,7 +453,10 @@ Local GMS smoke status:
   `RunnerGameUI/Object/0/Tile/0/foothold`, with four polygon points.
 - Lua IMG and WC text-format IMG behavior is locked by synthetic fixtures, but
   still needs direct real-sample smoke verification when a suitable local
-  client entry is found.
+  client entry is found. A parser-based local GMS scan across common package
+  families found no `.lua` image entries; text-format discovery remains
+  deferred because the supported signatures are payload-level rather than
+  directory-name-level.
 
 ## Suggested Next Prompt
 
