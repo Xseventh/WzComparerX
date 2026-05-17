@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+2185d4c Add UI RawData smoke coverage
 e580ba9 Add real Vector smoke coverage
 7e424ed Add UI outlink App smoke
 9872b75 Add UI canvas outlink smoke
@@ -305,6 +306,10 @@ M4 completed:
   inspection service still composes the resource tree, but Base workspace
   fallback, same-package relative lookup, candidate de-duplication, and ancestor
   path normalization no longer sit directly in the main inspection flow.
+- Core IMG value metadata and payload diagnostic projection now lives in a
+  dedicated helper, so `ResourceInspectionService` composes inspection trees and
+  identities without directly owning every Canvas / RawData / Video / Sound /
+  Lua / text / geometry value family switch.
 - Core inspection nodes now carry `ResourceInspectionIdentity` with package
   path, image selector, and inside-IMG value path fields. Merged shard image
   identities point to their true source shard package. The current identity
