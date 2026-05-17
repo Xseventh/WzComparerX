@@ -27,6 +27,15 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+c4df81d Resolve package group image selectors
+da76f30 Use full viewport for Canvas preview auto scale
+247060a Make Canvas preview scale fixed
+cebcf93 Fit Canvas preview auto scale to viewport
+662bccf Preserve MN container kind
+fbb8b7c Add MS outlink App smoke
+789828e Skip List.wz in folder inspection
+9f253de Preview RGB565 scale 16 canvases
+fd1b8c9 Preview BC7 zlib canvases
 cd91689 Preview remaining direct zlib canvas formats
 c1ecd07 Preview RGBA1010102 zlib canvases
 b91152a Preview DXT3 zlib canvases
@@ -48,73 +57,11 @@ a107b16 Lock modern PKG2 CLI diagnostics
 8647e80 Expand GMS IMG smoke coverage
 129ae95 Update handoff after IMG scalar fixtures
 6d55a2c Lock IMG scalar inspection fixtures
+b30a659 Update handoff after List.wz inspection
 d5ab55e Inspect List.wz string lists
+2c0286a Update handoff after MS outlink preview
 d7a5918 Resolve MS outlink canvas previews
-32b365f Extract MS image payloads
-fb9c60a List MS MN packages in folder inspection
-102f5e4 Clarify MS MN container inspection
-ed341bd Sync handoff after MS inspection
-e86f706 Inspect MS container directory tables
-1b7ae13 Align docs with active M5 status
-df41527 Clarify legacy container support targets
-3d26b16 Report MS container inspection blocker
-b1226ba Record GMS container inventory
-3b7bdb0 Add optional GMS core smoke tests
-27b9a27 Guard malformed PKG1 directories
-aa093ce Document headless UI test convention
-6330ff0 Report package group shard diagnostics
-dda5994 Resolve linked target identity
-3ce6b97 Document resource identity contract
-d426cf6 Lock media payload diagnostics
-4dcccee Report PKG2 inspection blocker
-f21ec65 Report unresolved Canvas preview links
-38452b2 Report unresolved split package links
-777a090 Add Core link target identity
-03a9199 Add Core resource inspection identity
-487d82d Add M5 parser coverage matrix
-aba5c63 Replan post-M4 roadmap
-97b584e Split Core split package resolver
-c502e80 Split Avalonia details projection
-171b99c Split Avalonia image content workflow
-ca589a9 Close M4 and split Canvas preview workflow
-bb67eff Record M4 GMS UI smoke
-8d5e68d Align inspection defaults with full IMG browsing
-251ddcc Simplify Avalonia IMG controls
-ecfd10a Align Avalonia IMG browsing with WC
-9725296 Shrink large Canvas previews in auto mode
-3208f86 Add Canvas preview zoom controls
-7310f1d Preview Canvas on image selection
-5abfc4f Fix linked package image inspection
-70baa8d Add Avalonia Canvas preview
-84c6c0c Align IMG inspection with WC lazy loading
-1f13770 Document WCX project progress in Chinese
-335835a Eager load split package trees
-1949d1b Match WC split package lookup roots
-39a4b4e Bound recursive split package expansion
-2aeab66 Generalize split package linking
-b0b332e Link split packages in resource inspection
-be4a713 Add Avalonia package return navigation
-cc9b602 Support manual image inspection in Avalonia
-19d009f Split Avalonia resource view models
-ecfd7b2 Harden Avalonia UI state tests
-d6607fe Test Avalonia image node activation
-c47b3c1 Add Avalonia tree click smoke test
-7975530 Add Avalonia tree selection smoke test
-2e64dc7 Expand Avalonia resource root by default
-24f6525 Show Avalonia activity log panel
-aa7ccaa Save optional Avalonia headless screenshots
-d7301c6 Add Avalonia headless screenshot tests
-68fccec Add Avalonia headless app tests
-2299e11 Make Avalonia activity log visible
-f6337a2 Add Avalonia activity log panel
-6ee6782 Add Avalonia resource node activation
-c1ef46a Add folder choice to Avalonia browse menu
-abbb766 Align Avalonia open entry with WC
-5e201c0 Add Avalonia folder package browser
-29e560c Add Avalonia resource file picker
-1ef8fab Normalize Avalonia image selectors
-cae2482 Add Avalonia image inspection workflow
-0bccdaa Add basic Avalonia resource browser
+29bcf79 Refresh handoff recent commits
 ```
 
 ## What Has Been Done
