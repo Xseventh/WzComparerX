@@ -164,6 +164,16 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Export);
     }
 
+    public static ResourceInspectionDiagnostic ExportCanvasScaleUnsupported(int scale, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas export currently supports unscaled images and RGB565 scale 4 images only; found scale {scale}.",
+            selector,
+            ResourceDiagnosticCodes.ExportCanvasScaleUnsupported,
+            ResourceDiagnosticSources.Export);
+    }
+
     public static ResourceInspectionDiagnostic ExportCanvasDecodeFailed(string? selector)
     {
         return new ResourceInspectionDiagnostic(

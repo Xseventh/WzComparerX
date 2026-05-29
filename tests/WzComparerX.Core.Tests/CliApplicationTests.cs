@@ -1026,6 +1026,28 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportCanvasFormat1WithOut_WritesBgra8888Pixels()
+    {
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage([0x21, 0xf3], width: 1, format: 1));
+        var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-canvas-{Guid.NewGuid():N}.bin");
+
+        try
+        {
+            var result = await RunCliAsync("export", "--type", "canvas", "--out", outputPath, "--value", "icon", "--key", "none", path, "Canvas.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal([0x11, 0x22, 0x33, 0xff], await File.ReadAllBytesAsync(outputPath));
+        }
+        finally
+        {
+            File.Delete(path);
+            File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
     public async Task ExportCanvasWithoutValue_ReturnsStructuredDiagnostic()
     {
         var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1));
@@ -1134,7 +1156,7 @@ public class CliApplicationTests
     {
         var path = WriteTemporaryPkg1ImageFile(
             "Canvas.img",
-            CreateCanvasImage([0x10, 0x20], width: 1, format: 1));
+            CreateCanvasImage([0x10, 0x20], width: 1, format: 15));
         var expectedError = await ReadExpectedFixtureAsync("export-canvas-unsupported-format.stderr.txt");
 
         try

@@ -65,6 +65,7 @@ Current examples:
 - `wcx.export.unsupported`
 - `wcx.export.canvas.compressionUnsupported`
 - `wcx.export.canvas.formatUnsupported`
+- `wcx.export.canvas.scaleUnsupported`
 - `wcx.export.canvas.decodeFailed`
 - `wcx.export.binary.outRequired`
 - `wcx.export.value.required`

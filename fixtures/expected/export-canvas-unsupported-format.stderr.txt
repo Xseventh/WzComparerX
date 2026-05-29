@@ -1,1 +1,1 @@
-error [wcx.export.canvas.formatUnsupported]: Canvas export does not support format 1. (icon)
+error [wcx.export.canvas.formatUnsupported]: Canvas export does not support format 15. (icon)

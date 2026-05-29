@@ -1,16 +1,15 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using WzComparerX.WzLib;
 
 #if NET6_0_OR_GREATER
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 #endif
 
-namespace WzComparerX.Core;
+namespace WzComparerX.WzLib;
 
-internal static class ResourceCanvasBc7Decoder
+internal static class WzImageCanvasBc7Decoder
 {
     // BC7 block unpacking follows WC's port of Rich Geldreich's MIT-licensed bc7decomp.
     public static (int Width, int Height, byte[] Pixels) ConvertToBgra8888(WzImageCanvasBitmap bitmap, string? path)
@@ -19,13 +18,13 @@ internal static class ResourceCanvasBc7Decoder
         var decodedHeight = bitmap.Height & ~3;
         if (decodedWidth <= 0 || decodedHeight <= 0)
         {
-            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(path));
+            throw WzImageCanvasBitmapDecodeException.DecodeFailed(path);
         }
 
         var expectedLength = checked(bitmap.Width * decodedHeight);
         if (bitmap.Pixels.Length < expectedLength)
         {
-            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(path));
+            throw WzImageCanvasBitmapDecodeException.DecodeFailed(path);
         }
 
         var source = bitmap.Pixels.AsSpan(0, expectedLength);
@@ -80,18 +79,8 @@ internal static class BC7Decomp
 
         private Span<byte> AsBytes()
         {
-#if NET6_0_OR_GREATER
-        var pThis = MemoryMarshal.CreateSpan(ref this, 1);
-        return MemoryMarshal.Cast<color_rgba, byte>(pThis);
-#else
-            unsafe
-            {
-                fixed (color_rgba* p = &this)
-                {
-                    return new Span<byte>(p, sizeof(color_rgba));
-                }
-            }
-#endif
+            var pThis = MemoryMarshal.CreateSpan(ref this, 1);
+            return MemoryMarshal.Cast<color_rgba, byte>(pThis);
         }
 
         public void set_noclamp_rgba(uint vr, uint vg, uint vb, uint va) => this.set(vr, vg, vb, va);
@@ -268,11 +257,9 @@ internal static class BC7Decomp
         return Avx2.ShiftRightLogical(Avx2.Add(Avx2.Add(Avx2.MultiplyLow(l, iw), Avx2.MultiplyLow(h, w)), Vector256.Create((short)32)), 6);
     }
 
-    static unsafe void bc7_interp2_sse2(ReadOnlySpan<color_rgba> endpoint_pair, Span<color_rgba> out_colors)
+    static void bc7_interp2_sse2(ReadOnlySpan<color_rgba> endpoint_pair, Span<color_rgba> out_colors)
     {
-        Vector128<byte> endpoints;
-        fixed (color_rgba* pInput = endpoint_pair)
-            endpoints = Sse2.LoadScalarVector128((long*)pInput).AsByte();
+        Vector128<byte> endpoints = LoadLower64(endpoint_pair);
         Vector128<short> endpoints_16 = Sse2.UnpackLow(endpoints, new Vector128<byte>()).AsInt16();
         Vector128<short> endpoints_16_swapped = Sse2.Shuffle(endpoints_16.AsInt32(), 0b_01_00_11_10).AsInt16();
 
@@ -284,15 +271,12 @@ internal static class BC7Decomp
 
         all_colors = Sse2.Shuffle(all_colors.AsInt32(), 0b_11_01_00_10).AsByte();
 
-        fixed (color_rgba* pOutput = out_colors)
-            Sse2.Store((byte*)pOutput, all_colors);
+        StoreVector128(all_colors, out_colors);
     }
 
-    static unsafe void bc7_interp3_sse2(ReadOnlySpan<color_rgba> endpoint_pair, Span<color_rgba> out_colors)
+    static void bc7_interp3_sse2(ReadOnlySpan<color_rgba> endpoint_pair, Span<color_rgba> out_colors)
     {
-        Vector128<byte> endpoints;
-        fixed (color_rgba* pInput = endpoint_pair)
-            endpoints = Sse2.LoadScalarVector128((long*)pInput).AsByte();
+        Vector128<byte> endpoints = LoadLower64(endpoint_pair);
         Vector128<short> endpoints_16bit = Sse2.UnpackLow(endpoints, new Vector128<byte>()).AsInt16();
         Vector128<short> endpoints_16bit_swapped = Sse2.Shuffle(endpoints_16bit.AsInt32(), 0b_01_00_11_10).AsInt16();
 
@@ -306,18 +290,13 @@ internal static class BC7Decomp
         Vector128<byte> all_colors_0 = Sse2.PackUnsignedSaturate(interpolated_01, interpolated_23);
         Vector128<byte> all_colors_1 = Sse2.PackUnsignedSaturate(interpolated_45, interpolated_67);
 
-        fixed (color_rgba* pOutput = out_colors)
-        {
-            Sse2.Store((byte*)pOutput, all_colors_0);
-            Sse2.Store((byte*)(pOutput + 4), all_colors_1);
-        }
+        StoreVector128(all_colors_0, out_colors);
+        StoreVector128(all_colors_1, out_colors[4..]);
     }
 
-    static unsafe void bc7_interp3_avx2(ReadOnlySpan<color_rgba> endpoint_pair, Span<color_rgba> out_colors)
+    static void bc7_interp3_avx2(ReadOnlySpan<color_rgba> endpoint_pair, Span<color_rgba> out_colors)
     {
-        Vector128<byte> endpoints;
-        fixed (color_rgba* pInput = endpoint_pair)
-            endpoints = Sse2.LoadScalarVector128((long*)pInput).AsByte();
+        Vector128<byte> endpoints = LoadLower64(endpoint_pair);
         Vector128<short> endpoints_16bit = Sse2.UnpackLow(endpoints, new Vector128<byte>()).AsInt16();
         Vector128<short> endpoints_16bit_swapped = Sse2.Shuffle(endpoints_16bit.AsInt32(), 0b_01_00_11_10).AsInt16();
 
@@ -340,11 +319,19 @@ internal static class BC7Decomp
         Vector128<byte> all_colors_0 = Sse2.PackUnsignedSaturate(interpolated_01, interpolated_23);
         Vector128<byte> all_colors_1 = Sse2.PackUnsignedSaturate(interpolated_45, interpolated_67);
 
-        fixed (color_rgba* pOutput = out_colors)
-        {
-            Sse2.Store((byte*)pOutput, all_colors_0);
-            Sse2.Store((byte*)(pOutput + 4), all_colors_1);
-        }
+        StoreVector128(all_colors_0, out_colors);
+        StoreVector128(all_colors_1, out_colors[4..]);
+    }
+
+    private static Vector128<byte> LoadLower64(ReadOnlySpan<color_rgba> colors)
+    {
+        var bytes = MemoryMarshal.AsBytes(colors);
+        return Vector128.CreateScalar(MemoryMarshal.Read<ulong>(bytes)).AsByte();
+    }
+
+    private static void StoreVector128(Vector128<byte> value, Span<color_rgba> colors)
+    {
+        value.CopyTo(MemoryMarshal.AsBytes(colors));
     }
 #endif
 
@@ -714,7 +701,7 @@ internal static class BC7Decomp
         public ulong m_s33 => (this.m_hi >> 60) & 0x0f;
     };
 
-    static unsafe void unpack_bc7_mode6(ReadOnlySpan<ulong> pBlock_bits, Span<color_rgba> pPixels)
+    static void unpack_bc7_mode6(ReadOnlySpan<ulong> pBlock_bits, Span<color_rgba> pPixels)
     {
         ref readonly bc7_mode_6 block = ref MemoryMarshal.Cast<ulong, bc7_mode_6>(pBlock_bits)[0];
 
@@ -749,8 +736,7 @@ internal static class BC7Decomp
                 Vector128<short> second_half = Sse2.ShiftRightLogical(Sse2.Add(Sse2.Add(Sse2.MultiplyLow(vep0, iw1), Sse2.MultiplyLow(vep1, w1)), Vector128.Create((short)32)), 6);
                 Vector128<byte> combined = Sse2.PackUnsignedSaturate(first_half, second_half);
 
-                fixed (color_rgba* pVals = vals)
-                    Sse2.Store((byte*)(pVals + i), combined);
+                StoreVector128(combined, vals[i..]);
             }
         }
         else
@@ -813,7 +799,7 @@ internal static class BC7Decomp
                 unpack_bc7_mode6(data_chunks, pPixels);
                 break;
             default:
-                Unsafe.InitBlockUnaligned(ref MemoryMarshal.AsBytes(pPixels)[0], 0, 4 * 16);
+                MemoryMarshal.AsBytes(pPixels).Fill(0);
                 break;
         }
     }

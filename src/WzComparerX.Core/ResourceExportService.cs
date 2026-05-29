@@ -101,27 +101,19 @@ public sealed class ResourceExportService
         var inspection = await ReadImageInspectionAsync(path, selector, options, cancellationToken);
         var canvas = SelectCanvas(inspection, selector, options.ValueSelector);
 
-        if (canvas.Value.CompressionKind != WzImageCanvasCompressionKind.Zlib)
-        {
-            throw new ResourceExportException(
-                ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(canvas.Value.CompressionKind, canvas.Path));
-        }
-
-        if (canvas.Value.Format is not 2 and not 2562)
-        {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(canvas.Value.Format, canvas.Path));
-        }
-
         cancellationToken.ThrowIfCancellationRequested();
         await using var stream = File.OpenRead(inspection.Header.SourcePath);
-        WzImageCanvasBitmap bitmap;
+        WzImageCanvasBgraBitmap bitmap;
         try
         {
-            bitmap = new WzImageCanvasPayloadDecoder().Decode(stream, canvas.Value);
+            bitmap = new WzImageCanvasBitmapDecoder().DecodeToBgra8888(
+                stream,
+                canvas.Value,
+                canvas.Path);
         }
-        catch (Exception ex) when (ex is InvalidDataException or EndOfStreamException or NotSupportedException)
+        catch (WzImageCanvasBitmapDecodeException ex)
         {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(canvas.Path));
+            throw new ResourceExportException(ToExportDiagnostic(ex));
         }
 
         return new ResourceExportDocument(
@@ -129,6 +121,20 @@ public sealed class ResourceExportService
             ResourceExportKind.Canvas,
             "application/octet-stream",
             bitmap.Pixels);
+    }
+
+    private static ResourceInspectionDiagnostic ToExportDiagnostic(WzImageCanvasBitmapDecodeException exception)
+    {
+        return exception.Kind switch
+        {
+            WzImageCanvasBitmapDecodeFailureKind.CompressionUnsupported =>
+                ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(exception.CompressionKind!.Value, exception.Path),
+            WzImageCanvasBitmapDecodeFailureKind.FormatUnsupported =>
+                ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(exception.Format!.Value, exception.Path),
+            WzImageCanvasBitmapDecodeFailureKind.ScaleUnsupported =>
+                ResourceInspectionDiagnostics.ExportCanvasScaleUnsupported(exception.Scale!.Value, exception.Path),
+            _ => ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(exception.Path)
+        };
     }
 
     private static IEnumerable<string> ExtractLuaScripts(WzImageInspection inspection)

@@ -61,6 +61,34 @@ public class WzImageCanvasPayloadDecoderTests
         Assert.Equal(pixels, bitmap.Pixels);
     }
 
+    [Fact]
+    public void DecodeToBgra8888_ConvertsFormat1ZlibPixels()
+    {
+        byte[] pixels = [0x21, 0xf3];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 1,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasBitmapDecoder();
+
+        var bitmap = decoder.DecodeToBgra8888(stream, canvas, "icon");
+
+        Assert.Equal(1, bitmap.Width);
+        Assert.Equal(1, bitmap.Height);
+        Assert.Equal(1, bitmap.Format);
+        Assert.Equal("bgra8888", bitmap.PixelFormat);
+        Assert.Equal([0x11, 0x22, 0x33, 0xff], bitmap.Pixels);
+    }
+
     [Theory]
     [InlineData(257)]
     [InlineData(513)]
@@ -331,6 +359,32 @@ public class WzImageCanvasPayloadDecoderTests
         var ex = Assert.Throws<NotSupportedException>(() => decoder.Decode(stream, canvas));
 
         Assert.Contains("format: 9999", ex.Message);
+    }
+
+    [Fact]
+    public void DecodeToBgra8888_RejectsUnsupportedFormatWithKind()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var payload = CreateDirectZlibPayload(pixels);
+        using var stream = new MemoryStream(payload);
+        var canvas = new WzImageCanvasInspection(
+            Width: 1,
+            Height: 1,
+            Format: 9999,
+            Scale: 0,
+            Pages: 1,
+            Unknown1: 0,
+            DataOffset: 0,
+            DataLength: payload.Length,
+            WzImageCanvasCompressionKind.Zlib,
+            UncompressedDataLength: pixels.Length);
+        var decoder = new WzImageCanvasBitmapDecoder();
+
+        var ex = Assert.Throws<WzImageCanvasBitmapDecodeException>(() => decoder.DecodeToBgra8888(stream, canvas, "icon"));
+
+        Assert.Equal(WzImageCanvasBitmapDecodeFailureKind.FormatUnsupported, ex.Kind);
+        Assert.Equal(9999, ex.Format);
+        Assert.Equal("icon", ex.Path);
     }
 
     [Fact]

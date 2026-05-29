@@ -58,7 +58,7 @@ WCX 已经能在没有 UI 的情况下完成资源浏览和自动化检查：
 - 递归扫描目录中的 WZ package header。
 - 用 `inspect` 输出统一的 resource inspection tree。
 - 用 `inspect --debug` 输出底层解析元数据和稳定 diagnostics。
-- 用 `export` 导出 metadata、WC text-format IMG、Lua IMG、以及第一阶段 raw Canvas bytes。
+- 用 `export` 导出 metadata、WC text-format IMG、Lua IMG、以及 direct-zlib Canvas BGRA8888 bytes。
 
 当前支持的主要命令见 `docs/commands.md`。
 
@@ -91,7 +91,7 @@ Milestone 3 已经收口：
   - metadata JSON；
   - WC text-format IMG stream；
   - Lua IMG script；
-  - direct-zlib raw Canvas bytes。
+  - direct-zlib Canvas BGRA8888 bytes。
 - Canvas export 使用 `--value <property-path>` 明确选择 IMG 内部 Canvas 值。
 - diagnostics 具有稳定的 severity、source、code、path、CLI text formatting 和文档。
 - PNG export、完整 Canvas pixel matrix、音视频 payload decode、完整 PKG2 directory parsing、XML dump 都是后续工作。

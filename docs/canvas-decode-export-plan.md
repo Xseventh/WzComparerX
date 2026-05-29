@@ -84,22 +84,18 @@ conditions through CLI output.
 5. Add CLI golden tests for `export --type canvas --out`.
 6. Run real-client smoke tests only after synthetic coverage is deterministic.
 
-Status: steps 1 through 5 are started for direct zlib Canvas payloads with
-format `2` / `2562`, including a committed hex fixture, `inspect --debug`
-text/JSON golden outputs, and raw-byte CLI export coverage. This raw-byte path
-is sufficient for M3 only as a parser/export slice. The Avalonia viewer also
-converts direct-zlib `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`),
-`R16` (`769`), `ARGB8888` (`2`), `A8` (`2304`), `RGBA1010102` (`2562`),
-`DXT3` (`1026`), `DXT5` (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and
-`RGBA32Float` (`4100`) into BGRA8888 preview pixels. PNG export and broader Canvas format
-coverage are later user-facing image export work. `RGB565` also supports WC's
-`scale=4` / `ActualScale=16` case by expanding each source pixel into a 16x16
-block, matching WC's `ImageCodec.ScalePixels` path.
+Status: steps 1 through 5 started with direct-zlib format `2` / `2562` and now
+share a WzLib Canvas bitmap decoder for both Preview and CLI export. The shared
+decoder converts direct-zlib `ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565`
+(`513`), `R16` (`769`), `ARGB8888` (`2`), `A8` (`2304`), `RGBA1010102`
+(`2562`), `DXT3` (`1026`), `DXT5` (`2050`), `DXT1` (`4097`), `BC7` (`4098`),
+and `RGBA32Float` (`4100`) into BGRA8888 bytes. PNG export and non-direct-zlib
+Canvas payloads remain later user-facing image export work. `RGB565` also
+supports WC's `scale=4` / `ActualScale=16` case by expanding each source pixel
+into a 16x16 block, matching WC's `ImageCodec.ScalePixels` path.
 Canvas export now supports the explicit value selector described in
 `docs/canvas-export-selector-plan.md`.
 
-M4 note: the basic Avalonia preview reuses the same payload decoder and adds a
-small viewer conversion path for direct-zlib format `1` / `257` / `513` /
-`769` / `2` / `2304` / `2562` / `1026` / `2050` / `4097` / `4098` Canvas
-values. `4100` and `513 scale=4` are also supported as viewer conversion slices.
-This does not change the current raw Canvas export contract.
+M5 note: the format conversion logic is no longer a Preview-only path. WzLib
+owns Canvas payload decompression and BGRA8888 bitmap conversion; Core maps the
+same decoder failures into viewer or export diagnostics.

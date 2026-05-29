@@ -91,8 +91,8 @@ Tasks:
   stable severity/source/code constants, shared CLI text formatting, and
   `docs/diagnostics.md`.
 - Define first Canvas decode/export slice. Documented in
-  `docs/canvas-decode-export-plan.md`; WzLib direct-zlib decoder and raw-byte
-  CLI export are covered by committed synthetic fixtures.
+  `docs/canvas-decode-export-plan.md`; WzLib direct-zlib Canvas bitmap decode
+  and byte-oriented CLI export are covered by committed synthetic fixtures.
 - Continue export surface decisions for stdout vs `--out`, text vs binary
   content, and partial/unsupported payload diagnostics.
 - Define and implement explicit Canvas value selection for export. Implemented
@@ -102,21 +102,21 @@ Tasks:
 Exit criteria:
 
 - CLI can inspect and export synthetic/raw nodes plus metadata, text IMG, Lua
-  IMG, and the first raw Canvas byte slice.
+  IMG, and the Canvas byte export slice.
 - Output is covered by snapshot-like expected files.
 - Parser diagnostics are available through `inspect --debug`.
 - Diagnostics rules are documented and tested.
 - Canvas export does not rely on "first Canvas wins"; callers select a Canvas
   value explicitly and that behavior has CLI golden coverage.
 - PNG export is not required for M3. It remains a later user-facing image export
-  milestone after raw Canvas bytes, value selection, and diagnostics are stable.
+  milestone after Canvas byte export, value selection, and diagnostics are stable.
 
 Closeout notes:
 
 - M3 establishes `inspect`, `inspect --debug`, and `export` as the headless
   automation surfaces.
 - Export currently covers metadata JSON, WC text-format IMG, Lua IMG, and the
-  first raw Canvas byte slice.
+  Canvas BGRA8888 byte slice.
 - Diagnostics have stable severities, sources, codes, CLI text formatting, and
   docs.
 - M4 should now build UI browsing on top of Core inspection/export models
@@ -526,7 +526,7 @@ parser coverage and smoke notes.
 | Basic resource browsing | WZ/IMG/MS/MN open, three-tree browsing, details, context menus, history | WZ/MS/MN/file/folder/fixture open, Resources + IMG Content + Preview | ~45% | M9 |
 | Package parsing | PKG1, PKG2, Base/extension packages, `.ms`/`.mn`, List.wz, newer KMST formats | PKG1 mainline; PKG2 KMST1199/1200 directory and image-offset first slice; `.ms`/`.mn` directory tables and initial image payload extraction; List.wz first-slice inspection | ~50-55% | M5 |
 | IMG property parsing | Property, Vector, Convex, UOL, Canvas, Sound, RawData, Video, Lua, text IMG | Most have inspection metadata; payload behavior is shallow | ~50% | M5 |
-| Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | Direct-zlib viewer slices for `1`/`257`/`513`/`513 scale=4`/`769`/`2`/`2304`/`2562`/`1026`/`2050`/`4097`/`4098`/`4100`; raw export remains the initial direct-zlib Canvas byte slice | ~45% | M8 |
+| Canvas/image decode | Multiple pixel formats, display, PNG save, raw export | WzLib shared BGRA8888 bitmap decoder plus Preview/CLI export slices for direct-zlib `1`/`257`/`513`/`513 scale=4`/`769`/`2`/`2304`/`2562`/`1026`/`2050`/`4097`/`4098`/`4100`; PNG export remains later | ~50% | M8 |
 | Animation/GIF/APNG/video export | Frame extraction, GIF/APNG, FFmpeg settings | No complete animation export | ~0-5% | M8 |
 | Sound playback/export | Sound_DX8 extract, play, pause, loop, save mp3/wav/pcm | Sound metadata only | ~5% | M8 |
 | Canvas#Video/video | VPX/video load and preview paths | Video metadata only | ~0-5% | M8 |

@@ -170,21 +170,21 @@ The old temporary parser/CLI terminology has been retired from active design,
 command documentation, file names, and active tests. The supported observation
 surface is now `inspect` and `inspect --debug`.
 
-Canvas pixel decoding has the first narrow direct-zlib raw-byte export slice for
-format `2` / `2562`, while the Avalonia viewer can convert direct-zlib
-`ARGB4444` (`1`), `ARGB1555` (`257`), `RGB565` (`513`), `R16` (`769`),
-`ARGB8888` (`2`), `A8` (`2304`), `RGBA1010102` (`2562`), `DXT3` (`1026`),
-`DXT5` (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and `RGBA32Float` (`4100`) Canvas payloads
-to BGRA8888 preview pixels. `RGB565` also handles WC's `scale=4` /
-`ActualScale=16` path by repeating each source pixel into a 16x16 block.
-PNG export and broader Canvas format coverage remain later work.
+Canvas pixel decoding now uses a shared WzLib Canvas bitmap decoder for Preview
+and CLI Canvas export. It converts direct-zlib `ARGB4444` (`1`), `ARGB1555`
+(`257`), `RGB565` (`513`), `R16` (`769`), `ARGB8888` (`2`), `A8` (`2304`),
+`RGBA1010102` (`2562`), `DXT3` (`1026`), `DXT5` (`2050`), `DXT1` (`4097`),
+`BC7` (`4098`), and `RGBA32Float` (`4100`) Canvas payloads to BGRA8888 bytes.
+`RGB565` also handles WC's `scale=4` / `ActualScale=16` path by repeating each
+source pixel into a 16x16 block. PNG export and non-direct-zlib Canvas payloads
+remain later work.
 RawData/Video/Sound payload decoding is not implemented yet. Lua image entries report script length and a
 short UTF-8 snippet; `export --type lua` writes the full decoded script for
 supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
 `export --type text`. Text exports write to stdout by default or exact bytes to
-`--out <path>`; Canvas export is
-binary-only and requires `--out`. Diagnostics carry stable severities, codes,
+`--out <path>`; Canvas export writes BGRA8888 bytes, is binary-only, and
+requires `--out`. Diagnostics carry stable severities, codes,
 sources, and resource paths through `ResourceInspectionDiagnostics`; CLI text
 output prints codes in brackets when present and avoids volatile raw exception
 text. The diagnostic rules are documented in `docs/diagnostics.md`.
@@ -201,10 +201,10 @@ object-type families only when new behavior needs them.
 Canvas decode/export follows the narrow plan in
 `docs/canvas-decode-export-plan.md`: synthetic fixture first, direct zlib and a
 single verified pixel format first, payload decoder separate from parser
-metadata and Core export. The first raw-byte `export --type canvas --out` slice
-exists for direct zlib Canvas payloads with format `2` / `2562`. PNG export is
-not required for M3; it remains later user-facing image export work. Canvas
-export now uses `--value <property-path>` for IMG-internal Canvas selection; the
+metadata and Core export. The current `export --type canvas --out` slice reuses
+the shared WzLib BGRA8888 decoder that Preview uses. PNG export is not required
+for M3; it remains later user-facing image export work. Canvas export now uses
+`--value <property-path>` for IMG-internal Canvas selection; the
 selector design is in `docs/canvas-export-selector-plan.md`.
 Committed synthetic PKG1 hex fixtures now cover Canvas, WC text-format IMG, and
 Lua IMG export paths, with expected text/JSON/stdout/stderr golden outputs
@@ -221,8 +221,8 @@ M3 closeout:
 
 - `inspect`, `inspect --debug`, and `export` are the headless automation
   surfaces.
-- Export covers metadata JSON, WC text-format IMG, Lua IMG, and raw direct-zlib
-  Canvas bytes.
+- Export covers metadata JSON, WC text-format IMG, Lua IMG, and direct-zlib
+  Canvas BGRA8888 bytes.
 - Diagnostics have stable severities, sources, codes, CLI text formatting, and
   docs.
 - XML dump, PNG export, broader Canvas decode, audio/video decode, and full PKG2

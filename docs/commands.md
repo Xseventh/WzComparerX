@@ -133,12 +133,13 @@ types, object value metadata, property type/kind data, and Canvas/RawData/Video/
 Sound payload offsets and lengths.
 
 Canvas metadata includes payload compression kind and expected uncompressed byte
-length when the texture format is known. The first narrow direct-zlib Canvas raw
-pixel export slice exists for format `2` / `2562`; PNG export and broader
-texture formats are still later steps. Lua image entries (`*.lua`) report script
-length and a short UTF-8 snippet. WC text-format IMG streams are also recognized
-when their payload starts with `#Property` or `Root <Property>` and are
-inspected as bounded `Property` trees.
+length when the texture format is known. Canvas bitmap decoding lives in WzLib
+and converts supported direct-zlib texture formats to BGRA8888 bytes for both
+Preview and CLI export. PNG export and non-direct-zlib Canvas payloads are still
+later steps. Lua image entries (`*.lua`) report script length and a short UTF-8
+snippet. WC text-format IMG streams are also recognized when their payload
+starts with `#Property` or `Root <Property>` and are inspected as bounded
+`Property` trees.
 
 To export data through the Core export abstraction:
 
@@ -158,7 +159,8 @@ concatenated in stream order without inserting extra separators. `export --type
 canvas` currently writes raw decoded Canvas pixel bytes for the Canvas value
 selected by `--value <property-path>`. If the selected IMG root object is
 directly a Canvas, `--value` can be omitted. It is not PNG export yet and
-currently only supports the first narrow direct-zlib Canvas format slice.
+currently writes BGRA8888 bytes for the same supported direct-zlib Canvas
+bitmap formats used by Preview.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 
