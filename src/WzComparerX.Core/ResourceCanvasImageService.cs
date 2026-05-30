@@ -4,6 +4,9 @@ namespace WzComparerX.Core;
 
 public sealed class ResourceCanvasImageService
 {
+    private const int MaxLinkResolutionDepth = 16;
+    private static readonly string[] CanvasLinkPropertyOrder = ["source", "_inlink", "_outlink", "link"];
+
     public async Task<ResourceCanvasImageDocument> LoadAsync(
         string path,
         string selector,
@@ -152,7 +155,7 @@ public sealed class ResourceCanvasImageService
             return CanvasImageTarget.Local(context, canvas, match.Path ?? valueSelector);
         }
 
-        if (match.Value is string linkValue && IsCanvasLinkProperty(match))
+        if (IsCanvasLinkProperty(match))
         {
             var linkedTarget = await ResolveCanvasLinkAsync(
                 context,
@@ -168,8 +171,8 @@ public sealed class ResourceCanvasImageService
                 ResourceInspectionDiagnostics.CanvasPreviewLinkUnresolved(
                     valueSelector,
                     selector,
-                    match.Name ?? "link",
-                    ResourceInspectionLinkResolver.NormalizeLinkTarget(linkValue) ?? string.Empty));
+                    ResourceInspectionLinkResolver.GetLinkKind(match) ?? match.Name ?? "link",
+                    ResourceInspectionLinkResolver.GetLinkedTarget(match) ?? string.Empty));
         }
 
         throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector));
@@ -181,6 +184,49 @@ public sealed class ResourceCanvasImageService
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
     {
+        return await ResolveCanvasLinkAsync(
+            context,
+            linkProperty,
+            options,
+            cancellationToken,
+            new HashSet<string>(StringComparer.Ordinal),
+            depth: 0,
+            contextIsOwned: false);
+    }
+
+    private static async Task<CanvasImageTarget?> ResolveCanvasLinkAsync(
+        CanvasImageInspectionContext context,
+        WzImagePropertyInspectionEntry linkProperty,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken,
+        HashSet<string> visited,
+        int depth,
+        bool contextIsOwned)
+    {
+        if (depth >= MaxLinkResolutionDepth)
+        {
+            return null;
+        }
+
+        var linkKind = ResourceInspectionLinkResolver.GetLinkKind(linkProperty);
+        var linkedTarget = ResourceInspectionLinkResolver.GetLinkedTarget(linkProperty);
+        if (string.IsNullOrWhiteSpace(linkKind) || string.IsNullOrWhiteSpace(linkedTarget))
+        {
+            return null;
+        }
+
+        var visitKey = string.Join(
+            '\0',
+            context.SourcePath,
+            context.ImageInspection.Selector,
+            linkProperty.Path,
+            linkKind,
+            linkedTarget);
+        if (!visited.Add(visitKey))
+        {
+            return null;
+        }
+
         var resolvedTarget = await ResourceInspectionLinkResolver.ResolveAsync(
             context.SourcePath,
             context.ImageInspection,
@@ -192,20 +238,36 @@ public sealed class ResourceCanvasImageService
             return null;
         }
 
-        if (string.Equals(resolvedTarget.PackagePath, context.SourcePath, StringComparison.Ordinal) &&
-            string.Equals(resolvedTarget.ImageSelector, context.ImageInspection.Selector, StringComparison.Ordinal))
-        {
-            if (string.IsNullOrWhiteSpace(resolvedTarget.ValuePath))
-            {
-                return context.ImageInspection.ObjectValue is WzImageCanvasInspection localRootCanvas
-                    ? CanvasImageTarget.Local(context, localRootCanvas, null)
-                    : null;
-            }
+        return await ResolveCanvasTargetAsync(
+            context,
+            resolvedTarget,
+            options,
+            cancellationToken,
+            visited,
+            depth + 1,
+            contextIsOwned);
+    }
 
-            var localCanvas = FindCanvasProperty(context.ImageInspection, resolvedTarget.ValuePath);
-            return localCanvas?.Value is WzImageCanvasInspection canvas
-                ? CanvasImageTarget.Local(context, canvas, localCanvas.Path ?? resolvedTarget.ValuePath)
-                : null;
+    private static async Task<CanvasImageTarget?> ResolveCanvasTargetAsync(
+        CanvasImageInspectionContext currentContext,
+        ResourceInspectionResolvedLinkTarget resolvedTarget,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken,
+        HashSet<string> visited,
+        int depth,
+        bool currentContextIsOwned)
+    {
+        if (string.Equals(resolvedTarget.PackagePath, currentContext.SourcePath, StringComparison.Ordinal) &&
+            string.Equals(resolvedTarget.ImageSelector, currentContext.ImageInspection.Selector, StringComparison.Ordinal))
+        {
+            return await ResolveCanvasInContextAsync(
+                currentContext,
+                resolvedTarget.ValuePath,
+                options,
+                cancellationToken,
+                visited,
+                depth,
+                currentContextIsOwned);
         }
 
         var linkedContext = await CanvasImageInspectionContext.LoadAsync(
@@ -213,42 +275,123 @@ public sealed class ResourceCanvasImageService
             resolvedTarget.ImageSelector,
             options,
             cancellationToken);
-        var linkedCanvasProperty = string.IsNullOrWhiteSpace(resolvedTarget.ValuePath)
-            ? null
-            : FindCanvasProperty(linkedContext.ImageInspection, resolvedTarget.ValuePath);
-        if (linkedCanvasProperty?.Value is WzImageCanvasInspection linkedCanvas)
+
+        try
         {
-            return CanvasImageTarget.Linked(
+            var linkedTarget = await ResolveCanvasInContextAsync(
                 linkedContext,
-                linkedCanvas,
-                linkedCanvasProperty.Path ?? resolvedTarget.ValuePath);
-        }
+                resolvedTarget.ValuePath,
+                options,
+                cancellationToken,
+                visited,
+                depth,
+                contextIsOwned: true);
 
-        if (string.IsNullOrWhiteSpace(resolvedTarget.ValuePath) &&
-            linkedContext.ImageInspection.ObjectValue is WzImageCanvasInspection linkedRootCanvas)
+            if (linkedTarget is null || !linkedTarget.UsesContext(linkedContext))
+            {
+                await linkedContext.DisposeAsync();
+            }
+
+            return linkedTarget;
+        }
+        catch
         {
-            return CanvasImageTarget.Linked(linkedContext, linkedRootCanvas, null);
+            await linkedContext.DisposeAsync();
+            throw;
         }
-
-        await linkedContext.DisposeAsync();
-        return null;
     }
 
-    private static WzImagePropertyInspectionEntry? FindCanvasProperty(WzImageInspection inspection, string valuePath)
+    private static async Task<CanvasImageTarget?> ResolveCanvasInContextAsync(
+        CanvasImageInspectionContext context,
+        string? valuePath,
+        ResourceInspectionOptions options,
+        CancellationToken cancellationToken,
+        HashSet<string> visited,
+        int depth,
+        bool contextIsOwned)
+    {
+        if (string.IsNullOrWhiteSpace(valuePath))
+        {
+            return context.ImageInspection.ObjectValue is WzImageCanvasInspection rootCanvas
+                ? CanvasImageTarget.Create(context, rootCanvas, null, contextIsOwned)
+                : null;
+        }
+
+        var property = FindProperty(context.ImageInspection, valuePath);
+        if (property is null)
+        {
+            return null;
+        }
+
+        if (IsCanvasLinkProperty(property))
+        {
+            return await ResolveCanvasLinkAsync(
+                context,
+                property,
+                options,
+                cancellationToken,
+                visited,
+                depth + 1,
+                contextIsOwned);
+        }
+
+        if (property.Value is not WzImageCanvasInspection canvas)
+        {
+            return null;
+        }
+
+        var childLink = FindCanvasChildLinkProperty(property);
+        if (childLink is not null)
+        {
+            var linkedTarget = await ResolveCanvasLinkAsync(
+                context,
+                childLink,
+                options,
+                cancellationToken,
+                visited,
+                depth + 1,
+                contextIsOwned);
+            if (linkedTarget is not null)
+            {
+                return linkedTarget;
+            }
+        }
+
+        return CanvasImageTarget.Create(context, canvas, property.Path ?? valuePath, contextIsOwned);
+    }
+
+    private static WzImagePropertyInspectionEntry? FindProperty(WzImageInspection inspection, string valuePath)
     {
         return inspection.Properties?
             .SelectMany(Flatten)
             .FirstOrDefault(property =>
-                property.Value is WzImageCanvasInspection &&
                 string.Equals(property.Path, valuePath, StringComparison.Ordinal)) ?? null;
+    }
+
+    private static WzImagePropertyInspectionEntry? FindCanvasChildLinkProperty(WzImagePropertyInspectionEntry canvasProperty)
+    {
+        if (canvasProperty.Children is null)
+        {
+            return null;
+        }
+
+        foreach (var linkName in CanvasLinkPropertyOrder)
+        {
+            var linkProperty = canvasProperty.Children.FirstOrDefault(child =>
+                string.Equals(child.Name, linkName, StringComparison.Ordinal) &&
+                IsCanvasLinkProperty(child));
+            if (linkProperty is not null)
+            {
+                return linkProperty;
+            }
+        }
+
+        return null;
     }
 
     private static bool IsCanvasLinkProperty(WzImagePropertyInspectionEntry property)
     {
-        return property.Kind == "string" &&
-            (string.Equals(property.Name, "source", StringComparison.Ordinal) ||
-             string.Equals(property.Name, "_inlink", StringComparison.Ordinal) ||
-             string.Equals(property.Name, "_outlink", StringComparison.Ordinal));
+        return ResourceInspectionLinkResolver.GetLinkKind(property) is not null;
     }
 
     private static IEnumerable<WzImagePropertyInspectionEntry> Flatten(WzImagePropertyInspectionEntry property)
@@ -363,6 +506,20 @@ public sealed class ResourceCanvasImageService
             string? path)
         {
             return new CanvasImageTarget(context, value, path, ownsContext: true);
+        }
+
+        public static CanvasImageTarget Create(
+            CanvasImageInspectionContext context,
+            WzImageCanvasInspection value,
+            string? path,
+            bool ownsContext)
+        {
+            return new CanvasImageTarget(context, value, path, ownsContext);
+        }
+
+        public bool UsesContext(CanvasImageInspectionContext context)
+        {
+            return ReferenceEquals(Context, context);
         }
 
         public ValueTask DisposeAsync()

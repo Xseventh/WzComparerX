@@ -254,8 +254,10 @@ M4 completed:
   diagnostics.
 - The UI has a Preview tab for Canvas values. Preview follows IMG Content
   selection: selecting a Canvas node previews that exact value, root Canvas IMG
-  objects use the same path, and `source` / `_inlink` / `_outlink` string nodes
-  resolve to linked Canvas values when the workspace path can be mapped. The
+  objects use the same path, UOL nodes resolve their relative target and then
+  follow any Canvas `source` / `_inlink` / `_outlink` child link in WC order,
+  and `source` / `_inlink` / `_outlink` string nodes resolve to linked Canvas
+  values when the workspace path can be mapped. The
   preview path uses the current direct-zlib `1` / `257` / `513` / `769` / `2`
   / `2304` / `2562` / `1026` / `2050` / `4097` / `4098` / `4100` viewer slices through
   `ResourceCanvasImageService`. Auto display scale enlarges small bitmaps with
@@ -330,9 +332,11 @@ M4 completed:
   `Identity.ResolvedLinkedTarget` plus resolved-link debug metadata for local
   `_inlink`, relative UOL, and logical `source` / `_outlink` / `link` targets
   that can be resolved through the current `Data` workspace. Canvas preview
-  uses the same resolver and emits `wcx.viewer.canvas.linkUnresolved` when a
-  selected `source` / `_inlink` / `_outlink` cannot be resolved to a Canvas
-  value.
+  uses the same resolver for UOL and link-string selections, including the
+  common WC chain where a frame UOL points at a placeholder Canvas whose child
+  `_outlink` points at the real Canvas. It emits
+  `wcx.viewer.canvas.linkUnresolved` when a selected UOL / `source` /
+  `_inlink` / `_outlink` cannot be resolved to a Canvas value.
 - Failed split-package candidates now emit `wcx.package.link.unresolved` on the
   directory stub. Missing candidates remain silent so ordinary empty directory
   stubs do not become noisy diagnostics.

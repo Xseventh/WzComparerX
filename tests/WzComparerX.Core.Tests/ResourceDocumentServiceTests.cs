@@ -1507,6 +1507,65 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task CanvasImageService_ResolvesUolThenOutlinkCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var directory = Directory.CreateTempSubdirectory("wcx-canvas-uol-outlink-");
+        var sourceDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Mob", "_Canvas"));
+        var proxyDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Mob"));
+        var sourcePath = Path.Combine(sourceDirectory.FullName, "_Canvas.wz");
+        var proxyPath = Path.Combine(proxyDirectory.FullName, "Mob.wz");
+        await File.WriteAllBytesAsync(
+            sourcePath,
+            CreatePkg1ImagePackage(
+                "Linked.img",
+                CreatePropertyImage(CreateCanvasProperty("icon", pixels))));
+        await File.WriteAllBytesAsync(
+            proxyPath,
+            CreatePkg1ImagePackage(
+                "Proxy.img",
+                CreatePropertyImage(
+                    CreateObjectProperty(
+                        "attack5",
+                        CreateObjectValue(
+                            "Property",
+                            0x00,
+                            0x00,
+                            1,
+                            CreateUolProperty("0", "../attack6/0"))),
+                    CreateObjectProperty(
+                        "attack6",
+                        CreateObjectValue(
+                            "Property",
+                            0x00,
+                            0x00,
+                            1,
+                            CreateLinkedCanvasProperty(
+                                "0",
+                                "_outlink",
+                                "Mob/_Canvas/Linked.img/icon"))))));
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                proxyPath,
+                "Proxy.img",
+                "attack5/0",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(sourcePath, document.SourcePath);
+            Assert.Equal("Linked.img", document.Selector);
+            Assert.Equal("icon", document.ValuePath);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task CanvasImageService_LoadsMsCanvasPixels()
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff];
@@ -1586,6 +1645,58 @@ public class ResourceDocumentServiceTests
 
             Assert.Equal(path, document.SourcePath);
             Assert.Equal("Mob/_Canvas/1150000.img", document.Selector);
+            Assert.Equal("icon", document.ValuePath);
+            Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task CanvasImageService_ResolvesMsUolThenOutlinkCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = Path.Combine(Path.GetTempPath(), $"Mob_00000-{Guid.NewGuid():N}.ms");
+        var proxyBytes = MsContainerFixture.CreateUolToLinkedCanvasPropertyImage(
+            "attack5",
+            "0",
+            "../attack6/0",
+            "attack6",
+            "0",
+            "_outlink",
+            "Mob/_Canvas/8880400.img/icon");
+        var linkedBytes = MsContainerFixture.CreateCanvasPropertyImage("icon", pixels);
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Mob/8880450.img",
+                    0,
+                    proxyBytes.Length,
+                    1024,
+                    Payload: proxyBytes),
+                new MsContainerFixture.Entry(
+                    "Mob/_Canvas/8880400.img",
+                    1,
+                    linkedBytes.Length,
+                    1024,
+                    Payload: linkedBytes)),
+            CancellationToken.None);
+        var service = new ResourceCanvasImageService();
+
+        try
+        {
+            var document = await service.LoadAsync(
+                path,
+                "Mob/8880450.img",
+                "attack5/0",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(path, document.SourcePath);
+            Assert.Equal("Mob/_Canvas/8880400.img", document.Selector);
             Assert.Equal("icon", document.ValuePath);
             Assert.Equal(pixels, document.Pixels);
         }
@@ -2351,6 +2462,37 @@ public class ResourceDocumentServiceTests
             (byte)0x00,
             BitConverter.GetBytes(payload.Length),
             payload);
+    }
+
+    private static byte[] CreateCanvasProperty(string name, byte[] pixels, int width = 1, int height = 1)
+    {
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x00,
+                width,
+                height,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload));
+    }
+
+    private static byte[] CreateUolProperty(string name, string target)
+    {
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "UOL",
+                0x00,
+                CreateImageString(target)));
     }
 
     private static byte[] CreateLinkedCanvasProperty(string name, string linkName, string linkValue)

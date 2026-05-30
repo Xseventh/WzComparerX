@@ -254,6 +254,42 @@ internal static class MsContainerFixture
                 payload)));
     }
 
+    public static byte[] CreateUolToLinkedCanvasPropertyImage(
+        string uolParentName,
+        string uolPropertyName,
+        string uolTarget,
+        string canvasParentName,
+        string canvasPropertyName,
+        string linkName,
+        string linkValue)
+    {
+        return CreatePropertyImage(
+            CreateObjectProperty(
+                uolParentName,
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateObjectProperty(
+                        uolPropertyName,
+                        CreateObjectValue(
+                            "UOL",
+                            0x00,
+                            CreateImageString(uolTarget))))),
+            CreateObjectProperty(
+                canvasParentName,
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateLinkedCanvasProperty(
+                        canvasPropertyName,
+                        linkName,
+                        linkValue))));
+    }
+
     private static void AddString(List<byte> bytes, string value)
     {
         bytes.AddRange(BitConverter.GetBytes(value.Length));
@@ -268,6 +304,34 @@ internal static class MsContainerFixture
         bytes.AddRange(BitConverter.GetBytes(objectValue.Length));
         bytes.AddRange(objectValue);
         return bytes.ToArray();
+    }
+
+    private static byte[] CreateLinkedCanvasProperty(string name, string linkName, string linkValue)
+    {
+        byte[] pixels = [0x00, 0x00, 0x00, 0x00];
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString(linkName),
+                0x08,
+                CreateImageString(linkValue),
+                1,
+                1,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload));
     }
 
     private static byte[] CreateCanvasObjectValue(

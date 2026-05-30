@@ -472,6 +472,63 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectingUolNode_LoadsLinkedCanvasPreview()
+    {
+        byte[] linkedPixels = [0x10, 0x20, 0x30, 0xff];
+        var directory = Directory.CreateTempSubdirectory("wcx-app-uol-outlink-");
+        var sourceDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "CanvasSource"));
+        var proxyDirectory = Directory.CreateDirectory(Path.Combine(directory.FullName, "Data", "Map", "Proxy"));
+        var sourcePath = Path.Combine(sourceDirectory.FullName, "CanvasSource.wz");
+        var proxyPath = Path.Combine(proxyDirectory.FullName, "Proxy.wz");
+        var viewModel = new MainWindowViewModel(
+            document => new ResourceCanvasPreviewViewModel(document, bitmap: null))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            File.WriteAllBytes(
+                sourcePath,
+                AppTestFixtures.CreatePkg1ImagePackage(
+                    "Linked.img",
+                    AppTestFixtures.CreateCanvasPropertyImage("icon", linkedPixels)));
+            File.WriteAllBytes(
+                proxyPath,
+                AppTestFixtures.CreatePkg1ImagePackage(
+                    "Proxy.img",
+                    AppTestFixtures.CreateUolToLinkedCanvasPropertyImage(
+                        "attack5",
+                        "0",
+                        "../attack6/0",
+                        "attack6",
+                        "0",
+                        "_outlink",
+                        "Map/CanvasSource/Linked.img/icon")));
+
+            await viewModel.OpenPathAsync(proxyPath);
+            viewModel.SelectedNode = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+            await WaitForImageContentAsync(viewModel);
+
+            var attack5 = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children, child => child.Name == "attack5");
+            var uol = Assert.Single(attack5.Children, child => child is { Name: "0", Kind: "uol" });
+            viewModel.SelectedImageContentNode = uol;
+            await WaitForCanvasPreviewAsync(viewModel);
+
+            Assert.Equal("Linked.img", viewModel.CanvasPreview?.Selector);
+            Assert.Equal("icon", viewModel.CanvasPreview?.ValuePath);
+            Assert.Equal(1, viewModel.CanvasPreview?.Width);
+            Assert.Equal(1, viewModel.CanvasPreview?.Height);
+            Assert.Contains(viewModel.ActivityLog, item => item.Title == "success: Loaded Canvas preview: Linked.img/icon (1x1)");
+        }
+        finally
+        {
+            viewModel.CanvasPreview?.Dispose();
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SelectingMsOutlinkStringNode_LoadsLinkedCanvasPreview()
     {
         byte[] linkedPixels = [0x10, 0x20, 0x30, 0xff];

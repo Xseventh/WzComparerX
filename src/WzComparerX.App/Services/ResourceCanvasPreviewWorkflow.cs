@@ -27,7 +27,7 @@ public sealed class ResourceCanvasPreviewWorkflow
     public string GetIdleStatus(ResourceInspectionNodeViewModel? node)
     {
         return IsPreviewNode(node)
-            ? "Select a Canvas node or link to preview."
+            ? "Select a Canvas node, UOL, or link to preview."
             : "Select a Canvas node to preview.";
     }
 
@@ -49,13 +49,14 @@ public sealed class ResourceCanvasPreviewWorkflow
     {
         return node is not null &&
             (node.Kind == "canvas" ||
+             node.Kind == "uol" ||
              IsRootCanvasImageNode(node) ||
              IsCanvasLinkNode(node));
     }
 
     private static string? GetValueSelector(ResourceInspectionNodeViewModel node)
     {
-        return node.Kind == "canvas" || IsCanvasLinkNode(node) ? node.Path : null;
+        return node.Kind is "canvas" or "uol" || IsCanvasLinkNode(node) ? node.Path : null;
     }
 
     private static bool IsRootCanvasImageNode(ResourceInspectionNodeViewModel node)

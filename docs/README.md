@@ -137,8 +137,10 @@ M4 目标是让 Avalonia UI 使用和 CLI 相同的 Core inspection / export 模
   (`2050`), `DXT1` (`4097`), `BC7` (`4098`), and `RGBA32Float` (`4100`) slices,
   plus WC's `RGB565 scale=4` expansion path, following the selected IMG Content node.
   Selecting Canvas nodes previews that
-  exact value; selecting `source` / `_inlink` / `_outlink` string nodes resolves
-  the linked Canvas when the current workspace layout can be mapped. The Preview
+  exact value; selecting UOL nodes resolves the relative target and follows any
+  Canvas `source` / `_inlink` / `_outlink` child link in WC order; selecting
+  `source` / `_inlink` / `_outlink` string nodes resolves the linked Canvas
+  when the current workspace layout can be mapped. The Preview
   tab exposes `Auto`, `0.25x`, `0.5x`, `1x`, `2x`, `4x`, `8x`, and `16x`
   display scale controls. Preview defaults to `1x`; `Auto` fits the full
   current Preview viewport once and stores that fixed scale for subsequent
@@ -247,7 +249,7 @@ M4 完成后已经开始低风险架构整理：
 - Canvas preview 的 direct-zlib viewer matrix 已覆盖 `BC7` (`4098`)。
   本地 GMS `Skill/_Canvas/_Canvas_097.wz` / `6414.img` smoke 验证了
   `skill/64141504/effect/1` 的 BC7 预览路径。
-- Canvas preview 遇到无法解析的 `source` / `_inlink` / `_outlink` 目标时，
+- Canvas preview 遇到无法解析的 UOL / `source` / `_inlink` / `_outlink` 目标时，
   现在会输出稳定 viewer error diagnostic：`wcx.viewer.canvas.linkUnresolved`，
   不再把 link 失败混同为普通 unsupported value。
 

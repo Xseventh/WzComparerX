@@ -92,6 +92,42 @@ internal static class AppTestFixtures
                 payload)));
     }
 
+    public static byte[] CreateUolToLinkedCanvasPropertyImage(
+        string uolParentName,
+        string uolPropertyName,
+        string uolTarget,
+        string canvasParentName,
+        string canvasPropertyName,
+        string linkName,
+        string linkValue)
+    {
+        return CreatePropertyImage(
+            CreateObjectProperty(
+                uolParentName,
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateObjectProperty(
+                        uolPropertyName,
+                        CreateObjectValue(
+                            "UOL",
+                            0x00,
+                            CreateImageString(uolTarget))))),
+            CreateObjectProperty(
+                canvasParentName,
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    1,
+                    CreateLinkedCanvasProperty(
+                        canvasPropertyName,
+                        linkName,
+                        linkValue))));
+    }
+
     private static byte[] CreateDirectoryStub(string name)
     {
         var bytes = new List<byte> { 0x01, 0x03 };
@@ -107,7 +143,7 @@ internal static class AppTestFixtures
     {
         var bytes = new List<byte> { 0x01, 0x04 };
         AddWzString(bytes, name);
-        bytes.Add((byte)imageSize);
+        AddCompressedInt32(bytes, imageSize);
         bytes.Add(0x00);
         var hashOffsetPosition = bytes.Count + 16;
         var imageOffset = 16 + bytes.Count + sizeof(uint) + 4;
@@ -116,6 +152,18 @@ internal static class AppTestFixtures
             desiredOffset: checked((uint)imageOffset));
         bytes.AddRange(BitConverter.GetBytes(hashOffset));
         return bytes.ToArray();
+    }
+
+    private static void AddCompressedInt32(List<byte> bytes, int value)
+    {
+        if (value > sbyte.MinValue && value <= sbyte.MaxValue)
+        {
+            bytes.Add(unchecked((byte)(sbyte)value));
+            return;
+        }
+
+        bytes.Add(0x80);
+        bytes.AddRange(BitConverter.GetBytes(value));
     }
 
     private static uint CreateHashOffset(uint hashOffsetPosition, uint desiredOffset)
@@ -165,6 +213,34 @@ internal static class AppTestFixtures
             (byte)0x00,
             BitConverter.GetBytes(payload.Length),
             payload);
+    }
+
+    private static byte[] CreateLinkedCanvasProperty(string name, string linkName, string linkValue)
+    {
+        byte[] pixels = [0x00, 0x00, 0x00, 0x00];
+        var payload = CreateDirectZlibPayload(pixels);
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "Canvas",
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                1,
+                CreateImageString(linkName),
+                0x08,
+                CreateImageString(linkValue),
+                1,
+                1,
+                2,
+                0x00,
+                1,
+                0,
+                (byte)0x00,
+                (byte)0x00,
+                BitConverter.GetBytes(payload.Length),
+                payload));
     }
 
     private static byte[] CreateDirectZlibPayload(byte[] pixels)
