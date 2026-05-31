@@ -27,6 +27,11 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+65a8674 Split Canvas image context helpers
+5c4b080 Align Canvas export with preview service
+63c5681 Resolve UOL canvas preview links
+35a16b2 Move Canvas bitmap decode into WzLib
+7a4f18d Lock export missing image diagnostic
 5e1adf0 Add image entry not found diagnostic
 1f3e2db Record Lua text sample scan
 ea6ccc8 Add real Video metadata smoke
