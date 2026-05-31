@@ -107,6 +107,27 @@ public class WzMsContainerInspectionReaderTests
     }
 
     [Fact]
+    public void Read_Version4ContainerHandlesEntryTableAcrossChaChaBlocks()
+    {
+        var bytes = MsContainerFixture.CreateV4(
+            "Mob_00000.ms",
+            new MsContainerFixture.Entry("Mob/0100000.img", 0, 207, 256, Flags: 6),
+            new MsContainerFixture.Entry("Mob/0100001.img", 1, 207, 256, Flags: 6),
+            new MsContainerFixture.Entry("Mob/BossPattern/BossSuu.img", 2, 512, 1024, Flags: 6));
+        using var stream = new MemoryStream(bytes);
+
+        var inspection = new WzMsContainerInspectionReader()
+            .Read(stream, "/tmp/Mob_00000.ms");
+
+        Assert.Equal(4, inspection.Header.Version);
+        Assert.Equal(3, inspection.Header.EntryCount);
+        Assert.Equal("Mob/0100000.img", inspection.Entries[0].Path);
+        Assert.Equal("Mob/0100001.img", inspection.Entries[1].Path);
+        Assert.Equal("Mob/BossPattern/BossSuu.img", inspection.Entries[2].Path);
+        Assert.Equal(inspection.Header.DataStartPosition + 1024, inspection.Entries[1].Offset);
+    }
+
+    [Fact]
     public void Read_Version4MnContainerReturnsHeaderAndEntries()
     {
         var bytes = MsContainerFixture.CreateV4(

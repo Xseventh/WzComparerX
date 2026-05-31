@@ -10,6 +10,11 @@ internal static class WzMsChaCha20
 
     public static void XorBlock(ReadOnlySpan<byte> input, Span<byte> output, ReadOnlySpan<byte> key)
     {
+        XorBlock(input, output, key, counter: 0);
+    }
+
+    public static void XorBlock(ReadOnlySpan<byte> input, Span<byte> output, ReadOnlySpan<byte> key, uint counter)
+    {
         if (input.Length > BlockLength)
         {
             throw new ArgumentOutOfRangeException(nameof(input));
@@ -22,7 +27,7 @@ internal static class WzMsChaCha20
 
         Span<byte> nonce = stackalloc byte[NonceLength];
         Span<byte> keyStream = stackalloc byte[BlockLength];
-        GenerateBlock(key, nonce, counter: 0, keyStream);
+        GenerateBlock(key, nonce, counter, keyStream);
         for (var i = 0; i < input.Length; i++)
         {
             output[i] = (byte)(input[i] ^ keyStream[i]);

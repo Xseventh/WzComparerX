@@ -40,40 +40,24 @@ internal static class MsContainerFixture
         var padding = CalculateEntryPadding(fileName) + 64;
         bytes.AddRange(Enumerable.Repeat((byte)0, padding));
 
-        var entryTable = new List<byte>();
+        var entryTableChunks = new List<byte[]>();
         for (var i = 0; i < entries.Length; i++)
         {
             var entry = entries[i];
-            AddString(entryTable, entry.Path);
-            entryTable.AddRange(BitConverter.GetBytes(100 + i));
-            entryTable.AddRange(BitConverter.GetBytes(entry.Flags));
-            entryTable.AddRange(BitConverter.GetBytes(entry.RelativeBlock));
-            entryTable.AddRange(BitConverter.GetBytes(entry.Size));
-            entryTable.AddRange(BitConverter.GetBytes(entry.SizeAligned));
-            entryTable.AddRange(BitConverter.GetBytes(entry.Unknown1));
-            entryTable.AddRange(BitConverter.GetBytes(entry.Unknown2));
-            entryTable.AddRange(CreateEntryKey(i));
-            entryTable.AddRange(BitConverter.GetBytes(entry.Unknown3));
-            entryTable.AddRange(BitConverter.GetBytes(entry.Unknown4));
+            AddStringChunks(entryTableChunks, entry.Path);
+            entryTableChunks.Add(BitConverter.GetBytes(100 + i));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.Flags));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.RelativeBlock));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.Size));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.SizeAligned));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.Unknown1));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.Unknown2));
+            entryTableChunks.Add(CreateEntryKey(i));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.Unknown3));
+            entryTableChunks.Add(BitConverter.GetBytes(entry.Unknown4));
         }
 
-        while ((entryTable.Count & (WzMsChaCha20.BlockLength - 1)) != 0)
-        {
-            entryTable.Add(0);
-        }
-
-        Span<byte> entryKey = stackalloc byte[WzMsChaCha20.KeyLength];
-        BuildEntryTableKey(fileName, entryKey);
-        var plainEntryTable = entryTable.ToArray();
-        var encryptedBlock = new byte[WzMsChaCha20.BlockLength];
-        for (var offset = 0; offset < entryTable.Count; offset += WzMsChaCha20.BlockLength)
-        {
-            WzMsChaCha20.XorBlock(
-                plainEntryTable.AsSpan(offset, WzMsChaCha20.BlockLength),
-                encryptedBlock,
-                entryKey);
-            bytes.AddRange(encryptedBlock);
-        }
+        bytes.AddRange(EncryptV4EntryTable(fileName, entryTableChunks));
 
         while ((bytes.Count & (Alignment - 1)) != 0)
         {
@@ -95,6 +79,60 @@ internal static class MsContainerFixture
 
         bytes.AddRange(payloads);
         return bytes.ToArray();
+    }
+
+    private static byte[] EncryptV4EntryTable(string fileName, IReadOnlyList<byte[]> chunks)
+    {
+        Span<byte> entryKey = stackalloc byte[WzMsChaCha20.KeyLength];
+        BuildEntryTableKey(fileName, entryKey);
+        var key = entryKey.ToArray();
+        var encryptedEntryTable = new List<byte>();
+        var plainBlock = new byte[WzMsChaCha20.BlockLength];
+        var encryptedBlock = new byte[WzMsChaCha20.BlockLength];
+        var position = 0;
+        uint counter = 0;
+
+        foreach (var chunk in chunks)
+        {
+            WriteChunk(chunk);
+        }
+
+        if (position > 0)
+        {
+            FlushBlock();
+        }
+
+        return encryptedEntryTable.ToArray();
+
+        void WriteChunk(ReadOnlySpan<byte> chunk)
+        {
+            while (!chunk.IsEmpty)
+            {
+                var count = Math.Min(chunk.Length, plainBlock.Length - position);
+                chunk[..count].CopyTo(plainBlock.AsSpan(position));
+                position += count;
+                chunk = chunk[count..];
+
+                if (position >= plainBlock.Length)
+                {
+                    FlushBlock();
+                }
+            }
+
+            if (position == 0)
+            {
+                counter = 0;
+            }
+        }
+
+        void FlushBlock()
+        {
+            WzMsChaCha20.XorBlock(plainBlock, encryptedBlock, key, counter);
+            encryptedEntryTable.AddRange(encryptedBlock);
+            Array.Clear(plainBlock);
+            position = 0;
+            counter++;
+        }
     }
 
     public static byte[] CreateV2(string fileName, params Entry[] entries)
@@ -294,6 +332,12 @@ internal static class MsContainerFixture
     {
         bytes.AddRange(BitConverter.GetBytes(value.Length));
         bytes.AddRange(Encoding.Unicode.GetBytes(value));
+    }
+
+    private static void AddStringChunks(List<byte[]> chunks, string value)
+    {
+        chunks.Add(BitConverter.GetBytes(value.Length));
+        chunks.Add(Encoding.Unicode.GetBytes(value));
     }
 
     private static byte[] CreateObjectProperty(string name, byte[] objectValue)

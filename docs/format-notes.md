@@ -271,16 +271,20 @@ WCX now inspects `.ms` and `.mn` v2/Snow and v4/ChaCha20 container directory
 tables through the normal `inspect` path. The directory slice reads header
 metadata, entry names, checksums, flags, relative blocks, absolute offsets,
 sizes, and unknown fields, then projects slash-separated entry names into the
-Core inspection tree as image nodes. The image-payload slice now follows WC's
-`Ms_Image.OpenRead()` / `Ms_ImageV2.OpenRead()` model: v2/Snow payloads decrypt
-with one continuous Snow pass plus a second pass over the first 1024 bytes,
-and v4/ChaCha20 payloads decrypt the first 1024 bytes while leaving the
-remaining bytes raw. The decrypted stream then enters the existing IMG
-inspection path. A local GMS smoke run verified all 10 `Data/Packs/*.ms` files
-inspect successfully as directory tables and `Packs/Skill_00002.ms` ->
-`Skill/15500.img` extracts as a `Property` IMG without committing client data;
-`.mn` is currently fixture-covered only because the local client has no `.mn`
-sample.
+Core inspection tree as image nodes. The v4 entry table reader follows WC's
+`Ms_FileV2.ChaCha20Reader` chunk semantics: ChaCha20 state continues across
+64-byte blocks and resets only when a logical read call finishes exactly on a
+block boundary. A local post-update GMS smoke run verified
+`Data/Packs/Mob_00000.ms` still decodes as v4/ChaCha20 with 7,025 entries after
+this alignment. The image-payload slice now follows WC's `Ms_Image.OpenRead()` /
+`Ms_ImageV2.OpenRead()` model: v2/Snow payloads decrypt with one continuous Snow
+pass plus a second pass over the first 1024 bytes, and v4/ChaCha20 payloads
+decrypt the first 1024 bytes while leaving the remaining bytes raw. The
+decrypted stream then enters the existing IMG inspection path. A local GMS smoke
+run verified all 10 `Data/Packs/*.ms` files inspect successfully as directory
+tables and `Packs/Skill_00002.ms` -> `Skill/15500.img` extracts as a `Property`
+IMG without committing client data; `.mn` is currently fixture-covered only
+because the local client has no `.mn` sample.
 
 Although `.ms` and `.mn` share the same WC loader path, WCX preserves the actual
 container extension in Core inspection output: `.ms` reports `format: ms` and

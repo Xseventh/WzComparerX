@@ -502,6 +502,7 @@ public sealed class WzMsContainerInspectionReader
         private readonly byte[] buffer = new byte[WzMsChaCha20.BlockLength];
         private readonly byte[] encryptedBuffer = new byte[WzMsChaCha20.BlockLength];
         private int position = WzMsChaCha20.BlockLength;
+        private uint counter;
 
         public MsChaCha20BlockReader(Stream stream, ReadOnlySpan<byte> key)
         {
@@ -542,7 +543,8 @@ public sealed class WzMsContainerInspectionReader
                 if (position >= buffer.Length)
                 {
                     stream.ReadExactly(encryptedBuffer);
-                    WzMsChaCha20.XorBlock(encryptedBuffer, buffer, key);
+                    WzMsChaCha20.XorBlock(encryptedBuffer, buffer, key, counter);
+                    counter++;
                     position = 0;
                 }
 
@@ -550,6 +552,11 @@ public sealed class WzMsContainerInspectionReader
                 buffer.AsSpan(position, count).CopyTo(destination);
                 destination = destination[count..];
                 position += count;
+            }
+
+            if (position >= buffer.Length)
+            {
+                counter = 0;
             }
         }
 
