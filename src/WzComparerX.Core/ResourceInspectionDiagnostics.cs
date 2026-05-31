@@ -233,6 +233,20 @@ public static class ResourceInspectionDiagnostics
             ResourceDiagnosticSources.Export);
     }
 
+    public static ResourceInspectionDiagnostic ExportValueLinkUnresolved(
+        string valueSelector,
+        string? selector,
+        string linkKind,
+        string linkedTarget)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Canvas export {linkKind} target could not be resolved: {linkedTarget}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.ExportValueLinkUnresolved,
+            ResourceDiagnosticSources.Export);
+    }
+
     public static ResourceInspectionDiagnostic CanvasPreviewCompressionUnsupported(
         WzImageCanvasCompressionKind compressionKind,
         string? selector)

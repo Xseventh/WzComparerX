@@ -98,43 +98,33 @@ public sealed class ResourceExportService
         ResourceExportOptions options,
         CancellationToken cancellationToken)
     {
-        var inspection = await ReadImageInspectionAsync(path, selector, options, cancellationToken);
-        var canvas = SelectCanvas(inspection, selector, options.ValueSelector);
+        if (string.IsNullOrWhiteSpace(selector))
+        {
+            throw new InvalidDataException("Image export requires an image selector.");
+        }
 
-        cancellationToken.ThrowIfCancellationRequested();
-        await using var stream = File.OpenRead(inspection.Header.SourcePath);
-        WzImageCanvasBgraBitmap bitmap;
+        ResourceCanvasImageDocument canvas;
         try
         {
-            bitmap = new WzImageCanvasBitmapDecoder().DecodeToBgra8888(
-                stream,
-                canvas.Value,
-                canvas.Path);
+            canvas = await new ResourceCanvasImageService().LoadForExportAsync(
+                path,
+                selector,
+                options.ValueSelector,
+                new ResourceInspectionOptions(
+                    options.StringKey,
+                    options.MaxPropertyDepth),
+                cancellationToken);
         }
-        catch (WzImageCanvasBitmapDecodeException ex)
+        catch (ResourceCanvasImageException ex)
         {
-            throw new ResourceExportException(ToExportDiagnostic(ex));
+            throw new ResourceExportException(ex.Diagnostic);
         }
 
         return new ResourceExportDocument(
-            inspection.Header.SourcePath,
+            canvas.SourcePath,
             ResourceExportKind.Canvas,
             "application/octet-stream",
-            bitmap.Pixels);
-    }
-
-    private static ResourceInspectionDiagnostic ToExportDiagnostic(WzImageCanvasBitmapDecodeException exception)
-    {
-        return exception.Kind switch
-        {
-            WzImageCanvasBitmapDecodeFailureKind.CompressionUnsupported =>
-                ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(exception.CompressionKind!.Value, exception.Path),
-            WzImageCanvasBitmapDecodeFailureKind.FormatUnsupported =>
-                ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(exception.Format!.Value, exception.Path),
-            WzImageCanvasBitmapDecodeFailureKind.ScaleUnsupported =>
-                ResourceInspectionDiagnostics.ExportCanvasScaleUnsupported(exception.Scale!.Value, exception.Path),
-            _ => ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(exception.Path)
-        };
+            canvas.Pixels);
     }
 
     private static IEnumerable<string> ExtractLuaScripts(WzImageInspection inspection)
@@ -156,56 +146,6 @@ public sealed class ResourceExportService
             {
                 yield return entry.Script;
             }
-        }
-    }
-
-    private static CanvasExportTarget SelectCanvas(
-        WzImageInspection inspection,
-        string? selector,
-        string? valueSelector)
-    {
-        if (string.IsNullOrWhiteSpace(valueSelector))
-        {
-            if (inspection.ObjectValue is WzImageCanvasInspection rootCanvas)
-            {
-                return new CanvasExportTarget(rootCanvas, selector);
-            }
-
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueRequired(ResourceExportKind.Canvas, selector));
-        }
-
-        var matches = inspection.Properties?
-            .SelectMany(Flatten)
-            .Where(property => string.Equals(property.Path, valueSelector, StringComparison.Ordinal))
-            .ToArray() ?? [];
-
-        if (matches.Length == 0)
-        {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueNotFound(valueSelector, selector));
-        }
-
-        if (matches.Length > 1)
-        {
-            throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueAmbiguous(valueSelector, selector));
-        }
-
-        var match = matches[0];
-        return match.Value is WzImageCanvasInspection canvas
-            ? new CanvasExportTarget(canvas, match.Path ?? valueSelector)
-            : throw new ResourceExportException(ResourceInspectionDiagnostics.ExportValueUnsupported(ResourceExportKind.Canvas, valueSelector, selector));
-    }
-
-    private static IEnumerable<WzImagePropertyInspectionEntry> Flatten(WzImagePropertyInspectionEntry property)
-    {
-        yield return property;
-        if (property.Children is null)
-        {
-            yield break;
-        }
-
-        foreach (var child in property.Children.SelectMany(Flatten))
-        {
-            yield return child;
         }
     }
 
@@ -233,6 +173,4 @@ public sealed class ResourceExportService
     {
         return new ResourceExportException(ResourceInspectionDiagnostics.ExportUnsupported(kind, selector));
     }
-
-    private sealed record CanvasExportTarget(WzImageCanvasInspection Value, string? Path);
 }

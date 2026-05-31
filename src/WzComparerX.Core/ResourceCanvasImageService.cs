@@ -20,6 +20,7 @@ public sealed class ResourceCanvasImageService
             valueSelector,
             useFirstCanvasFallback: false,
             options,
+            CanvasImageDiagnosticSurface.Preview,
             cancellationToken);
     }
 
@@ -35,6 +36,24 @@ public sealed class ResourceCanvasImageService
             valueSelector: null,
             useFirstCanvasFallback: true,
             options,
+            CanvasImageDiagnosticSurface.Preview,
+            cancellationToken);
+    }
+
+    public async Task<ResourceCanvasImageDocument> LoadForExportAsync(
+        string path,
+        string selector,
+        string? valueSelector,
+        ResourceInspectionOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await LoadCoreAsync(
+            path,
+            selector,
+            valueSelector,
+            useFirstCanvasFallback: false,
+            options,
+            CanvasImageDiagnosticSurface.Export,
             cancellationToken);
     }
 
@@ -44,6 +63,7 @@ public sealed class ResourceCanvasImageService
         string? valueSelector,
         bool useFirstCanvasFallback,
         ResourceInspectionOptions? options,
+        CanvasImageDiagnosticSurface diagnosticSurface,
         CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
@@ -61,6 +81,7 @@ public sealed class ResourceCanvasImageService
             valueSelector,
             useFirstCanvasFallback,
             options,
+            diagnosticSurface,
             cancellationToken);
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -76,7 +97,7 @@ public sealed class ResourceCanvasImageService
             }
             catch (WzImageCanvasBitmapDecodeException ex)
             {
-                throw new ResourceCanvasImageException(ToPreviewDiagnostic(ex));
+                throw new ResourceCanvasImageException(ToDiagnostic(ex, diagnosticSurface));
             }
 
             return new ResourceCanvasImageDocument(
@@ -91,17 +112,27 @@ public sealed class ResourceCanvasImageService
         }
     }
 
-    private static ResourceInspectionDiagnostic ToPreviewDiagnostic(WzImageCanvasBitmapDecodeException exception)
+    private static ResourceInspectionDiagnostic ToDiagnostic(
+        WzImageCanvasBitmapDecodeException exception,
+        CanvasImageDiagnosticSurface diagnosticSurface)
     {
         return exception.Kind switch
         {
             WzImageCanvasBitmapDecodeFailureKind.CompressionUnsupported =>
-                ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(exception.CompressionKind!.Value, exception.Path),
+                diagnosticSurface == CanvasImageDiagnosticSurface.Export
+                    ? ResourceInspectionDiagnostics.ExportCanvasCompressionUnsupported(exception.CompressionKind!.Value, exception.Path)
+                    : ResourceInspectionDiagnostics.CanvasPreviewCompressionUnsupported(exception.CompressionKind!.Value, exception.Path),
             WzImageCanvasBitmapDecodeFailureKind.FormatUnsupported =>
-                ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(exception.Format!.Value, exception.Path),
+                diagnosticSurface == CanvasImageDiagnosticSurface.Export
+                    ? ResourceInspectionDiagnostics.ExportCanvasFormatUnsupported(exception.Format!.Value, exception.Path)
+                    : ResourceInspectionDiagnostics.CanvasPreviewFormatUnsupported(exception.Format!.Value, exception.Path),
             WzImageCanvasBitmapDecodeFailureKind.ScaleUnsupported =>
-                ResourceInspectionDiagnostics.CanvasPreviewScaleUnsupported(exception.Scale!.Value, exception.Path),
-            _ => ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(exception.Path)
+                diagnosticSurface == CanvasImageDiagnosticSurface.Export
+                    ? ResourceInspectionDiagnostics.ExportCanvasScaleUnsupported(exception.Scale!.Value, exception.Path)
+                    : ResourceInspectionDiagnostics.CanvasPreviewScaleUnsupported(exception.Scale!.Value, exception.Path),
+            _ => diagnosticSurface == CanvasImageDiagnosticSurface.Export
+                ? ResourceInspectionDiagnostics.ExportCanvasDecodeFailed(exception.Path)
+                : ResourceInspectionDiagnostics.CanvasPreviewDecodeFailed(exception.Path)
         };
     }
 
@@ -111,6 +142,7 @@ public sealed class ResourceCanvasImageService
         string? valueSelector,
         bool useFirstCanvasFallback,
         ResourceInspectionOptions options,
+        CanvasImageDiagnosticSurface diagnosticSurface,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(valueSelector))
@@ -131,7 +163,7 @@ public sealed class ResourceCanvasImageService
                 }
             }
 
-            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueRequired(selector));
+            throw new ResourceCanvasImageException(ValueRequired(diagnosticSurface, selector));
         }
 
         var matches = context.ImageInspection.Properties?
@@ -141,12 +173,12 @@ public sealed class ResourceCanvasImageService
 
         if (matches.Length == 0)
         {
-            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueNotFound(valueSelector, selector));
+            throw new ResourceCanvasImageException(ValueNotFound(diagnosticSurface, valueSelector, selector));
         }
 
         if (matches.Length > 1)
         {
-            throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueAmbiguous(valueSelector, selector));
+            throw new ResourceCanvasImageException(ValueAmbiguous(diagnosticSurface, valueSelector, selector));
         }
 
         var match = matches[0];
@@ -168,14 +200,66 @@ public sealed class ResourceCanvasImageService
             }
 
             throw new ResourceCanvasImageException(
-                ResourceInspectionDiagnostics.CanvasPreviewLinkUnresolved(
+                LinkUnresolved(
+                    diagnosticSurface,
                     valueSelector,
                     selector,
                     ResourceInspectionLinkResolver.GetLinkKind(match) ?? match.Name ?? "link",
                     ResourceInspectionLinkResolver.GetLinkedTarget(match) ?? string.Empty));
         }
 
-        throw new ResourceCanvasImageException(ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector));
+        throw new ResourceCanvasImageException(ValueUnsupported(diagnosticSurface, valueSelector, selector));
+    }
+
+    private static ResourceInspectionDiagnostic ValueRequired(
+        CanvasImageDiagnosticSurface diagnosticSurface,
+        string? selector)
+    {
+        return diagnosticSurface == CanvasImageDiagnosticSurface.Export
+            ? ResourceInspectionDiagnostics.ExportValueRequired(ResourceExportKind.Canvas, selector)
+            : ResourceInspectionDiagnostics.CanvasPreviewValueRequired(selector);
+    }
+
+    private static ResourceInspectionDiagnostic ValueNotFound(
+        CanvasImageDiagnosticSurface diagnosticSurface,
+        string valueSelector,
+        string? selector)
+    {
+        return diagnosticSurface == CanvasImageDiagnosticSurface.Export
+            ? ResourceInspectionDiagnostics.ExportValueNotFound(valueSelector, selector)
+            : ResourceInspectionDiagnostics.CanvasPreviewValueNotFound(valueSelector, selector);
+    }
+
+    private static ResourceInspectionDiagnostic ValueAmbiguous(
+        CanvasImageDiagnosticSurface diagnosticSurface,
+        string valueSelector,
+        string? selector)
+    {
+        return diagnosticSurface == CanvasImageDiagnosticSurface.Export
+            ? ResourceInspectionDiagnostics.ExportValueAmbiguous(valueSelector, selector)
+            : ResourceInspectionDiagnostics.CanvasPreviewValueAmbiguous(valueSelector, selector);
+    }
+
+    private static ResourceInspectionDiagnostic ValueUnsupported(
+        CanvasImageDiagnosticSurface diagnosticSurface,
+        string valueSelector,
+        string? selector)
+    {
+        return diagnosticSurface == CanvasImageDiagnosticSurface.Export
+            ? ResourceInspectionDiagnostics.ExportValueUnsupported(ResourceExportKind.Canvas, valueSelector, selector)
+            : ResourceInspectionDiagnostics.CanvasPreviewValueUnsupported(valueSelector, selector);
+    }
+
+    private static ResourceInspectionDiagnostic LinkUnresolved(
+        CanvasImageDiagnosticSurface diagnosticSurface,
+        string valueSelector,
+        string? selector,
+        string linkKind,
+        string linkedTarget)
+    {
+        return diagnosticSurface == CanvasImageDiagnosticSurface.Export
+            ? ResourceInspectionDiagnostics.ExportValueLinkUnresolved(valueSelector, selector, linkKind, linkedTarget)
+            : ResourceInspectionDiagnostics.CanvasPreviewLinkUnresolved(valueSelector, selector, linkKind, linkedTarget);
     }
 
     private static async Task<CanvasImageTarget?> ResolveCanvasLinkAsync(
@@ -528,4 +612,9 @@ public sealed class ResourceCanvasImageService
         }
     }
 
+    private enum CanvasImageDiagnosticSurface
+    {
+        Preview,
+        Export
+    }
 }

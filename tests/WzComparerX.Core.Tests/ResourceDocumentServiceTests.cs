@@ -1451,6 +1451,56 @@ public class ResourceDocumentServiceTests
     }
 
     [Fact]
+    public async Task ExportCanvas_ResolvesMsOutlinkCanvasPixels()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = Path.Combine(Path.GetTempPath(), $"Mob_00000-{Guid.NewGuid():N}.ms");
+        var proxyBytes = MsContainerFixture.CreateLinkedCanvasPropertyImage(
+            "proxy",
+            "_outlink",
+            "Mob/_Canvas/1150000.img/icon");
+        var linkedBytes = MsContainerFixture.CreateCanvasPropertyImage("icon", pixels);
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Mob/1150000.img",
+                    0,
+                    proxyBytes.Length,
+                    1024,
+                    Payload: proxyBytes),
+                new MsContainerFixture.Entry(
+                    "Mob/_Canvas/1150000.img",
+                    1,
+                    linkedBytes.Length,
+                    1024,
+                    Payload: linkedBytes)),
+            CancellationToken.None);
+        var service = new ResourceExportService();
+
+        try
+        {
+            var document = await service.ExportAsync(
+                path,
+                "Mob/1150000.img",
+                new ResourceExportOptions(
+                    ResourceExportKind.Canvas,
+                    StringKey: WzStringEncryptionKind.None,
+                    ValueSelector: "proxy/_outlink"));
+
+            Assert.Equal(path, document.SourcePath);
+            Assert.Equal(ResourceExportKind.Canvas, document.Kind);
+            Assert.Equal("application/octet-stream", document.ContentType);
+            Assert.Equal(pixels, document.Content);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task CanvasImageService_ResolvesOutlinkCanvasPixels()
     {
         byte[] pixels = [0x10, 0x20, 0x30, 0xff];

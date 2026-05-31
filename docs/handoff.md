@@ -178,6 +178,10 @@ and CLI Canvas export. It converts direct-zlib `ARGB4444` (`1`), `ARGB1555`
 `RGB565` also handles WC's `scale=4` / `ActualScale=16` path by repeating each
 source pixel into a 16x16 block. PNG export and non-direct-zlib Canvas payloads
 remain later work.
+Canvas selection and Canvas link resolution now also share one Core service
+between Avalonia Preview and CLI Canvas export, so `.ms` / `.mn` payloads,
+package-group selectors, `_inlink` / `_outlink` / `source` links, and UOL-linked
+Canvas values use the same resolver in both surfaces.
 RawData/Video/Sound payload decoding is not implemented yet. Lua image entries report script length and a
 short UTF-8 snippet; `export --type lua` writes the full decoded script for
 supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
@@ -202,10 +206,11 @@ Canvas decode/export follows the narrow plan in
 `docs/canvas-decode-export-plan.md`: synthetic fixture first, direct zlib and a
 single verified pixel format first, payload decoder separate from parser
 metadata and Core export. The current `export --type canvas --out` slice reuses
-the shared WzLib BGRA8888 decoder that Preview uses. PNG export is not required
-for M3; it remains later user-facing image export work. Canvas export now uses
-`--value <property-path>` for IMG-internal Canvas selection; the
-selector design is in `docs/canvas-export-selector-plan.md`.
+the same Core Canvas image service and shared WzLib BGRA8888 decoder that
+Preview uses. PNG export is not required for M3; it remains later user-facing
+image export work. Canvas export now uses `--value <property-path>` for
+IMG-internal Canvas selection; the selector design is in
+`docs/canvas-export-selector-plan.md`.
 Committed synthetic PKG1 hex fixtures now cover Canvas, WC text-format IMG, and
 Lua IMG export paths, with expected text/JSON/stdout/stderr golden outputs
 under `fixtures/expected`.

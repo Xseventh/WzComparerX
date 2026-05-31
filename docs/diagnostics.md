@@ -72,6 +72,7 @@ Current examples:
 - `wcx.export.value.notFound`
 - `wcx.export.value.unsupported`
 - `wcx.export.value.ambiguous`
+- `wcx.export.value.linkUnresolved`
 - `wcx.viewer.canvas.compressionUnsupported`
 - `wcx.viewer.canvas.formatUnsupported`
 - `wcx.viewer.canvas.decodeFailed`

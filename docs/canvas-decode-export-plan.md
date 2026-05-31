@@ -94,8 +94,12 @@ Canvas payloads remain later user-facing image export work. `RGB565` also
 supports WC's `scale=4` / `ActualScale=16` case by expanding each source pixel
 into a 16x16 block, matching WC's `ImageCodec.ScalePixels` path.
 Canvas export now supports the explicit value selector described in
-`docs/canvas-export-selector-plan.md`.
+`docs/canvas-export-selector-plan.md` and routes through the same Core Canvas
+image service as Avalonia Preview, with export-specific diagnostics layered on
+top. That keeps `.ms` / `.mn` payload extraction, package-group image selector
+fallback, and Canvas link resolution aligned across CLI and UI.
 
 M5 note: the format conversion logic is no longer a Preview-only path. WzLib
-owns Canvas payload decompression and BGRA8888 bitmap conversion; Core maps the
-same decoder failures into viewer or export diagnostics.
+owns Canvas payload decompression and BGRA8888 bitmap conversion; Core owns the
+shared Canvas selection/link-resolution workflow and maps the same failures into
+viewer or export diagnostics.

@@ -1048,6 +1048,51 @@ public class CliApplicationTests
     }
 
     [Fact]
+    public async Task ExportCanvasFromMsWithOut_WritesRawPixelsToFile()
+    {
+        byte[] pixels = [0x10, 0x20, 0x30, 0xff];
+        var path = Path.Combine(Path.GetTempPath(), $"Mob_00000-{Guid.NewGuid():N}.ms");
+        var imageBytes = MsContainerFixture.CreateCanvasPropertyImage("icon", pixels);
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Mob/1150000.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Payload: imageBytes)));
+        var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-canvas-{Guid.NewGuid():N}.bin");
+
+        try
+        {
+            var result = await RunCliAsync(
+                "export",
+                "--type",
+                "canvas",
+                "--out",
+                outputPath,
+                "--value",
+                "icon",
+                "--key",
+                "none",
+                path,
+                "Mob/1150000.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(pixels, await File.ReadAllBytesAsync(outputPath));
+        }
+        finally
+        {
+            File.Delete(path);
+            File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
     public async Task ExportCanvasWithoutValue_ReturnsStructuredDiagnostic()
     {
         var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreateCanvasImage([0x10, 0x20, 0x30, 0xff], width: 1));

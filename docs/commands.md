@@ -160,7 +160,10 @@ canvas` currently writes raw decoded Canvas pixel bytes for the Canvas value
 selected by `--value <property-path>`. If the selected IMG root object is
 directly a Canvas, `--value` can be omitted. It is not PNG export yet and
 currently writes BGRA8888 bytes for the same supported direct-zlib Canvas
-bitmap formats used by Preview.
+bitmap formats used by Preview. Canvas export uses the same Core Canvas
+selection and link-resolution path as the Avalonia Preview, so `.ms` / `.mn`
+image payloads, package-group selectors, and supported Canvas links resolve
+consistently across CLI and UI.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 

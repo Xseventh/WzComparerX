@@ -92,7 +92,8 @@ Milestone 3 已经收口：
   - WC text-format IMG stream；
   - Lua IMG script；
   - direct-zlib Canvas BGRA8888 bytes。
-- Canvas export 使用 `--value <property-path>` 明确选择 IMG 内部 Canvas 值。
+- Canvas export 使用 `--value <property-path>` 明确选择 IMG 内部 Canvas 值，
+  并与 Avalonia Preview 共用 Core Canvas selector / link-resolution 路径。
 - diagnostics 具有稳定的 severity、source、code、path、CLI text formatting 和文档。
 - PNG export、完整 Canvas pixel matrix、音视频 payload decode、完整 PKG2 directory parsing、XML dump 都是后续工作。
 
