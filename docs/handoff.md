@@ -187,8 +187,11 @@ Canvas selection and Canvas link resolution now also share one Core service
 between Avalonia Preview and CLI Canvas export, so `.ms` / `.mn` payloads,
 package-group selectors, `_inlink` / `_outlink` / `source` links, and UOL-linked
 Canvas values use the same resolver in both surfaces.
-RawData/Video/Sound payload decoding is not implemented yet. Lua image entries report script length and a
-short UTF-8 snippet; `export --type lua` writes the full decoded script for
+RawData/Sound payload decoding and Canvas#Video frame decoding/playback are not
+implemented yet. Canvas#Video `MCV0` header/table parsing is implemented and
+exposes fourCC, dimensions, frame count, alpha/timing flags, and first-frame
+offset metadata through `inspect --debug`. Lua image entries report script
+length and a short UTF-8 snippet; `export --type lua` writes the full decoded script for
 supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
 `export --type text`. Text exports write to stdout by default or exact bytes to
@@ -461,8 +464,11 @@ Local GMS smoke status:
   `wcx.payload.rawData.unsupported` info diagnostic.
 - Optional local GMS UI Canvas#Video smoke covers `UI/UI_000.wz` selector
   `UIGachapon.img`, path `royalStyle/openvideo/intro`, preserving video
-  metadata, identity value path, and the stable
-  `wcx.payload.video.unsupported` info diagnostic.
+  metadata, `MCV0` header metadata, identity value path, and the stable
+  `wcx.payload.video.unsupported` info diagnostic. Optional local Packs smoke
+  also covers `Packs/Mob_00002.ms` selector
+  `Mob/BossPattern/BossFirstAdversary.img`, path `1069/003/effect/0`, with
+  `VP90`, dimensions, frame count, alpha-map, and first-frame offsets.
 - Optional local GMS Vector smoke now covers
   `Character/Character_000.wz` selector `00002000.img`
   (`walk1/0/body/origin`, `walk1/0/arm/origin`) and

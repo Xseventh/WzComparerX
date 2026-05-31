@@ -1027,7 +1027,13 @@ public class ResourceDocumentServiceTests
             Assert.Equal("video", clip.Kind);
             Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "video"));
             Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "unknown" && Equals(item.Value, 5));
-            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 4));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 103));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "signature" && Equals(item.Value, "MCV0"));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "fourCc" && Equals(item.Value, "VP80"));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "width" && Equals(item.Value, 320));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "height" && Equals(item.Value, 180));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "frameCount" && Equals(item.Value, 2));
+            Assert.Contains(clip.DebugMetadata ?? [], item => item.Name == "firstFrameDataOffset" && Equals(item.Value, 92L));
             Assert.Contains(clip.Diagnostics ?? [], diagnostic =>
                 diagnostic.Code == ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported &&
                 diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
@@ -1295,7 +1301,7 @@ public class ResourceDocumentServiceTests
         Assert.Equal(ResourceDiagnosticSources.Parser, rawData.Source);
 
         Assert.Equal(ResourceDiagnosticSeverities.Info, video.Severity);
-        Assert.Equal("Video payload decoding is not implemented.", video.Message);
+        Assert.Equal("Video frame decoding is not implemented.", video.Message);
         Assert.Equal("clip", video.Path);
         Assert.Equal(ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported, video.Code);
         Assert.Equal(ResourceDiagnosticSources.Parser, video.Source);
@@ -2588,6 +2594,7 @@ public class ResourceDocumentServiceTests
 
     private static byte[] CreateVideoProperty()
     {
+        var payload = CreateMcvVideoPayload();
         return CreateObjectProperty(
             "clip",
             CreateObjectValue(
@@ -2595,11 +2602,8 @@ public class ResourceDocumentServiceTests
                 0x00,
                 0x00,
                 5,
-                4,
-                0x01,
-                0x02,
-                0x03,
-                0x04));
+                CreateCompressedInt32(payload.Length),
+                payload));
     }
 
     private static byte[] CreateSoundProperty()
@@ -2811,6 +2815,37 @@ public class ResourceDocumentServiceTests
     {
         var bytes = new List<byte>();
         AddCompressedInt32(bytes, value);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateMcvVideoPayload()
+    {
+        const uint fourCc = 0x30385056;
+        var bytes = new List<byte>();
+        bytes.AddRange("MCV0"u8.ToArray());
+        bytes.AddRange(new byte[2]);
+        bytes.AddRange(BitConverter.GetBytes((ushort)36));
+        bytes.AddRange(BitConverter.GetBytes(fourCc ^ 0xa5a5a5a5u));
+        bytes.AddRange(BitConverter.GetBytes((ushort)320));
+        bytes.AddRange(BitConverter.GetBytes((ushort)180));
+        bytes.AddRange(BitConverter.GetBytes(2));
+        bytes.Add(0x07);
+        bytes.AddRange(new byte[3]);
+        bytes.AddRange(BitConverter.GetBytes(1000L));
+        bytes.AddRange(BitConverter.GetBytes(33));
+        bytes.AddRange(BitConverter.GetBytes(0));
+        bytes.AddRange(BitConverter.GetBytes(3));
+        bytes.AddRange(BitConverter.GetBytes(3));
+        bytes.AddRange(BitConverter.GetBytes(4));
+        bytes.AddRange(BitConverter.GetBytes(7));
+        bytes.AddRange(BitConverter.GetBytes(2));
+        bytes.AddRange(BitConverter.GetBytes(9));
+        bytes.AddRange(BitConverter.GetBytes(2));
+        bytes.AddRange(BitConverter.GetBytes(16));
+        bytes.AddRange(BitConverter.GetBytes(17));
+        bytes.AddRange(BitConverter.GetBytes(0L));
+        bytes.AddRange(BitConverter.GetBytes(16L));
+        bytes.AddRange(CreateBytes(0xee, 11));
         return bytes.ToArray();
     }
 

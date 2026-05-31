@@ -34,6 +34,7 @@ internal static class ResourceInspectionValueProjection
                 metadata.Add(new ResourceInspectionMetadata("unknown", video.Unknown));
                 metadata.Add(new ResourceInspectionMetadata("dataOffset", video.DataOffset));
                 metadata.Add(new ResourceInspectionMetadata("dataLength", video.DataLength));
+                AddVideoHeaderMetadata(metadata, video);
                 break;
             case WzImageSoundInspection sound:
                 metadata.Add(new ResourceInspectionMetadata("valueType", "sound"));
@@ -96,5 +97,42 @@ internal static class ResourceInspectionValueProjection
         {
             metadata.Add(new ResourceInspectionMetadata(name, value));
         }
+    }
+
+    private static void AddVideoHeaderMetadata(List<ResourceInspectionMetadata> metadata, WzImageVideoInspection video)
+    {
+        if (video.Header is null)
+        {
+            AddOptional(metadata, "headerError", video.HeaderError);
+            return;
+        }
+
+        var header = video.Header;
+        metadata.Add(new ResourceInspectionMetadata("signature", header.Signature));
+        metadata.Add(new ResourceInspectionMetadata("headerLength", header.HeaderLength));
+        metadata.Add(new ResourceInspectionMetadata("fourCc", header.FourCcText));
+        metadata.Add(new ResourceInspectionMetadata("fourCcValue", header.FourCc));
+        metadata.Add(new ResourceInspectionMetadata("width", header.Width));
+        metadata.Add(new ResourceInspectionMetadata("height", header.Height));
+        metadata.Add(new ResourceInspectionMetadata("frameCount", header.FrameCount));
+        metadata.Add(new ResourceInspectionMetadata("dataFlags", header.DataFlags.ToString()));
+        metadata.Add(new ResourceInspectionMetadata("hasAlphaMap", header.DataFlags.HasFlag(WzImageVideoDataFlags.AlphaMap)));
+        metadata.Add(new ResourceInspectionMetadata("hasPerFrameDelay", header.DataFlags.HasFlag(WzImageVideoDataFlags.PerFrameDelay)));
+        metadata.Add(new ResourceInspectionMetadata("hasPerFrameTimeline", header.DataFlags.HasFlag(WzImageVideoDataFlags.PerFrameTimeline)));
+        metadata.Add(new ResourceInspectionMetadata("frameDelayUnit", header.FrameDelayUnit));
+        metadata.Add(new ResourceInspectionMetadata("defaultDelay", header.DefaultDelay));
+
+        if (header.Frames.Count == 0)
+        {
+            return;
+        }
+
+        var firstFrame = header.Frames[0];
+        metadata.Add(new ResourceInspectionMetadata("firstFrameDataOffset", firstFrame.DataOffset));
+        metadata.Add(new ResourceInspectionMetadata("firstFrameDataLength", firstFrame.DataLength));
+        metadata.Add(new ResourceInspectionMetadata("firstFrameAlphaDataOffset", firstFrame.AlphaDataOffset));
+        metadata.Add(new ResourceInspectionMetadata("firstFrameAlphaDataLength", firstFrame.AlphaDataLength));
+        metadata.Add(new ResourceInspectionMetadata("firstFrameDelayNanoseconds", firstFrame.DelayInNanoseconds));
+        metadata.Add(new ResourceInspectionMetadata("firstFrameStartNanoseconds", firstFrame.StartTimeInNanoseconds));
     }
 }

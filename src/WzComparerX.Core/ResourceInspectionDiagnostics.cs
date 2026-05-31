@@ -28,7 +28,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Info,
-            "Video payload decoding is not implemented.",
+            "Video frame decoding is not implemented.",
             path,
             ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported,
             ResourceDiagnosticSources.Parser);

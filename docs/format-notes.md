@@ -214,9 +214,14 @@ data length `58688`, and data offset `15358714`, with the stable
 decoding.
 UI Canvas#Video smoke now covers `Data/UI/UI_000.wz` selector
 `UIGachapon.img`: `royalStyle/openvideo/intro` inspects as video metadata with
-unknown value `1`, data length `1943143`, and data offset `27488749`, with the
-stable `wcx.payload.video.unsupported` info diagnostic for unsupported payload
-decoding.
+unknown value, data length, data offset, and WC-style `MCV0` header metadata
+when present. The parser reads the video fourCC, dimensions, frame count, data
+flags, delay defaults, and first-frame offsets; frame decode/playback remains
+unsupported and reports the stable `wcx.payload.video.unsupported` info
+diagnostic. A local Packs smoke also covers
+`Data/Packs/Mob_00002.ms` selector `Mob/BossPattern/BossFirstAdversary.img`:
+`1069/003/effect/0` reports `MCV0`, `VP90`, `2656x1352`, `97` frames, alpha-map
+data, and first-frame table offsets without committing client data.
 Vector smoke now covers two real-client paths without committing client data:
 `Data/Character/Character_000.wz` selector `00002000.img` exposes
 `walk1/0/body/origin` as `(19, 32)` and `walk1/0/arm/origin` as `(6, 8)`,

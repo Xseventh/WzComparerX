@@ -253,6 +253,9 @@ For each migrated feature, record:
   - Bounded nested IMG `Property` inspection.
   - IMG Vector, Convex2D, UOL, Canvas metadata, RawData metadata, and
     Canvas#Video metadata value inspection.
+  - WC-style Canvas#Video `MCV0` header/table inspection from
+    `Wz_Video.ReadVideoFileHeader`, including fourCC, dimensions, frame count,
+    alpha/timing flags, and frame offsets.
   - Canvas zlib/chunked payload metadata and uncompressed data size estimates.
   - IMG Sound_DX8 metadata value inspection.
   - Top-level IMG Canvas metadata and Vector value inspection.
@@ -264,7 +267,7 @@ For each migrated feature, record:
   - Full Canvas pixel decode coverage is not implemented yet; WCX currently has
     a narrow direct-zlib slice used by export and the basic Avalonia preview.
   - RawData payload decoding is not implemented yet.
-  - Canvas#Video payload decoding is not implemented yet.
+  - Canvas#Video frame decoding/playback is not implemented yet.
   - Sound_DX8 audio payload decoding is not implemented yet.
   - Other nested IMG object payloads are still summarized by object type.
 - UI dependency removed or isolated:

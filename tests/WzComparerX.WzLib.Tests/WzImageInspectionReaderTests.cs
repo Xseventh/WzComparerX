@@ -776,6 +776,73 @@ public class WzImageInspectionReaderTests
         var video = Assert.IsType<WzImageVideoInspection>(property.Value);
         Assert.Equal(5, video.Unknown);
         Assert.Equal(4, video.DataLength);
+        Assert.Null(video.Header);
+        Assert.NotNull(video.HeaderError);
+    }
+
+    [Fact]
+    public void Read_ReturnsVideoMcvHeaderMetadata()
+    {
+        var payload = CreateMcvVideoPayload();
+        var bytes = CreatePropertyImage(CreateObjectProperty(
+            "clip",
+            CreateObjectValue(
+                "Canvas#Video",
+                0x00,
+                0x00,
+                5,
+                CreateCompressedInt32(payload.Length),
+                payload)));
+        using var stream = new MemoryStream(bytes);
+        var reader = new WzImageInspectionReader(
+            new WzStringDecryptor(WzStringEncryptionKind.None),
+            maxPropertyDepth: 2);
+
+        var inspection = reader.Read(stream, CreateHeader(), CreateImageEntry(offset: 4, dataSize: bytes.Length - 4), "0");
+
+        Assert.NotNull(inspection.Properties);
+        var property = Assert.Single(inspection.Properties);
+        var video = Assert.IsType<WzImageVideoInspection>(property.Value);
+        Assert.Equal(5, video.Unknown);
+        Assert.Equal(payload.Length, video.DataLength);
+        Assert.Null(video.HeaderError);
+
+        var header = Assert.IsType<WzImageVideoHeaderInspection>(video.Header);
+        Assert.Equal("MCV0", header.Signature);
+        Assert.Equal(36, header.HeaderLength);
+        Assert.Equal("VP80", header.FourCcText);
+        Assert.Equal(320, header.Width);
+        Assert.Equal(180, header.Height);
+        Assert.Equal(2, header.FrameCount);
+        Assert.Equal(
+            WzImageVideoDataFlags.AlphaMap |
+            WzImageVideoDataFlags.PerFrameDelay |
+            WzImageVideoDataFlags.PerFrameTimeline,
+            header.DataFlags);
+        Assert.Equal(1000, header.FrameDelayUnit);
+        Assert.Equal(33, header.DefaultDelay);
+        Assert.Collection(
+            header.Frames,
+            frame =>
+            {
+                Assert.Equal(0, frame.Index);
+                Assert.Equal(92, frame.DataOffset);
+                Assert.Equal(3, frame.DataLength);
+                Assert.Equal(99, frame.AlphaDataOffset);
+                Assert.Equal(2, frame.AlphaDataLength);
+                Assert.Equal(16000, frame.DelayInNanoseconds);
+                Assert.Equal(0, frame.StartTimeInNanoseconds);
+            },
+            frame =>
+            {
+                Assert.Equal(1, frame.Index);
+                Assert.Equal(95, frame.DataOffset);
+                Assert.Equal(4, frame.DataLength);
+                Assert.Equal(101, frame.AlphaDataOffset);
+                Assert.Equal(2, frame.AlphaDataLength);
+                Assert.Equal(17000, frame.DelayInNanoseconds);
+                Assert.Equal(16000, frame.StartTimeInNanoseconds);
+            });
     }
 
     [Fact]
@@ -1015,6 +1082,42 @@ public class WzImageInspectionReaderTests
     private static byte[] CreateCompressedInt32(int value)
     {
         return [(byte)0x80, .. BitConverter.GetBytes(value)];
+    }
+
+    private static byte[] CreateMcvVideoPayload()
+    {
+        const uint fourCc = 0x30385056; // VP80 in little-endian FourCC order.
+        var bytes = new List<byte>();
+        bytes.AddRange("MCV0"u8.ToArray());
+        bytes.AddRange(new byte[2]);
+        bytes.AddRange(BitConverter.GetBytes((ushort)36));
+        bytes.AddRange(BitConverter.GetBytes(fourCc ^ 0xa5a5a5a5u));
+        bytes.AddRange(BitConverter.GetBytes((ushort)320));
+        bytes.AddRange(BitConverter.GetBytes((ushort)180));
+        bytes.AddRange(BitConverter.GetBytes(2));
+        bytes.Add((byte)(WzImageVideoDataFlags.AlphaMap | WzImageVideoDataFlags.PerFrameDelay | WzImageVideoDataFlags.PerFrameTimeline));
+        bytes.AddRange(new byte[3]);
+        bytes.AddRange(BitConverter.GetBytes(1000L));
+        bytes.AddRange(BitConverter.GetBytes(33));
+
+        bytes.AddRange(BitConverter.GetBytes(0));
+        bytes.AddRange(BitConverter.GetBytes(3));
+        bytes.AddRange(BitConverter.GetBytes(3));
+        bytes.AddRange(BitConverter.GetBytes(4));
+
+        bytes.AddRange(BitConverter.GetBytes(7));
+        bytes.AddRange(BitConverter.GetBytes(2));
+        bytes.AddRange(BitConverter.GetBytes(9));
+        bytes.AddRange(BitConverter.GetBytes(2));
+
+        bytes.AddRange(BitConverter.GetBytes(16));
+        bytes.AddRange(BitConverter.GetBytes(17));
+
+        bytes.AddRange(BitConverter.GetBytes(0L));
+        bytes.AddRange(BitConverter.GetBytes(16L));
+
+        bytes.AddRange(CreateBytes(0xee, 11));
+        return bytes.ToArray();
     }
 
     private static void AddImageObjectName(List<byte> bytes, string value)

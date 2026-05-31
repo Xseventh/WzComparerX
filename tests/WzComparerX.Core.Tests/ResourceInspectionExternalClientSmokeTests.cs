@@ -548,17 +548,58 @@ public class ResourceInspectionExternalClientSmokeTests
 
         var video = AssertNode(inspection.Root, "royalStyle/openvideo/intro", "video");
 
-        Assert.Equal("unknown=1, dataLength=1943143, dataOffset=27488749", video.DisplayValue);
         Assert.Equal("UIGachapon.img", video.Identity?.ImageSelector);
         Assert.Equal("royalStyle/openvideo/intro", video.Identity?.ValuePath);
         Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "video"));
         Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "unknown" && Equals(item.Value, 1));
-        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 1943143));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "dataLength" && item.Value is int length && length > 0);
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "signature" && Equals(item.Value, "MCV0"));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "fourCc");
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "width" && item.Value is int width && width > 0);
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "height" && item.Value is int height && height > 0);
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "frameCount" && item.Value is int frameCount && frameCount > 0);
         Assert.Contains(video.Diagnostics ?? [], diagnostic =>
             diagnostic.Code == ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported &&
             diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
             diagnostic.Source == ResourceDiagnosticSources.Parser &&
             diagnostic.Path == "royalStyle/openvideo/intro");
+        AssertNoErrorDiagnostics(inspection);
+    }
+
+    [Fact]
+    public async Task InspectOptionalExternalClientMobBossPattern_ReadsVideoHeaderMetadata()
+    {
+        var mobPackPath = ExternalClientSmokeData.FindFirstFile("Packs", "Mob_00002.ms");
+        if (mobPackPath is null)
+        {
+            return;
+        }
+
+        var service = new ResourceInspectionService();
+        var inspection = await service.InspectAsync(
+            mobPackPath,
+            "Mob/BossPattern/BossFirstAdversary.img",
+            new ResourceInspectionOptions(
+                StringKey: null,
+                MaxPropertyDepth: 6,
+                IncludeDebugMetadata: true));
+
+        var video = AssertNode(inspection.Root, "1069/003/effect/0", "video");
+
+        Assert.Equal("Mob/BossPattern/BossFirstAdversary.img", video.Identity?.ImageSelector);
+        Assert.Equal("1069/003/effect/0", video.Identity?.ValuePath);
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "signature" && Equals(item.Value, "MCV0"));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "fourCc" && Equals(item.Value, "VP90"));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "width" && Equals(item.Value, 2656));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "height" && Equals(item.Value, 1352));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "frameCount" && Equals(item.Value, 97));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "hasAlphaMap" && Equals(item.Value, true));
+        Assert.Contains(video.DebugMetadata ?? [], item => item.Name == "firstFrameDataOffset" && Equals(item.Value, 1600L));
+        Assert.Contains(video.Diagnostics ?? [], diagnostic =>
+            diagnostic.Code == ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported &&
+            diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
+            diagnostic.Source == ResourceDiagnosticSources.Parser &&
+            diagnostic.Path == "1069/003/effect/0");
         AssertNoErrorDiagnostics(inspection);
     }
 

@@ -1,6 +1,6 @@
-using static WzComparerX.WzLib.WzImageBinaryReaderPrimitives;
-
 namespace WzComparerX.WzLib;
+
+using static WzImageBinaryReaderPrimitives;
 
 internal static class WzImagePayloadInspectionReader
 {
@@ -74,8 +74,9 @@ internal static class WzImagePayloadInspectionReader
             throw new InvalidDataException($"Video data extends past the image stream: {dataOffset + dataLength}.");
         }
 
+        var header = WzImageVideoHeaderReader.TryRead(stream, dataOffset, dataLength, out var headerError);
         SkipBytes(stream, dataLength);
-        return new WzImageVideoInspection(unknown, dataOffset, dataLength);
+        return new WzImageVideoInspection(unknown, dataOffset, dataLength, header, headerError);
     }
 
     public static WzImageSoundInspection ReadSound(Stream stream, long imageEndOffset, int version)
