@@ -517,6 +517,7 @@ public sealed class ResourceInspectionService
             : inspection.ObjectValue is not null
             ? FormatObject(inspection.ObjectValue)
             : inspection.ObjectType;
+        var linkResolutionCache = new ResourceInspectionLinkResolutionCache();
         var children = new List<ResourceInspectionNode>();
         foreach (var property in inspection.Properties ?? [])
         {
@@ -527,6 +528,7 @@ public sealed class ResourceInspectionService
                 inspection.Header.SourcePath,
                 inspection.Selector,
                 options,
+                linkResolutionCache,
                 cancellationToken));
         }
 
@@ -553,6 +555,7 @@ public sealed class ResourceInspectionService
         string packagePath,
         string imageSelector,
         ResourceInspectionOptions options,
+        ResourceInspectionLinkResolutionCache linkResolutionCache,
         CancellationToken cancellationToken)
     {
         var name = property.Name ?? property.Index.ToString(CultureInfo.InvariantCulture);
@@ -566,6 +569,7 @@ public sealed class ResourceInspectionService
                 packagePath,
                 imageSelector,
                 options,
+                linkResolutionCache,
                 cancellationToken));
         }
 
@@ -577,6 +581,7 @@ public sealed class ResourceInspectionService
                 inspection,
                 property,
                 options.StringKey,
+                linkResolutionCache,
                 cancellationToken)
             : null;
 

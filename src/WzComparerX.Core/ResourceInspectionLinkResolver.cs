@@ -37,6 +37,23 @@ public static class ResourceInspectionLinkResolver
         WzStringEncryptionKind? stringKey,
         CancellationToken cancellationToken = default)
     {
+        return await ResolveAsync(
+            currentPackagePath,
+            currentImage,
+            property,
+            stringKey,
+            cache: null,
+            cancellationToken);
+    }
+
+    internal static async Task<ResourceInspectionResolvedLinkTarget?> ResolveAsync(
+        string currentPackagePath,
+        WzImageInspection currentImage,
+        WzImagePropertyInspectionEntry property,
+        WzStringEncryptionKind? stringKey,
+        ResourceInspectionLinkResolutionCache? cache,
+        CancellationToken cancellationToken = default)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(currentPackagePath);
         ArgumentNullException.ThrowIfNull(currentImage);
         ArgumentNullException.ThrowIfNull(property);
@@ -59,6 +76,7 @@ public static class ResourceInspectionLinkResolver
                 currentPackagePath,
                 linkedTarget,
                 stringKey,
+                cache,
                 cancellationToken),
             _ => null
         };
@@ -74,6 +92,21 @@ public static class ResourceInspectionLinkResolver
         string currentPackagePath,
         string logicalPath,
         WzStringEncryptionKind? stringKey,
+        CancellationToken cancellationToken = default)
+    {
+        return await ResolveLogicalImageValueAsync(
+            currentPackagePath,
+            logicalPath,
+            stringKey,
+            cache: null,
+            cancellationToken);
+    }
+
+    internal static async Task<ResourceInspectionResolvedLinkTarget?> ResolveLogicalImageValueAsync(
+        string currentPackagePath,
+        string logicalPath,
+        WzStringEncryptionKind? stringKey,
+        ResourceInspectionLinkResolutionCache? cache,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(currentPackagePath);
@@ -102,6 +135,7 @@ public static class ResourceInspectionLinkResolver
                 currentPackagePath,
                 logicalImageSelector,
                 valuePath,
+                cache,
                 cancellationToken);
             if (currentMsTarget is not null)
             {
@@ -123,6 +157,7 @@ public static class ResourceInspectionLinkResolver
                 candidate.Selector,
                 valuePath,
                 stringKey,
+                cache,
                 cancellationToken);
             if (target is not null)
             {
@@ -137,6 +172,7 @@ public static class ResourceInspectionLinkResolver
                 msPath,
                 logicalImageSelector,
                 valuePath,
+                cache,
                 cancellationToken);
             if (target is not null)
             {
@@ -195,27 +231,23 @@ public static class ResourceInspectionLinkResolver
         string selector,
         string? valuePath,
         WzStringEncryptionKind? stringKey,
+        ResourceInspectionLinkResolutionCache? cache,
         CancellationToken cancellationToken)
     {
-        if (!File.Exists(packagePath))
+        var group = cache is null
+            ? await LoadPackageGroupAsync(packagePath, stringKey, cancellationToken)
+            : await cache.GetPackageGroupAsync(packagePath, stringKey, cancellationToken);
+        if (group is null)
         {
             return null;
         }
 
-        try
+        foreach (var member in group.Members)
         {
-            var group = await WzPackageGroupInspectionLoader.LoadAsync(packagePath, stringKey, cancellationToken);
-            foreach (var member in group.Members)
+            if (WzImageInspectionLoader.TryFindImageEntry(member.Inspection, selector) is not null)
             {
-                if (WzImageInspectionLoader.TryFindImageEntry(member.Inspection, selector) is not null)
-                {
-                    return new ResourceInspectionResolvedLinkTarget(member.SourcePath, selector, valuePath);
-                }
+                return new ResourceInspectionResolvedLinkTarget(member.SourcePath, selector, valuePath);
             }
-        }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or EndOfStreamException or NotSupportedException or UnauthorizedAccessException)
-        {
-            return null;
         }
 
         return null;
@@ -225,6 +257,45 @@ public static class ResourceInspectionLinkResolver
         string containerPath,
         string selector,
         string? valuePath,
+        ResourceInspectionLinkResolutionCache? cache,
+        CancellationToken cancellationToken)
+    {
+        var inspection = cache is null
+            ? await LoadMsContainerAsync(containerPath, cancellationToken)
+            : await cache.GetMsContainerAsync(containerPath, cancellationToken);
+        if (inspection is null)
+        {
+            return null;
+        }
+
+        var entry = WzMsImageInspectionLoader.TryFindImageEntry(inspection, selector);
+        return entry is null
+            ? null
+            : new ResourceInspectionResolvedLinkTarget(inspection.Header.SourcePath, entry.Path, valuePath);
+    }
+
+    private static async Task<WzPackageGroupInspection?> LoadPackageGroupAsync(
+        string packagePath,
+        WzStringEncryptionKind? stringKey,
+        CancellationToken cancellationToken)
+    {
+        if (!File.Exists(packagePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            return await WzPackageGroupInspectionLoader.LoadAsync(packagePath, stringKey, cancellationToken);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or EndOfStreamException or NotSupportedException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private static async Task<WzMsContainerInspection?> LoadMsContainerAsync(
+        string containerPath,
         CancellationToken cancellationToken)
     {
         if (!File.Exists(containerPath))
@@ -234,11 +305,7 @@ public static class ResourceInspectionLinkResolver
 
         try
         {
-            var inspection = await new WzMsContainerInspectionReader().ReadAsync(containerPath, cancellationToken);
-            var entry = WzMsImageInspectionLoader.TryFindImageEntry(inspection, selector);
-            return entry is null
-                ? null
-                : new ResourceInspectionResolvedLinkTarget(inspection.Header.SourcePath, entry.Path, valuePath);
+            return await new WzMsContainerInspectionReader().ReadAsync(containerPath, cancellationToken);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or NotSupportedException or UnauthorizedAccessException)
         {
