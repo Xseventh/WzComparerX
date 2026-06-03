@@ -192,8 +192,10 @@ implemented yet. Canvas#Video `MCV0` header/table parsing is implemented and
 exposes fourCC, dimensions, frame count, alpha/timing flags, and first-frame
 offset metadata through `inspect --debug`. `external/VPDecoder` is now tracked
 as a submodule and has been validated as a managed raw `VP90` packet decoder
-candidate for the current local GMS first color/alpha frame chunks, but it has
-not yet been wired into a WCX media/Core/App decode service. Lua image entries
+candidate for the current local GMS first color/alpha frame chunks. The pinned
+submodule revision exposes memory-first `ReadOnlySpan<byte>` /
+`ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, and `Reset()`, but
+it has not yet been wired into a WCX media/Core/App decode service. Lua image entries
 report script length and a short UTF-8 snippet; `export --type lua` writes the
 full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with

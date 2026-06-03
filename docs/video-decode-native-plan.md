@@ -108,7 +108,20 @@ same media abstraction because older or different clients may still use `VP80`.
 ## Managed Decoder Validation
 
 `external/VPDecoder` was added and validated against the extracted first
-`VP90` color and alpha frame packets from the local GMS sample above.
+`VP90` color and alpha frame packets from the local GMS sample above. It is
+currently pinned to:
+
+```text
+7342b124706175d6ae838ca9158b14830f0f93f5
+```
+
+This revision exposes memory-first library APIs for WCX-style integration:
+
+- `DecodeFrame(ReadOnlySpan<byte>, ...)`
+- `DecodeFrame(ReadOnlyMemory<byte>, ...)`
+- `DecodeFrameWithAlpha(ReadOnlySpan<byte>, ReadOnlySpan<byte>, ...)`
+- `DecodeFrameWithAlpha(ReadOnlyMemory<byte>, ReadOnlyMemory<byte>, ...)`
+- `Reset()`
 
 Validated commands:
 
@@ -118,15 +131,19 @@ dotnet build external/VPDecoder/VPDecoder.slnx --no-restore -m:1 -p:UseSharedCom
 dotnet test external/VPDecoder/VPDecoder.slnx --no-build -m:1
 dotnet run --no-build --project external/VPDecoder/src/VPDecoder.Cli/VPDecoder.Cli.csproj -- --input /tmp/vp9-main-frame-0.vp9 --width 2656 --height 1352 --out /tmp/vp9-main-frame-0.bgra
 dotnet run --no-build --project external/VPDecoder/src/VPDecoder.Cli/VPDecoder.Cli.csproj -- --input /tmp/vp9-alpha-frame-0.vp9 --width 2656 --height 1352 --out /tmp/vp9-alpha-frame-0.bgra
+dotnet run --no-build --project external/VPDecoder/src/VPDecoder.Cli/VPDecoder.Cli.csproj -- --input /tmp/vp9-main-frame-0.vp9 --alpha /tmp/vp9-alpha-frame-0.vp9 --width 2656 --height 1352 --out /tmp/vp9-merged-frame-0.bgra
 ```
 
 Observed results:
 
-- VPDecoder tests passed: 399 total, 0 failed.
+- VPDecoder tests passed: 401 total, 0 failed.
 - Main frame decoded to `2656x1352` BGRA8888, 14,363,648 bytes,
   SHA-256 `bd018f0c6eac5ae58945a2517c96c29a40f703b6c8c0a07c99debb9a8a864902`.
 - Alpha frame decoded to `2656x1352` BGRA8888, 14,363,648 bytes,
   SHA-256 `de5f6cf32681237d0076b8e106c2d8803a54379f639d9f6e7d10a864ad1ff306`.
-- Core API tests cover alpha composition through `DecodeFrameWithAlpha`.
-- The VPDecoder CLI currently decodes one packet at a time; alpha composition is
-  available in the library API but not exposed as a CLI `--alpha` option yet.
+- Color + alpha decoded to `2656x1352` BGRA8888, 14,363,648 bytes,
+  SHA-256 `c8095ee5e4b760a8a6f7c18d10b357b9f579c6864bb1cd815061d8d6e930a2ff`.
+- Library tests cover `ReadOnlyMemory<byte>` input and alpha composition
+  through `DecodeFrameWithAlpha`.
+- The VPDecoder CLI also exposes `--alpha` for smoke validation, but WCX should
+  integrate the library API directly rather than shelling out to the CLI.
