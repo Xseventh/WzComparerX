@@ -596,16 +596,6 @@ public partial class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasDiagnostics));
             AddActivity("error", $"Canvas preview failed: {ex.Message}");
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException)
-        {
-            if (!IsCurrentCanvasPreviewRequest(node, requestId))
-            {
-                return;
-            }
-
-            CanvasPreviewStatus = ex.Message;
-            AddActivity("error", $"Canvas preview failed: {ex.Message}");
-        }
         catch (Exception ex)
         {
             if (!IsCurrentCanvasPreviewRequest(node, requestId))
@@ -681,7 +671,7 @@ public partial class MainWindowViewModel : ViewModelBase
             OnPropertyChanged(nameof(HasDiagnostics));
             AddActivity("error", $"Video preview failed: {ex.Message}");
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException)
+        catch (Exception ex)
         {
             if (!IsCurrentCanvasPreviewRequest(node, requestId))
             {

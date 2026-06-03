@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using WzComparerX.App.Services;
@@ -697,7 +698,7 @@ public class MainWindowViewModelTests
         }
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task SelectingVideoNode_LoadsVideoPreviewAsCurrentPreview()
     {
         var path = Path.Combine(Path.GetTempPath(), $"wcx-video-{Guid.NewGuid():N}.wz");
@@ -739,6 +740,43 @@ public class MainWindowViewModelTests
         finally
         {
             viewModel.VideoPreview?.Dispose();
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SelectingVideoNode_WhenPreviewFactoryFails_ReportsFailureState()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-video-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, AppTestFixtures.CreatePkg1ImagePackage("Video.img", AppTestFixtures.CreateVideoPropertyImage()));
+        var decoder = new WzImageVideoSequenceDecoder(() => new QueueRawVideoPacketDecoder(
+            RawBgraFrame([0x10, 0x20, 0x30, 0xff])));
+        var videoWorkflow = new ResourceVideoPreviewWorkflow(new ResourceVideoSequenceService(decoder: decoder));
+        var viewModel = new MainWindowViewModel(
+            new ResourceInspectionService(),
+            videoPreviewWorkflow: videoWorkflow,
+            videoPreviewFactory: _ => throw new InvalidOperationException("Video bitmap factory failed."))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            var image = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+
+            viewModel.SelectedNode = image;
+            await WaitForImageContentAsync(viewModel);
+            viewModel.SelectedImageContentNode = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children);
+            await WaitForPreviewStatusAsync(viewModel, "Video bitmap factory failed.");
+
+            Assert.Null(viewModel.VideoPreview);
+            Assert.False(viewModel.HasCurrentPreview);
+            Assert.Equal("Video bitmap factory failed.", viewModel.CanvasPreviewStatus);
+            Assert.Contains(viewModel.ActivityLog, item => item.Title == "error: Video preview failed: Video bitmap factory failed.");
+        }
+        finally
+        {
             File.Delete(path);
         }
     }
@@ -850,7 +888,7 @@ public class MainWindowViewModelTests
         Assert.Equal(400d, preview.DisplayHeight);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void VideoPreviewViewModel_TracksFrameSequenceAndScale()
     {
         var document = new ResourceVideoSequenceDocument(
@@ -1068,6 +1106,21 @@ public class MainWindowViewModelTests
         }
 
         Assert.Fail($"Video preview was not loaded. Status: {viewModel.CanvasPreviewStatus}");
+    }
+
+    private static async Task WaitForPreviewStatusAsync(MainWindowViewModel viewModel, string status)
+    {
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            if (viewModel.CanvasPreviewStatus == status)
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Fail($"Preview status did not become '{status}'. Current status: {viewModel.CanvasPreviewStatus}");
     }
 
     private static async Task WaitForImageContentAsync(MainWindowViewModel viewModel)
