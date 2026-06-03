@@ -4,11 +4,28 @@ namespace WzComparerX.Rendering;
 
 public sealed class WzImageVideoFrameDecoder
 {
-    private readonly IWzRawVideoPacketDecoder vp9Decoder;
+    private readonly Func<string, IWzRawVideoPacketDecoder> decoderFactory;
+    private readonly bool useSharedDecoder;
+    private IWzRawVideoPacketDecoder? decoder;
+    private string? decoderCodec;
 
-    public WzImageVideoFrameDecoder(IWzRawVideoPacketDecoder? vp9Decoder = null)
+    public WzImageVideoFrameDecoder()
+        : this(CreateDefaultDecoder)
     {
-        this.vp9Decoder = vp9Decoder ?? new Vp9RawVideoPacketDecoder();
+    }
+
+    public WzImageVideoFrameDecoder(IWzRawVideoPacketDecoder decoder)
+    {
+        ArgumentNullException.ThrowIfNull(decoder);
+        decoderFactory = _ => decoder;
+        useSharedDecoder = true;
+        this.decoder = decoder;
+        decoderCodec = string.Empty;
+    }
+
+    public WzImageVideoFrameDecoder(Func<string, IWzRawVideoPacketDecoder> decoderFactory)
+    {
+        this.decoderFactory = decoderFactory ?? throw new ArgumentNullException(nameof(decoderFactory));
     }
 
     public WzVideoDecodeResult DecodeFrame(
@@ -51,7 +68,13 @@ public sealed class WzImageVideoFrameDecoder
             alphaPacket = alpha.Packet;
         }
 
-        var rawResult = vp9Decoder.Decode(
+        if (decoder is null || (!useSharedDecoder && decoderCodec != header.FourCcText))
+        {
+            decoder = decoderFactory(header.FourCcText);
+            decoderCodec = header.FourCcText;
+        }
+
+        var rawResult = decoder.Decode(
             colorPacket.Packet,
             alphaPacket,
             header.Width,
@@ -60,6 +83,11 @@ public sealed class WzImageVideoFrameDecoder
         if (!rawResult.Succeeded)
         {
             return WzVideoDecodeResult.Fail(rawResult.Diagnostic!);
+        }
+
+        if (rawResult.NoDisplayFrame)
+        {
+            return WzVideoDecodeResult.Fail(WzVideoDecodeDiagnostic.NoDisplayFrame(frame.Index));
         }
 
         var rawFrame = rawResult.Frame!;
@@ -76,6 +104,16 @@ public sealed class WzImageVideoFrameDecoder
 
     public void Reset()
     {
-        vp9Decoder.Reset();
+        decoder?.Reset();
+    }
+
+    private static IWzRawVideoPacketDecoder CreateDefaultDecoder(string fourCc)
+    {
+        return fourCc switch
+        {
+            "VP90" => new Vp9RawVideoPacketDecoder(),
+            "VP80" => new Vp8RawVideoPacketDecoder(),
+            _ => throw new ArgumentOutOfRangeException(nameof(fourCc), fourCc, "Unsupported video codec.")
+        };
     }
 }

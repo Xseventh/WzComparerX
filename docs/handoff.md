@@ -190,28 +190,29 @@ Canvas values use the same resolver in both surfaces.
 RawData/Sound payload decoding is not implemented yet. Canvas#Video `MCV0`
 header/table parsing is implemented and exposes fourCC, dimensions, frame
 count, alpha/timing flags, and frame offset metadata through `inspect --debug`.
-`external/VPDecoder` is tracked as a submodule and has been validated as a
-managed raw `VP90` packet decoder candidate for local GMS first-frame chunks.
-The pinned submodule revision exposes memory-first `ReadOnlySpan<byte>` /
-`ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, `Reset()`, and VP9
-sequence semantics documentation.
+`external/VPDecoder` is tracked as a submodule and currently points at
+`0a6c7ee`, which exposes memory-first `ReadOnlySpan<byte>` /
+`ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, `Reset()`, VP9
+no-display result semantics, and a gated VP8 key-frame reconstruction path.
 `WzComparerX.Rendering` now has `WzImageVideoFrameDecoder` for selected-frame
 diagnostics and `WzImageVideoSequenceDecoder` for WC-style full frame-table
 decode. The sequence decoder reads color/alpha chunks from an image payload
 stream using `WzImageVideoInspection`, keeps separate color and alpha raw VP9
-decoder states, and delegates packet decode to `Vp9RawVideoPacketDecoder`. The
-pinned VPDecoder revision documents VP9 sequence semantics: one decoder instance
-is one stream state; `DecodeFrameWithAlpha` is a single-frame convenience helper,
-not a full color+alpha sequence decoder.
+decoder states, routes `VP90` through `Vp9RawVideoPacketDecoder`, routes `VP80`
+through `Vp8RawVideoPacketDecoder`, and skips successful no-display packets
+after feeding them into the raw decoder state. The pinned VPDecoder revision
+documents VP9 sequence semantics: one decoder instance is one stream state;
+`DecodeFrameWithAlpha` is a single-frame convenience helper, not a full
+color+alpha sequence decoder.
 Core `ResourceVideoTargetService`, Rendering `ResourceVideoSequenceService`,
 CLI `export --type video --out <directory>`, and Avalonia Preview are now wired
 to this sequence path. When decode succeeds, CLI writes `manifest.json` and
-BGRA8888 frame dumps. Current real GMS VP90 sequence smokes reach the decoder
-surface but fail on VPDecoder gaps: UI `UIGachapon.img`
-`royalStyle/openvideo/intro` frame 0 reports coefficient block geometry
-mismatch, and Packs `BossFirstAdversary.img` `1069/003/effect/0` frame 1
-reports unsupported non-display/reference state. VP80 metadata is parsed, but
-VP8 pixel reconstruction remains unsupported by VPDecoder.
+BGRA8888 frame dumps. Current real-client video validation still treats full
+GMS sequence export as a follow-up smoke because representative samples can
+write hundreds of MB to GB of BGRA frame data. VP8 support is integrated through
+the same Rendering interface, but remains bounded by the VPDecoder-supported
+key-frame subset and explicit unsupported diagnostics for broader VP8
+inter/reference cases.
 Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with

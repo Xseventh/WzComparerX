@@ -1056,7 +1056,7 @@ public class CliApplicationTests
     [Fact]
     public async Task ExportVideoWithOut_ReturnsStableCodecDiagnostic()
     {
-        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreatePropertyImage(CreateVideoProperty()));
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreatePropertyImage(CreateVideoProperty(fourCc: 0x30375056)));
         var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-video-{Guid.NewGuid():N}");
 
         try
@@ -1076,7 +1076,7 @@ public class CliApplicationTests
 
             Assert.Equal(1, result.ExitCode);
             Assert.Equal(string.Empty, result.Output);
-            Assert.Equal("error [wcx.video.codec.unsupported]: Unsupported video codec: VP80.".ReplaceLineEndings() + Environment.NewLine, result.Error);
+            Assert.Equal("error [wcx.video.codec.unsupported]: Unsupported video codec: VP70.".ReplaceLineEndings() + Environment.NewLine, result.Error);
             Assert.False(Directory.Exists(outputPath));
         }
         finally
@@ -1592,9 +1592,9 @@ public class CliApplicationTests
                 0x03));
     }
 
-    private static byte[] CreateVideoProperty()
+    private static byte[] CreateVideoProperty(uint fourCc = 0x30385056)
     {
-        var payload = CreateMcvVideoPayload();
+        var payload = CreateMcvVideoPayload(fourCc);
         return CreateObjectProperty(
             "clip",
             CreateObjectValue(
@@ -1728,9 +1728,8 @@ public class CliApplicationTests
         return bytes.ToArray();
     }
 
-    private static byte[] CreateMcvVideoPayload()
+    private static byte[] CreateMcvVideoPayload(uint fourCc)
     {
-        const uint fourCc = 0x30385056;
         var bytes = new List<byte>();
         bytes.AddRange("MCV0"u8.ToArray());
         bytes.AddRange(new byte[2]);

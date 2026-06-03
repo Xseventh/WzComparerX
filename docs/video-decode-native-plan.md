@@ -195,24 +195,23 @@ is lazy and only happens through preview/export.
 
 ## Current Real-Client Decode Boundary
 
-The App/CLI/Rendering surfaces are wired, but full real-client VP8/VP9 video
-coverage is still blocked by VPDecoder feature gaps:
+The App/CLI/Rendering surfaces are wired through one memory-first Rendering
+interface. `external/VPDecoder` is pinned at `0a6c7ee`; WCX routes `VP90` to
+the VP9 adapter, routes `VP80` to the VP8 adapter, and models successful
+no-display packets separately from failed packets.
 
-- `Data/UI/UI_000.wz`, selector `UIGachapon.img`, value
-  `royalStyle/openvideo/intro` reaches the decoder and fails at frame 0 with
-  `wcx.video.frame.decodeFailed` wrapping VPDecoder
-  `InternalDecodeFailure`: coefficient block count does not match block
-  geometry.
-- `Data/Packs/Mob_00002.ms`, selector
-  `Mob/BossPattern/BossFirstAdversary.img`, value `1069/003/effect/0` reaches
-  the decoder and fails at frame 1 with `wcx.video.frame.decodeFailed` wrapping
-  VPDecoder `UnsupportedInterFrameFeature`: non-display/reference state is not
-  supported yet.
-- `VP80` is recognized at the MCV metadata layer, but the managed VPDecoder
-  currently parses VP8 headers only and does not reconstruct VP8 pixels.
+The previous VP9 non-display/reference-state blocker is no longer represented
+as a WCX failure path; no-display packets are fed into the raw decoder state and
+skipped by the sequence exporter/preview. VP8 is now integrated through the same
+codec factory, but its real-client coverage is bounded by the pinned VPDecoder
+key-frame subset and explicit unsupported diagnostics for broader VP8
+inter/reference cases.
 
-Do not claim WC-compatible video playback/export until those decoder gaps are
-closed or a native libvpx backend is added behind the same Rendering interface.
+Full real-client video export should still be treated as a dedicated smoke
+slice. The current known GMS samples are large enough to write hundreds of MB to
+GB of BGRA frame dumps, so routine validation uses VPDecoder submodule tests,
+Rendering unit tests, CLI contract tests, and metadata-only local GMS inspection
+unless a slice explicitly needs to exercise complete frame output.
 
 ## VP9 Sequence Semantics
 

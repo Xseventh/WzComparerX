@@ -26,7 +26,7 @@ internal static class WzImageVideoDecodePrimitives
             return WzVideoDecodeDiagnostic.InvalidMetadata(message);
         }
 
-        if (video.Header.FourCcText != "VP90")
+        if (video.Header.FourCcText is not ("VP90" or "VP80"))
         {
             return WzVideoDecodeDiagnostic.UnsupportedCodec(video.Header.FourCcText);
         }

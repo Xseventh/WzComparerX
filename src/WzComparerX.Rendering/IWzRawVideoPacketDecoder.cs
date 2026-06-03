@@ -16,11 +16,20 @@ public sealed record WzRawVideoPacketDecodeResult(
     WzRawDecodedVideoFrame? Frame,
     WzVideoDecodeDiagnostic? Diagnostic)
 {
-    public bool Succeeded => Frame is not null && Diagnostic is null;
+    public bool Succeeded => Diagnostic is null;
+
+    public bool HasDisplayFrame => Frame is not null && Diagnostic is null;
+
+    public bool NoDisplayFrame => Frame is null && Diagnostic is null;
 
     public static WzRawVideoPacketDecodeResult Success(WzRawDecodedVideoFrame frame)
     {
         return new WzRawVideoPacketDecodeResult(frame, null);
+    }
+
+    public static WzRawVideoPacketDecodeResult NoDisplay()
+    {
+        return new WzRawVideoPacketDecodeResult(null, null);
     }
 
     public static WzRawVideoPacketDecodeResult Fail(WzVideoDecodeDiagnostic diagnostic)

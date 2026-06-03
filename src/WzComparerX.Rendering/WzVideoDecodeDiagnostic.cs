@@ -24,6 +24,11 @@ public sealed record WzVideoDecodeDiagnostic(
         return new WzVideoDecodeDiagnostic("wcx.video.frame.invalidIndex", $"Video frame index is outside the frame table: {frameIndex}.");
     }
 
+    public static WzVideoDecodeDiagnostic NoDisplayFrame(int frameIndex)
+    {
+        return new WzVideoDecodeDiagnostic("wcx.video.frame.noDisplay", $"Video frame {frameIndex} updates decoder state but does not contain a display frame.");
+    }
+
     public static WzVideoDecodeDiagnostic FrameDecodeFailed(int frameIndex, WzVideoDecodeDiagnostic diagnostic)
     {
         return new WzVideoDecodeDiagnostic(

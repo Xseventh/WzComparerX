@@ -113,14 +113,14 @@ public sealed class WzImageVideoSequenceDecoderTests
     public void DecodeSequence_WhenCodecIsUnsupported_ReturnsDiagnosticWithoutCreatingDecoders()
     {
         var factoryCallCount = 0;
-        var service = new WzImageVideoSequenceDecoder(() =>
+        var service = new WzImageVideoSequenceDecoder(_ =>
         {
             factoryCallCount++;
             return new QueueRawVideoPacketDecoder();
         });
         var video = CreateVideo(
             dataOffset: 0,
-            fourCc: "VP80",
+            fourCc: "VP70",
             flags: WzImageVideoDataFlags.Default,
             frames:
             [
@@ -132,6 +132,64 @@ public sealed class WzImageVideoSequenceDecoderTests
         Assert.False(result.Succeeded);
         Assert.Equal("wcx.video.codec.unsupported", result.Diagnostic?.Code);
         Assert.Equal(0, factoryCallCount);
+    }
+
+    [Fact]
+    public void DecodeSequence_WhenCodecIsVp80_UsesVp80DecoderFactory()
+    {
+        var imagePayload = new byte[] { 7 };
+        var requestedCodecs = new List<string>();
+        var service = new WzImageVideoSequenceDecoder(fourCc =>
+        {
+            requestedCodecs.Add(fourCc);
+            return new QueueRawVideoPacketDecoder(RawBgraFrame([1, 2, 3, 255]));
+        });
+        var video = CreateVideo(
+            dataOffset: 0,
+            fourCc: "VP80",
+            flags: WzImageVideoDataFlags.Default,
+            frames:
+            [
+                new WzImageVideoFrameInspection(0, 0, 1, -1, 0, 0, 0)
+            ]);
+
+        var result = service.DecodeSequence(new MemoryStream(imagePayload), video);
+
+        Assert.True(result.Succeeded, result.Diagnostic?.Message);
+        Assert.Equal(["VP80"], requestedCodecs);
+        Assert.NotNull(result.Sequence);
+        Assert.Single(result.Sequence.Frames);
+    }
+
+    [Fact]
+    public void DecodeSequence_WhenFrameIsNoDisplay_UpdatesDecoderStateAndSkipsDisplayFrame()
+    {
+        var imagePayload = new byte[] { 1, 2 };
+        var colorDecoder = new QueueRawVideoPacketDecoder(
+            WzRawVideoPacketDecodeResult.NoDisplay(),
+            RawBgraFrame([4, 5, 6, 255]));
+        var service = new WzImageVideoSequenceDecoder(() => colorDecoder);
+        var video = CreateVideo(
+            dataOffset: 0,
+            fourCc: "VP90",
+            flags: WzImageVideoDataFlags.Default,
+            frames:
+            [
+                new WzImageVideoFrameInspection(0, 0, 1, -1, 0, 10, 0),
+                new WzImageVideoFrameInspection(1, 1, 1, -1, 0, 20, 10)
+            ]);
+
+        var result = service.DecodeSequence(new MemoryStream(imagePayload), video);
+
+        Assert.True(result.Succeeded, result.Diagnostic?.Message);
+        Assert.NotNull(result.Sequence);
+        var frame = Assert.Single(result.Sequence.Frames);
+        Assert.Equal(1, frame.FrameIndex);
+        Assert.Equal([4, 5, 6, 255], frame.Pixels);
+        Assert.Collection(
+            colorDecoder.Packets,
+            packet => Assert.Equal([1], packet),
+            packet => Assert.Equal([2], packet));
     }
 
     [Fact]

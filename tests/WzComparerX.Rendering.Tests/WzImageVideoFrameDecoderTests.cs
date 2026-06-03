@@ -87,7 +87,7 @@ public sealed class WzImageVideoFrameDecoderTests
         var service = new WzImageVideoFrameDecoder(decoder);
         var video = CreateVideo(
             dataOffset: 0,
-            fourCc: "VP80",
+            fourCc: "VP70",
             frames:
             [
                 new WzImageVideoFrameInspection(0, 0, 1, -1, 0, 0, 0)
@@ -98,6 +98,86 @@ public sealed class WzImageVideoFrameDecoderTests
         Assert.False(result.Succeeded);
         Assert.Equal("wcx.video.codec.unsupported", result.Diagnostic?.Code);
         Assert.False(decoder.WasCalled);
+    }
+
+    [Fact]
+    public void DecodeFrame_WhenCodecIsVp80_UsesVp80DecoderFactory()
+    {
+        var requestedCodecs = new List<string>();
+        var decoder = new RecordingRawVideoPacketDecoder();
+        var service = new WzImageVideoFrameDecoder(fourCc =>
+        {
+            requestedCodecs.Add(fourCc);
+            return decoder;
+        });
+        var video = CreateVideo(
+            dataOffset: 0,
+            fourCc: "VP80",
+            frames:
+            [
+                new WzImageVideoFrameInspection(0, 0, 1, -1, 0, 0, 0)
+            ]);
+
+        var result = service.DecodeFrame(new MemoryStream([0]), video, 0);
+
+        Assert.True(result.Succeeded, result.Diagnostic?.Message);
+        Assert.Equal(["VP80"], requestedCodecs);
+        Assert.True(decoder.WasCalled);
+    }
+
+    [Fact]
+    public void DecodeFrame_WhenCodecChanges_RecreatesRawDecoder()
+    {
+        var requestedCodecs = new List<string>();
+        var service = new WzImageVideoFrameDecoder(fourCc =>
+        {
+            requestedCodecs.Add(fourCc);
+            return new RecordingRawVideoPacketDecoder();
+        });
+        var vp9 = CreateVideo(
+            dataOffset: 0,
+            fourCc: "VP90",
+            frames:
+            [
+                new WzImageVideoFrameInspection(0, 0, 1, -1, 0, 0, 0)
+            ]);
+        var vp8 = CreateVideo(
+            dataOffset: 0,
+            fourCc: "VP80",
+            frames:
+            [
+                new WzImageVideoFrameInspection(0, 0, 1, -1, 0, 0, 0)
+            ]);
+
+        var vp9Result = service.DecodeFrame(new MemoryStream([1]), vp9, 0);
+        var vp8Result = service.DecodeFrame(new MemoryStream([2]), vp8, 0);
+
+        Assert.True(vp9Result.Succeeded, vp9Result.Diagnostic?.Message);
+        Assert.True(vp8Result.Succeeded, vp8Result.Diagnostic?.Message);
+        Assert.Equal(["VP90", "VP80"], requestedCodecs);
+    }
+
+    [Fact]
+    public void DecodeFrame_WhenRawDecoderReturnsNoDisplay_ReturnsNoDisplayDiagnostic()
+    {
+        var decoder = new RecordingRawVideoPacketDecoder
+        {
+            Result = WzRawVideoPacketDecodeResult.NoDisplay()
+        };
+        var service = new WzImageVideoFrameDecoder(decoder);
+        var video = CreateVideo(
+            dataOffset: 0,
+            fourCc: "VP90",
+            frames:
+            [
+                new WzImageVideoFrameInspection(3, 0, 1, -1, 0, 0, 0)
+            ]);
+
+        var result = service.DecodeFrame(new MemoryStream([0]), video, 0);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal("wcx.video.frame.noDisplay", result.Diagnostic?.Code);
+        Assert.Contains("Video frame 3", result.Diagnostic?.Message);
     }
 
     [Fact]
@@ -256,6 +336,8 @@ public sealed class WzImageVideoFrameDecoderTests
 
         public bool WasReset { get; private set; }
 
+        public WzRawVideoPacketDecodeResult? Result { get; set; }
+
         public WzRawVideoPacketDecodeResult Decode(
             ReadOnlyMemory<byte> colorPacket,
             ReadOnlyMemory<byte>? alphaPacket,
@@ -270,6 +352,11 @@ public sealed class WzImageVideoFrameDecoderTests
                 : null;
             ExpectedWidth = expectedWidth;
             ExpectedHeight = expectedHeight;
+            if (Result is not null)
+            {
+                return Result;
+            }
+
             return WzRawVideoPacketDecodeResult.Success(new WzRawDecodedVideoFrame(
                 expectedWidth,
                 expectedHeight,

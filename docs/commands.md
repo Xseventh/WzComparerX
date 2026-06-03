@@ -169,9 +169,9 @@ consistently across CLI and UI.
 Rendering video backend can decode the selected `Canvas#Video` value. The output
 directory contains `manifest.json` plus `frame-0000.bgra`, `frame-0001.bgra`,
 and so on. Each frame is BGRA8888. This is a frame dump contract, not a packaged
-movie container export. Real GMS `VP90` sequences currently reach the decoder
-surface but may return `wcx.video.frame.decodeFailed` while VPDecoder coverage
-is still incomplete.
+movie container export. The Rendering backend currently routes `VP90` and
+`VP80` through the VPDecoder submodule; unsupported decoder features are reported
+as stable `wcx.video.*` diagnostics instead of partial frame output.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 
