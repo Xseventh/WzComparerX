@@ -195,9 +195,12 @@ as a submodule and has been validated as a managed raw `VP90` packet decoder
 candidate for the current local GMS first color/alpha frame chunks. The pinned
 submodule revision exposes memory-first `ReadOnlySpan<byte>` /
 `ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, and `Reset()`, but
-it has not yet been wired into a WCX media/Core/App decode service. Lua image entries
-report script length and a short UTF-8 snippet; `export --type lua` writes the
-full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
+it has not yet been wired into Core/App/CLI decode surfaces.
+`WzComparerX.Rendering` now has `WzImageVideoFrameDecoder`, which reads selected
+color/alpha chunks from an image payload stream using `WzImageVideoInspection`
+metadata and delegates raw `VP90` decode to `Vp9RawVideoPacketDecoder`.
+Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
+writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
 `export --type text`. Text exports write to stdout by default or exact bytes to
 `--out <path>`; Canvas export writes BGRA8888 bytes, is binary-only, and

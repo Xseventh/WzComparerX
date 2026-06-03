@@ -88,9 +88,11 @@ runtimes/linux-musl-arm64/native/libyuv.so
 ## First Implementation Slice
 
 1. Add a media-layer decoder interface that accepts `WzImageVideoInspection`
-   plus an image stream accessor and returns BGRA8888 frames.
+   plus an image stream accessor and returns BGRA8888 frames. Implemented in
+   `WzComparerX.Rendering` as `WzImageVideoFrameDecoder`.
 2. Adapt `external/VPDecoder` as the first backend for raw `VP90` frame packets,
    including alpha-map merge for samples that carry alpha frame chunks.
+   Implemented as `Vp9RawVideoPacketDecoder`.
 3. Keep native `libvpx.dll` / `libyuv.dll` assets as a comparison/fallback
    backend, starting with WC's Windows `References` folders if the native path
    becomes necessary.
@@ -147,3 +149,19 @@ Observed results:
   through `DecodeFrameWithAlpha`.
 - The VPDecoder CLI also exposes `--alpha` for smoke validation, but WCX should
   integrate the library API directly rather than shelling out to the CLI.
+
+## WCX Adapter Validation
+
+WCX now has a Rendering-layer adapter:
+
+```text
+WzComparerX.Rendering/WzImageVideoFrameDecoder
+```
+
+The adapter accepts an image payload stream plus `WzImageVideoInspection`, reads
+selected color/alpha frame chunks from memory, and delegates raw `VP90` packet
+decode to `Vp9RawVideoPacketDecoder`.
+
+This keeps WzLib limited to `MCV0` metadata/frame-table parsing. Core/App/CLI
+have not been wired to video decode yet, so resource inspection still reports
+Video payload decode as unsupported until a media-facing Core service is added.
