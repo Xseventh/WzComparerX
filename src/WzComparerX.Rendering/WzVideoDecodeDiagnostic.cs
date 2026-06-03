@@ -31,6 +31,20 @@ public sealed record WzVideoDecodeDiagnostic(
             $"{packetName} packet is outside the image payload stream: offset={offset}, length={length}, streamLength={streamLength}.");
     }
 
+    public static WzVideoDecodeDiagnostic AlphaDimensionMismatch(int colorWidth, int colorHeight, int alphaWidth, int alphaHeight)
+    {
+        return new WzVideoDecodeDiagnostic(
+            "wcx.video.alpha.dimensionMismatch",
+            $"Video alpha frame dimensions do not match color frame dimensions: color={colorWidth}x{colorHeight}, alpha={alphaWidth}x{alphaHeight}.");
+    }
+
+    public static WzVideoDecodeDiagnostic AlphaPixelFormatUnsupported(WzVideoPixelFormat colorFormat, WzVideoPixelFormat alphaFormat)
+    {
+        return new WzVideoDecodeDiagnostic(
+            "wcx.video.alpha.pixelFormatUnsupported",
+            $"Video alpha merge requires BGRA8888 color and alpha frames: color={colorFormat}, alpha={alphaFormat}.");
+    }
+
     public static WzVideoDecodeDiagnostic DecoderFailure(string code, string message)
     {
         return new WzVideoDecodeDiagnostic($"wcx.video.decoder.{code}", message);

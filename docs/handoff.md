@@ -187,8 +187,8 @@ Canvas selection and Canvas link resolution now also share one Core service
 between Avalonia Preview and CLI Canvas export, so `.ms` / `.mn` payloads,
 package-group selectors, `_inlink` / `_outlink` / `source` links, and UOL-linked
 Canvas values use the same resolver in both surfaces.
-RawData/Sound payload decoding and Canvas#Video frame decoding/playback are not
-implemented yet. Canvas#Video `MCV0` header/table parsing is implemented and
+RawData/Sound payload decoding and user-facing Canvas#Video playback/export are
+not implemented yet. Canvas#Video `MCV0` header/table parsing is implemented and
 exposes fourCC, dimensions, frame count, alpha/timing flags, and first-frame
 offset metadata through `inspect --debug`. `external/VPDecoder` is now tracked
 as a submodule and has been validated as a managed raw `VP90` packet decoder
@@ -196,13 +196,14 @@ candidate for the current local GMS first color/alpha frame chunks. The pinned
 submodule revision exposes memory-first `ReadOnlySpan<byte>` /
 `ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, and `Reset()`, but
 it has not yet been wired into Core/App/CLI decode surfaces.
-`WzComparerX.Rendering` now has `WzImageVideoFrameDecoder`, which reads selected
-color/alpha chunks from an image payload stream using `WzImageVideoInspection`
-metadata and delegates raw `VP90` decode to `Vp9RawVideoPacketDecoder`. The
+`WzComparerX.Rendering` now has `WzImageVideoFrameDecoder` for selected-frame
+diagnostics and `WzImageVideoSequenceDecoder` for WC-style full frame-table
+decode. The sequence decoder reads color/alpha chunks from an image payload
+stream using `WzImageVideoInspection`, keeps separate color and alpha raw VP9
+decoder states, and delegates packet decode to `Vp9RawVideoPacketDecoder`. The
 pinned VPDecoder revision documents VP9 sequence semantics: one decoder instance
 is one stream state; `DecodeFrameWithAlpha` is a single-frame convenience helper,
-not a full color+alpha sequence decoder. Future playback should maintain
-separate color and alpha decoder states.
+not a full color+alpha sequence decoder.
 Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with

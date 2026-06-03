@@ -156,11 +156,18 @@ WCX now has a Rendering-layer adapter:
 
 ```text
 WzComparerX.Rendering/WzImageVideoFrameDecoder
+WzComparerX.Rendering/WzImageVideoSequenceDecoder
 ```
 
-The adapter accepts an image payload stream plus `WzImageVideoInspection`, reads
-selected color/alpha frame chunks from memory, and delegates raw `VP90` packet
-decode to `Vp9RawVideoPacketDecoder`.
+The frame adapter accepts an image payload stream plus `WzImageVideoInspection`,
+reads selected color/alpha frame chunks from memory, and delegates raw `VP90`
+packet decode to `Vp9RawVideoPacketDecoder`.
+
+The sequence adapter mirrors WC's `MaplestoryCanvasVideoLoader` shape more
+closely: it iterates the full `MCV0` frame table in order, keeps one raw VP9
+decoder state for color data, keeps a second decoder state for alpha-map data
+when present, and merges alpha from the alpha frame red channel into BGRA8888
+output before optional RGBA conversion.
 
 This keeps WzLib limited to `MCV0` metadata/frame-table parsing. Core/App/CLI
 have not been wired to video decode yet, so resource inspection still reports
@@ -181,8 +188,8 @@ The pinned VPDecoder revision documents cross-frame behavior:
   state on the current decoder, but decodes alpha with a fresh internal decoder
   for that call.
 
-That means the current `WzImageVideoFrameDecoder` is suitable for selected-frame
-or first-frame preview when packets are independently decodable. A future
-playback or full color+alpha sequence service should keep two decoder states:
-one for color and one for alpha, reset both together, decode both packet streams
-in order, and then merge the decoded frames.
+That means `WzImageVideoFrameDecoder` remains suitable for selected-frame or
+first-frame diagnostics when packets are independently decodable. The preferred
+playback/export path is now `WzImageVideoSequenceDecoder`, because it maintains
+separate color and alpha decoder states and decodes packets in frame-table
+order. App/CLI still need user-facing surfaces for the decoded sequence.
