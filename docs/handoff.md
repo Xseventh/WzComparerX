@@ -187,15 +187,14 @@ Canvas selection and Canvas link resolution now also share one Core service
 between Avalonia Preview and CLI Canvas export, so `.ms` / `.mn` payloads,
 package-group selectors, `_inlink` / `_outlink` / `source` links, and UOL-linked
 Canvas values use the same resolver in both surfaces.
-RawData/Sound payload decoding and user-facing Canvas#Video playback/export are
-not implemented yet. Canvas#Video `MCV0` header/table parsing is implemented and
-exposes fourCC, dimensions, frame count, alpha/timing flags, and first-frame
-offset metadata through `inspect --debug`. `external/VPDecoder` is now tracked
-as a submodule and has been validated as a managed raw `VP90` packet decoder
-candidate for the current local GMS first color/alpha frame chunks. The pinned
-submodule revision exposes memory-first `ReadOnlySpan<byte>` /
-`ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, and `Reset()`, but
-it has not yet been wired into Core/App/CLI decode surfaces.
+RawData/Sound payload decoding is not implemented yet. Canvas#Video `MCV0`
+header/table parsing is implemented and exposes fourCC, dimensions, frame
+count, alpha/timing flags, and frame offset metadata through `inspect --debug`.
+`external/VPDecoder` is tracked as a submodule and has been validated as a
+managed raw `VP90` packet decoder candidate for local GMS first-frame chunks.
+The pinned submodule revision exposes memory-first `ReadOnlySpan<byte>` /
+`ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, `Reset()`, and VP9
+sequence semantics documentation.
 `WzComparerX.Rendering` now has `WzImageVideoFrameDecoder` for selected-frame
 diagnostics and `WzImageVideoSequenceDecoder` for WC-style full frame-table
 decode. The sequence decoder reads color/alpha chunks from an image payload
@@ -204,6 +203,15 @@ decoder states, and delegates packet decode to `Vp9RawVideoPacketDecoder`. The
 pinned VPDecoder revision documents VP9 sequence semantics: one decoder instance
 is one stream state; `DecodeFrameWithAlpha` is a single-frame convenience helper,
 not a full color+alpha sequence decoder.
+Core `ResourceVideoTargetService`, Rendering `ResourceVideoSequenceService`,
+CLI `export --type video --out <directory>`, and Avalonia Preview are now wired
+to this sequence path. When decode succeeds, CLI writes `manifest.json` and
+BGRA8888 frame dumps. Current real GMS VP90 sequence smokes reach the decoder
+surface but fail on VPDecoder gaps: UI `UIGachapon.img`
+`royalStyle/openvideo/intro` frame 0 reports coefficient block geometry
+mismatch, and Packs `BossFirstAdversary.img` `1069/003/effect/0` frame 1
+reports unsupported non-display/reference state. VP80 metadata is parsed, but
+VP8 pixel reconstruction remains unsupported by VPDecoder.
 Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
@@ -478,10 +486,14 @@ Local GMS smoke status:
 - Optional local GMS UI Canvas#Video smoke covers `UI/UI_000.wz` selector
   `UIGachapon.img`, path `royalStyle/openvideo/intro`, preserving video
   metadata, `MCV0` header metadata, identity value path, and the stable
-  `wcx.payload.video.unsupported` info diagnostic. Optional local Packs smoke
-  also covers `Packs/Mob_00002.ms` selector
+  `wcx.payload.video.unsupported` info diagnostic. The same sample now reaches
+  CLI video export but fails at frame 0 with `wcx.video.frame.decodeFailed`
+  while VPDecoder lacks the required coefficient geometry coverage. Optional
+  local Packs smoke also covers `Packs/Mob_00002.ms` selector
   `Mob/BossPattern/BossFirstAdversary.img`, path `1069/003/effect/0`, with
-  `VP90`, dimensions, frame count, alpha-map, and first-frame offsets.
+  `VP90`, dimensions, frame count, alpha-map, and frame offsets; sequence export
+  reaches frame 1 and then fails with `wcx.video.frame.decodeFailed` for the
+  current VPDecoder non-display/reference-state gap.
 - Optional local GMS Vector smoke now covers
   `Character/Character_000.wz` selector `00002000.img`
   (`walk1/0/body/origin`, `walk1/0/arm/origin`) and

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using WzComparerX.App.Services;
 using WzComparerX.Core;
+using WzComparerX.Rendering;
 
 namespace WzComparerX.App.ViewModels;
 
@@ -13,7 +14,9 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly ResourceFolderInspectionService folderInspectionService;
     private readonly ResourceImageContentWorkflow imageContentWorkflow;
     private readonly ResourceCanvasPreviewWorkflow canvasPreviewWorkflow;
+    private readonly ResourceVideoPreviewWorkflow videoPreviewWorkflow;
     private readonly Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel> canvasPreviewFactory;
+    private readonly Func<ResourceVideoSequenceDocument, ResourceVideoPreviewViewModel> videoPreviewFactory;
     private int canvasPreviewRequestId;
     private int imageContentRequestId;
     private double canvasPreviewViewportWidth;
@@ -59,7 +62,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasCanvasPreview))]
+    [NotifyPropertyChangedFor(nameof(HasCurrentPreview))]
+    [NotifyPropertyChangedFor(nameof(CurrentPreview))]
     private ResourceCanvasPreviewViewModel? canvasPreview;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCurrentPreview))]
+    [NotifyPropertyChangedFor(nameof(CurrentPreview))]
+    private ResourceVideoPreviewViewModel? videoPreview;
 
     [ObservableProperty]
     private string canvasPreviewStatus = "Select a Canvas node to preview.";
@@ -83,13 +93,17 @@ public partial class MainWindowViewModel : ViewModelBase
         ResourceImageContentWorkflow? imageContentWorkflow = null,
         ResourceCanvasImageService? canvasImageService = null,
         ResourceCanvasPreviewWorkflow? canvasPreviewWorkflow = null,
-        Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel>? canvasPreviewFactory = null)
+        Func<ResourceCanvasImageDocument, ResourceCanvasPreviewViewModel>? canvasPreviewFactory = null,
+        ResourceVideoPreviewWorkflow? videoPreviewWorkflow = null,
+        Func<ResourceVideoSequenceDocument, ResourceVideoPreviewViewModel>? videoPreviewFactory = null)
     {
         this.inspectionService = inspectionService;
         this.folderInspectionService = folderInspectionService ?? new ResourceFolderInspectionService();
         this.imageContentWorkflow = imageContentWorkflow ?? new ResourceImageContentWorkflow(inspectionService);
         this.canvasPreviewWorkflow = canvasPreviewWorkflow ?? new ResourceCanvasPreviewWorkflow(canvasImageService);
+        this.videoPreviewWorkflow = videoPreviewWorkflow ?? new ResourceVideoPreviewWorkflow();
         this.canvasPreviewFactory = canvasPreviewFactory ?? CreateCanvasPreview;
+        this.videoPreviewFactory = videoPreviewFactory ?? CreateVideoPreview;
     }
 
     public ObservableCollection<ResourceInspectionNodeViewModel> RootNodes { get; } = [];
@@ -109,6 +123,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public bool HasDiagnostics => SelectedDiagnostics.Count > 0;
 
     public bool HasCanvasPreview => CanvasPreview is not null;
+
+    public bool HasCurrentPreview => CurrentPreview is not null;
+
+    public ResourceBitmapPreviewViewModel? CurrentPreview => VideoPreview is not null
+        ? VideoPreview
+        : CanvasPreview;
 
     public bool HasImageContent => ImageContentNodes.Count > 0;
 
@@ -451,6 +471,13 @@ public partial class MainWindowViewModel : ViewModelBase
         var requestId = Interlocked.Increment(ref canvasPreviewRequestId);
         ClearCanvasPreview(canvasPreviewWorkflow.GetIdleStatus(node));
         var target = ResolveCanvasPreviewImageTarget(node);
+        if (videoPreviewWorkflow.CanLoad(node, target, IsBusy))
+        {
+            CanvasPreviewStatus = "Loading Video preview...";
+            _ = LoadVideoPreviewAsync(node!, target!, requestId);
+            return;
+        }
+
         if (!canvasPreviewWorkflow.CanLoad(node, target, IsBusy))
         {
             return;
@@ -472,17 +499,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void SetCanvasPreviewScale(string? scale)
     {
-        if (CanvasPreview is null)
+        var preview = CurrentPreview;
+        if (preview is null)
         {
             return;
         }
 
         if (string.Equals(scale, "auto", StringComparison.OrdinalIgnoreCase))
         {
-            canvasPreviewScale = CanvasPreview.CalculateViewportFitScale(
+            canvasPreviewScale = preview.CalculateViewportFitScale(
                 canvasPreviewViewportWidth,
                 canvasPreviewViewportHeight);
-            CanvasPreview.SetScale(canvasPreviewScale);
+            preview.SetScale(canvasPreviewScale);
             return;
         }
 
@@ -493,8 +521,8 @@ public partial class MainWindowViewModel : ViewModelBase
             CultureInfo.InvariantCulture,
             out var parsedScale))
         {
-            CanvasPreview.SetScale(parsedScale);
-            canvasPreviewScale = CanvasPreview.Scale;
+            preview.SetScale(parsedScale);
+            canvasPreviewScale = preview.Scale;
         }
     }
 
@@ -595,6 +623,81 @@ public partial class MainWindowViewModel : ViewModelBase
         return new ResourceCanvasPreviewViewModel(document, ResourceCanvasBitmapFactory.Create(document));
     }
 
+    private async Task LoadVideoPreviewAsync(
+        ResourceInspectionNodeViewModel node,
+        ResourceImageSelectorTarget target,
+        int requestId)
+    {
+        if (!videoPreviewWorkflow.CanLoad(node, target, IsBusy))
+        {
+            return;
+        }
+
+        if (!TryCreateInspectionOptions(out var options))
+        {
+            return;
+        }
+
+        try
+        {
+            var document = await videoPreviewWorkflow.LoadAsync(node, target, options);
+            var preview = videoPreviewFactory(document);
+            if (!IsCurrentCanvasPreviewRequest(node, requestId))
+            {
+                preview.Dispose();
+                return;
+            }
+
+            ReplaceVideoPreview(preview);
+            preview.Start();
+            CanvasPreviewStatus = $"Loaded Video preview: {preview.Title}";
+            AddActivity("success", CanvasPreviewStatus);
+        }
+        catch (ResourceVideoTargetException ex)
+        {
+            if (!IsCurrentCanvasPreviewRequest(node, requestId))
+            {
+                return;
+            }
+
+            CanvasPreviewStatus = ex.Message;
+            SelectedDiagnostics.Add(ResourceDiagnosticViewModel.FromDiagnostic(ex.Diagnostic));
+            OnPropertyChanged(nameof(HasDiagnostics));
+            AddActivity("error", $"Video preview failed: {ex.Message}");
+        }
+        catch (ResourceVideoSequenceException ex)
+        {
+            if (!IsCurrentCanvasPreviewRequest(node, requestId))
+            {
+                return;
+            }
+
+            CanvasPreviewStatus = ex.Message;
+            SelectedDiagnostics.Add(new ResourceDiagnosticViewModel(
+                ResourceDiagnosticSeverities.Error,
+                ex.Diagnostic.Message,
+                ex.Diagnostic.Code,
+                node.Path));
+            OnPropertyChanged(nameof(HasDiagnostics));
+            AddActivity("error", $"Video preview failed: {ex.Message}");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or NotSupportedException)
+        {
+            if (!IsCurrentCanvasPreviewRequest(node, requestId))
+            {
+                return;
+            }
+
+            CanvasPreviewStatus = ex.Message;
+            AddActivity("error", $"Video preview failed: {ex.Message}");
+        }
+    }
+
+    private static ResourceVideoPreviewViewModel CreateVideoPreview(ResourceVideoSequenceDocument document)
+    {
+        return new ResourceVideoPreviewViewModel(document, ResourceVideoBitmapFactory.Create(document));
+    }
+
     private ResourceImageSelectorTarget? ResolveSelectedImageTarget()
     {
         return imageContentWorkflow.ResolveSelectedTarget(PathText, SelectedNode);
@@ -617,6 +720,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void ReplaceCanvasPreview(ResourceCanvasPreviewViewModel? preview)
     {
+        if (preview is not null)
+        {
+            ReplaceVideoPreview(null);
+        }
+
         var previous = CanvasPreview;
         if (preview is not null)
         {
@@ -627,9 +735,31 @@ public partial class MainWindowViewModel : ViewModelBase
         previous?.Dispose();
     }
 
+    private void ReplaceVideoPreview(ResourceVideoPreviewViewModel? preview)
+    {
+        if (preview is not null)
+        {
+            ReplaceCanvasPreview(null);
+        }
+
+        var previous = VideoPreview;
+        if (preview is not null)
+        {
+            preview.SetScale(canvasPreviewScale);
+        }
+
+        VideoPreview = preview;
+        previous?.Dispose();
+    }
+
     private void ClearCanvasPreview(string status)
     {
-        ReplaceCanvasPreview(null);
+        var previousCanvas = CanvasPreview;
+        var previousVideo = VideoPreview;
+        CanvasPreview = null;
+        VideoPreview = null;
+        previousCanvas?.Dispose();
+        previousVideo?.Dispose();
         CanvasPreviewStatus = status;
     }
 

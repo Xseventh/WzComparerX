@@ -24,6 +24,13 @@ public sealed record WzVideoDecodeDiagnostic(
         return new WzVideoDecodeDiagnostic("wcx.video.frame.invalidIndex", $"Video frame index is outside the frame table: {frameIndex}.");
     }
 
+    public static WzVideoDecodeDiagnostic FrameDecodeFailed(int frameIndex, WzVideoDecodeDiagnostic diagnostic)
+    {
+        return new WzVideoDecodeDiagnostic(
+            "wcx.video.frame.decodeFailed",
+            $"Video frame {frameIndex} failed with {diagnostic.Code}: {diagnostic.Message}");
+    }
+
     public static WzVideoDecodeDiagnostic PacketOutOfBounds(string packetName, long offset, int length, long streamLength)
     {
         return new WzVideoDecodeDiagnostic(

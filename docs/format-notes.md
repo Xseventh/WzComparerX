@@ -216,9 +216,11 @@ UI Canvas#Video smoke now covers `Data/UI/UI_000.wz` selector
 `UIGachapon.img`: `royalStyle/openvideo/intro` inspects as video metadata with
 unknown value, data length, data offset, and WC-style `MCV0` header metadata
 when present. The parser reads the video fourCC, dimensions, frame count, data
-flags, delay defaults, and first-frame offsets; frame decode/playback remains
-unsupported and reports the stable `wcx.payload.video.unsupported` info
-diagnostic. A local Packs smoke also covers
+flags, delay defaults, and frame offsets. `inspect` remains metadata-only and
+reports the stable `wcx.payload.video.unsupported` info diagnostic, while App
+Preview and CLI `export --type video` now try full sequence decode lazily. The
+current local real-client VP90 sequence smokes reach the decoder but fail on
+VPDecoder coverage gaps. A local Packs smoke also covers
 `Data/Packs/Mob_00002.ms` selector `Mob/BossPattern/BossFirstAdversary.img`:
 `1069/003/effect/0` reports `MCV0`, `VP90`, `2656x1352`, `97` frames, alpha-map
 data, and first-frame table offsets without committing client data.

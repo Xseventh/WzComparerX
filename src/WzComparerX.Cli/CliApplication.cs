@@ -1,4 +1,5 @@
 using WzComparerX.Core;
+using WzComparerX.Rendering;
 using WzComparerX.WzLib;
 
 namespace WzComparerX.Cli;
@@ -197,6 +198,18 @@ public static class CliApplication
 
             if (string.Equals(command, "export", StringComparison.OrdinalIgnoreCase))
             {
+                if (exportKind == ResourceExportKind.Video)
+                {
+                    return await ExportVideoAsync(
+                        path,
+                        selector,
+                        exportOutputPath,
+                        exportValueSelector,
+                        stringKey,
+                        imagePropertyDepth,
+                        error);
+                }
+
                 var service = new ResourceExportService();
 
                 var options = new ResourceExportOptions(exportKind, stringKey, imagePropertyDepth, exportValueSelector);
@@ -232,6 +245,16 @@ public static class CliApplication
             WriteDiagnostics([ex.Diagnostic], error);
             return 1;
         }
+        catch (ResourceVideoTargetException ex)
+        {
+            WriteDiagnostics([ex.Diagnostic], error);
+            return 1;
+        }
+        catch (ResourceVideoSequenceException ex)
+        {
+            WriteVideoDiagnostic(ex.Diagnostic, error);
+            return 1;
+        }
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             error.WriteLine(ex.Message);
@@ -246,7 +269,82 @@ public static class CliApplication
         error.WriteLine("  wcx header [--json] <wz-file>");
         error.WriteLine("  wcx headers [--json] <wz-file-or-directory>");
         error.WriteLine("  wcx inspect [--json] [--debug] [--key auto|none|noop|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
-        error.WriteLine("  wcx export [--type metadata|text|lua|canvas] [--out <path>] [--value <property-path>] [--key auto|none|noop|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+        error.WriteLine("  wcx export [--type metadata|text|lua|canvas|video] [--out <path-or-directory>] [--value <property-path>] [--key auto|none|noop|kms|gms] [--depth 0-64] <synthetic-json-or-wz-file> [image-name-or-index]");
+    }
+
+    private static async Task<int> ExportVideoAsync(
+        string path,
+        string? selector,
+        string? exportOutputPath,
+        string? valueSelector,
+        WzStringEncryptionKind? stringKey,
+        int imagePropertyDepth,
+        TextWriter error)
+    {
+        if (string.IsNullOrWhiteSpace(selector))
+        {
+            error.WriteLine("Video export requires an image selector.");
+            return 2;
+        }
+
+        if (string.IsNullOrWhiteSpace(exportOutputPath))
+        {
+            error.WriteLine("Video export requires --out <directory>.");
+            return 2;
+        }
+
+        if (File.Exists(exportOutputPath))
+        {
+            error.WriteLine($"Video export output must be a directory, but a file already exists: {exportOutputPath}");
+            return 2;
+        }
+
+        var service = new ResourceVideoSequenceService();
+        var document = await service.LoadAsync(
+            path,
+            selector,
+            valueSelector,
+            new ResourceInspectionOptions(stringKey, imagePropertyDepth),
+            WzVideoDecodeOptions.Default);
+
+        Directory.CreateDirectory(exportOutputPath);
+        var frames = new List<object>(document.Frames.Count);
+        for (var i = 0; i < document.Frames.Count; i++)
+        {
+            var frame = document.Frames[i];
+            var fileName = $"frame-{i:D4}.bgra";
+            await File.WriteAllBytesAsync(Path.Combine(exportOutputPath, fileName), frame.Pixels);
+            frames.Add(new
+            {
+                index = frame.FrameIndex,
+                file = fileName,
+                width = frame.Width,
+                height = frame.Height,
+                stride = frame.Stride,
+                pixelFormat = frame.PixelFormat.ToString(),
+                startTimeNanoseconds = frame.StartTimeInNanoseconds,
+                delayNanoseconds = frame.DelayInNanoseconds
+            });
+        }
+
+        var manifest = new
+        {
+            source = document.SourcePath,
+            selector = document.Selector,
+            value = document.ValuePath,
+            fourCc = document.FourCc,
+            width = document.Width,
+            height = document.Height,
+            pixelFormat = document.PixelFormat.ToString(),
+            frameCount = document.FrameCount,
+            durationNanoseconds = document.DurationInNanoseconds,
+            frames
+        };
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            manifest,
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(Path.Combine(exportOutputPath, "manifest.json"), json);
+        return 0;
     }
 
     private static void WriteDiagnostics(
@@ -262,6 +360,11 @@ public static class CliApplication
         {
             error.WriteLine(ResourceInspectionDiagnosticFormatter.Format(diagnostic));
         }
+    }
+
+    private static void WriteVideoDiagnostic(WzVideoDecodeDiagnostic diagnostic, TextWriter error)
+    {
+        error.WriteLine($"error [{diagnostic.Code}]: {diagnostic.Message}");
     }
 
     private static bool HasErrorDiagnostics(ResourceInspectionDocument document)
@@ -334,6 +437,12 @@ public static class CliApplication
         if (string.Equals(value, "canvas", StringComparison.OrdinalIgnoreCase))
         {
             kind = ResourceExportKind.Canvas;
+            return true;
+        }
+
+        if (string.Equals(value, "video", StringComparison.OrdinalIgnoreCase))
+        {
+            kind = ResourceExportKind.Video;
             return true;
         }
 

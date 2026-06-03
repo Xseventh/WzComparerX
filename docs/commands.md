@@ -149,6 +149,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- export --type text --key 
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key auto path/to/UI.wz SomeScript.lua
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --out script.lua --key auto path/to/UI.wz SomeScript.lua
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out canvas.raw --value icon --key auto path/to/Base_000.wz SomeCanvas.img
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type video --out video-frames --value path/to/video --key auto path/to/UI_000.wz UIGachapon.img
 ```
 
 `export --type metadata` writes the same stable inspection JSON shape used by
@@ -164,6 +165,13 @@ bitmap formats used by Preview. Canvas export uses the same Core Canvas
 selection and link-resolution path as the Avalonia Preview, so `.ms` / `.mn`
 image payloads, package-group selectors, and supported Canvas links resolve
 consistently across CLI and UI.
+`export --type video` currently writes a decoded frame directory when the
+Rendering video backend can decode the selected `Canvas#Video` value. The output
+directory contains `manifest.json` plus `frame-0000.bgra`, `frame-0001.bgra`,
+and so on. Each frame is BGRA8888. This is a frame dump contract, not a packaged
+movie container export. Real GMS `VP90` sequences currently reach the decoder
+surface but may return `wcx.video.frame.decodeFailed` while VPDecoder coverage
+is still incomplete.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 

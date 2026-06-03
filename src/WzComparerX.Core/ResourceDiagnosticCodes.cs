@@ -34,4 +34,8 @@ public static class ResourceDiagnosticCodes
     public const string CanvasPreviewValueNotFound = "wcx.viewer.canvas.valueNotFound";
     public const string CanvasPreviewValueUnsupported = "wcx.viewer.canvas.valueUnsupported";
     public const string CanvasPreviewValueAmbiguous = "wcx.viewer.canvas.valueAmbiguous";
+    public const string VideoPreviewValueRequired = "wcx.viewer.video.valueRequired";
+    public const string VideoPreviewValueNotFound = "wcx.viewer.video.valueNotFound";
+    public const string VideoPreviewValueUnsupported = "wcx.viewer.video.valueUnsupported";
+    public const string VideoPreviewValueAmbiguous = "wcx.viewer.video.valueAmbiguous";
 }

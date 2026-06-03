@@ -77,6 +77,14 @@ Current examples:
 - `wcx.viewer.canvas.formatUnsupported`
 - `wcx.viewer.canvas.decodeFailed`
 - `wcx.viewer.canvas.linkUnresolved`
+- `wcx.viewer.video.valueRequired`
+- `wcx.viewer.video.valueNotFound`
+- `wcx.viewer.video.valueUnsupported`
+- `wcx.viewer.video.valueAmbiguous`
+- `wcx.video.codec.unsupported`
+- `wcx.video.frame.decodeFailed`
+- `wcx.video.packet.outOfBounds`
+- `wcx.video.alpha.dimensionMismatch`
 
 Add a code when a diagnostic may be asserted by tests, scripts, future UI, or
 automation. Temporary debug facts belong in debug metadata instead.
@@ -87,6 +95,10 @@ implemented v2/v4 payload extraction or the downstream IMG reader could not
 produce an inspection tree for that entry.
 `wcx.inspection.image.notFound` means the requested IMG selector was not present
 in the inspected package or package group.
+`wcx.payload.video.unsupported` means stable inspection metadata is available
+while actual frame decode is lazy and happens only through preview/export
+surfaces. Rendering-level `wcx.video.*` diagnostics are emitted when that
+decode path cannot produce the requested frames.
 
 ## Severities
 

@@ -58,7 +58,9 @@ WCX 已经能在没有 UI 的情况下完成资源浏览和自动化检查：
 - 递归扫描目录中的 WZ package header。
 - 用 `inspect` 输出统一的 resource inspection tree。
 - 用 `inspect --debug` 输出底层解析元数据和稳定 diagnostics。
-- 用 `export` 导出 metadata、WC text-format IMG、Lua IMG、以及 direct-zlib Canvas BGRA8888 bytes。
+- 用 `export` 导出 metadata、WC text-format IMG、Lua IMG、direct-zlib Canvas
+  BGRA8888 bytes，以及当前 decoder 可覆盖的 Canvas#Video BGRA8888 frame
+  dumps。
 
 当前支持的主要命令见 `docs/commands.md`。
 
@@ -242,9 +244,9 @@ M4 完成后已经开始低风险架构整理：
   unsupported payload diagnostic。
 - 本地 GMS UI Canvas#Video smoke 覆盖了 `UI/UI_000.wz` / `UIGachapon.img`
   中 `royalStyle/openvideo/intro` 的 video payload metadata、WC-style `MCV0`
-  header metadata 和稳定 unsupported frame-decode diagnostic。`Packs/Mob_00002.ms`
-  / `BossFirstAdversary.img` 也验证了 `VP90`、尺寸、帧数、alpha-map 和
-  first-frame table offsets。
+  header metadata 和 lazy video decode surface。`Packs/Mob_00002.ms` /
+  `BossFirstAdversary.img` 也验证了 `VP90`、尺寸、帧数、alpha-map 和 frame
+  table offsets；完整真实 VP90/VP80 解码仍取决于 VPDecoder 后续覆盖。
 - 本地 GMS Vector smoke 覆盖了 `Character/Character_000.wz` 的角色锚点
   Vector，以及 `Packs/Mob_00000.ms` 通过 MS image payload 路径解析出的
   Mob frame Vector。Convex2D smoke 覆盖了 `UI/UI_000.wz` / `RunnerGame.img`

@@ -1,6 +1,10 @@
+using Avalonia;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using WzComparerX.App.Services;
 using WzComparerX.App.ViewModels;
 using WzComparerX.Core;
+using WzComparerX.Rendering;
 using WzComparerX.Tests;
 using WzComparerX.WzLib;
 
@@ -694,6 +698,52 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectingVideoNode_LoadsVideoPreviewAsCurrentPreview()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"wcx-video-{Guid.NewGuid():N}.wz");
+        File.WriteAllBytes(path, AppTestFixtures.CreatePkg1ImagePackage("Video.img", AppTestFixtures.CreateVideoPropertyImage()));
+        var decoder = new WzImageVideoSequenceDecoder(() => new QueueRawVideoPacketDecoder(
+            RawBgraFrame([0x10, 0x20, 0x30, 0xff])));
+        var videoWorkflow = new ResourceVideoPreviewWorkflow(new ResourceVideoSequenceService(decoder: decoder));
+        var viewModel = new MainWindowViewModel(
+            new ResourceInspectionService(),
+            videoPreviewWorkflow: videoWorkflow,
+            videoPreviewFactory: document => new ResourceVideoPreviewViewModel(document, CreateVideoBitmap(document.Width, document.Height)))
+        {
+            KeyText = "none"
+        };
+
+        try
+        {
+            await viewModel.OpenPathAsync(path);
+            var image = Assert.Single(Assert.Single(viewModel.RootNodes).Children);
+
+            viewModel.SelectedNode = image;
+            await WaitForImageContentAsync(viewModel);
+
+            var video = Assert.Single(Assert.Single(viewModel.ImageContentNodes).Children);
+            Assert.Equal("video", video.Kind);
+
+            viewModel.SelectedImageContentNode = video;
+            await WaitForVideoPreviewAsync(viewModel);
+
+            Assert.True(viewModel.HasCurrentPreview);
+            Assert.False(viewModel.HasCanvasPreview);
+            Assert.NotNull(viewModel.VideoPreview);
+            Assert.Same(viewModel.VideoPreview, viewModel.CurrentPreview);
+            Assert.Equal("Video.img", viewModel.VideoPreview.Selector);
+            Assert.Equal("clip", viewModel.VideoPreview.ValuePath);
+            Assert.Equal(1, viewModel.VideoPreview.FrameCount);
+            Assert.Equal("Loaded Video preview: Video.img/clip (1x1, 1 frames)", viewModel.CanvasPreviewStatus);
+        }
+        finally
+        {
+            viewModel.VideoPreview?.Dispose();
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void CanvasPreviewViewModel_DefaultsToOneToOneScale()
     {
         var document = new ResourceCanvasImageDocument(
@@ -798,6 +848,45 @@ public class MainWindowViewModelTests
         Assert.Equal("39%", preview.ScaleLabel);
         Assert.Equal(800d, preview.DisplayWidth);
         Assert.Equal(400d, preview.DisplayHeight);
+    }
+
+    [Fact]
+    public void VideoPreviewViewModel_TracksFrameSequenceAndScale()
+    {
+        var document = new ResourceVideoSequenceDocument(
+            SourcePath: "Video.wz",
+            Selector: "Video.img",
+            ValuePath: "clip",
+            FourCc: "VP90",
+            Width: 1,
+            Height: 1,
+            PixelFormat: WzVideoPixelFormat.Bgra8888,
+            Frames:
+            [
+                new WzDecodedVideoFrame(1, 1, WzVideoPixelFormat.Bgra8888, [1, 2, 3, 4], 4, 0, 0, 16_000_000),
+                new WzDecodedVideoFrame(1, 1, WzVideoPixelFormat.Bgra8888, [5, 6, 7, 8], 4, 1, 16_000_000, 16_000_000)
+            ]);
+        var bitmap = new WriteableBitmap(
+            new PixelSize(1, 1),
+            new Vector(96, 96),
+            PixelFormats.Bgra8888,
+            AlphaFormat.Unpremul);
+
+        using var preview = new ResourceVideoPreviewViewModel(document, bitmap);
+
+        Assert.Equal("Video.img/clip (1x1, 2 frames)", preview.Title);
+        Assert.Equal(2, preview.FrameCount);
+        Assert.Equal(0, preview.CurrentFrameIndex);
+        Assert.Equal("1 / 2", preview.PlaybackLabel);
+
+        preview.StepNext();
+        preview.SetScale(2);
+
+        Assert.Equal(1, preview.CurrentFrameIndex);
+        Assert.Equal("2 / 2", preview.PlaybackLabel);
+        Assert.Equal(2d, preview.Scale);
+        Assert.Equal(2d, preview.DisplayWidth);
+        Assert.Equal(2d, preview.DisplayHeight);
     }
 
     [Fact]
@@ -966,6 +1055,21 @@ public class MainWindowViewModelTests
         Assert.Fail($"Canvas preview was not loaded. Status: {viewModel.CanvasPreviewStatus}");
     }
 
+    private static async Task WaitForVideoPreviewAsync(MainWindowViewModel viewModel)
+    {
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            if (viewModel.VideoPreview is not null)
+            {
+                return;
+            }
+
+            await Task.Delay(20);
+        }
+
+        Assert.Fail($"Video preview was not loaded. Status: {viewModel.CanvasPreviewStatus}");
+    }
+
     private static async Task WaitForImageContentAsync(MainWindowViewModel viewModel)
     {
         for (var attempt = 0; attempt < 50; attempt++)
@@ -979,5 +1083,51 @@ public class MainWindowViewModelTests
         }
 
         Assert.Fail($"Image content was not loaded. Status: {viewModel.ImageContentStatus}");
+    }
+
+    private static WriteableBitmap CreateVideoBitmap(int width, int height)
+    {
+        return new WriteableBitmap(
+            new PixelSize(width, height),
+            new Vector(96, 96),
+            PixelFormat.Bgra8888,
+            AlphaFormat.Premul);
+    }
+
+    private static WzRawVideoPacketDecodeResult RawBgraFrame(byte[] pixels, int width = 1, int height = 1)
+    {
+        return WzRawVideoPacketDecodeResult.Success(new WzRawDecodedVideoFrame(
+            width,
+            height,
+            WzVideoPixelFormat.Bgra8888,
+            pixels,
+            width * 4));
+    }
+
+    private sealed class QueueRawVideoPacketDecoder : IWzRawVideoPacketDecoder
+    {
+        private readonly Queue<WzRawVideoPacketDecodeResult> results;
+
+        public QueueRawVideoPacketDecoder(params WzRawVideoPacketDecodeResult[] results)
+        {
+            this.results = new Queue<WzRawVideoPacketDecodeResult>(results);
+        }
+
+        public WzRawVideoPacketDecodeResult Decode(
+            ReadOnlyMemory<byte> colorPacket,
+            ReadOnlyMemory<byte>? alphaPacket,
+            int expectedWidth,
+            int expectedHeight,
+            WzVideoDecodeOptions options)
+        {
+            Assert.Null(alphaPacket);
+            return results.Count == 0
+                ? WzRawVideoPacketDecodeResult.Fail(WzVideoDecodeDiagnostic.DecoderFailure("missingTestResult", "Test decoder has no queued result."))
+                : results.Dequeue();
+        }
+
+        public void Reset()
+        {
+        }
     }
 }

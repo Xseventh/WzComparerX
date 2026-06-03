@@ -168,7 +168,7 @@
                                             Spacing="6"
                                             VerticalAlignment="Center">
                                     <TextBlock x:Name="CanvasPreviewScaleTextBlock"
-                                               Text="{Binding CanvasPreview.ScaleLabel}"
+                                               Text="{Binding CurrentPreview.ScaleLabel}"
                                                VerticalAlignment="Center"
                                                MinWidth="82"/>
                                     <Button x:Name="CanvasPreviewAutoScaleButton"
@@ -206,9 +206,9 @@
                                                   HorizontalScrollBarVisibility="Auto"
                                                   VerticalScrollBarVisibility="Auto">
                                         <Image x:Name="CanvasPreviewImage"
-                                               Source="{Binding CanvasPreview.Bitmap}"
-                                               Width="{Binding CanvasPreview.DisplayWidth}"
-                                               Height="{Binding CanvasPreview.DisplayHeight}"
+                                               Source="{Binding CurrentPreview.Bitmap}"
+                                               Width="{Binding CurrentPreview.DisplayWidth}"
+                                               Height="{Binding CurrentPreview.DisplayHeight}"
                                                Stretch="Fill"
                                                RenderOptions.BitmapInterpolationMode="None"
                                                HorizontalAlignment="Left"

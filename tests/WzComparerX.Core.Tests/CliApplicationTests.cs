@@ -673,7 +673,7 @@ public class CliApplicationTests
             Assert.Contains("height: 180", output);
             Assert.Contains("frameCount: 2", output);
             Assert.Contains("firstFrameDataOffset: 92", output);
-            Assert.Contains("info [wcx.payload.video.unsupported]: Video frame decoding is not implemented. (clip)", output);
+            Assert.Contains("info [wcx.payload.video.unsupported]: Video frame decoding is lazy; inspect reports metadata and preview/export decode frames on demand. (clip)", output);
             Assert.Contains("sound [sound]", output);
             Assert.Contains("valueType: sound", output);
             Assert.Contains("duration: 60", output);
@@ -1050,6 +1050,42 @@ public class CliApplicationTests
         {
             File.Delete(path);
             File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ExportVideoWithOut_ReturnsStableCodecDiagnostic()
+    {
+        var path = WriteTemporaryPkg1ImageFile("Canvas.img", CreatePropertyImage(CreateVideoProperty()));
+        var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-video-{Guid.NewGuid():N}");
+
+        try
+        {
+            var result = await RunCliAsync(
+                "export",
+                "--type",
+                "video",
+                "--out",
+                outputPath,
+                "--value",
+                "clip",
+                "--key",
+                "none",
+                path,
+                "Canvas.img");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal("error [wcx.video.codec.unsupported]: Unsupported video codec: VP80.".ReplaceLineEndings() + Environment.NewLine, result.Error);
+            Assert.False(Directory.Exists(outputPath));
+        }
+        finally
+        {
+            File.Delete(path);
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, recursive: true);
+            }
         }
     }
 

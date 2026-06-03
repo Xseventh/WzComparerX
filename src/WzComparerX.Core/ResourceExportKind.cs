@@ -5,5 +5,6 @@ public enum ResourceExportKind
     Metadata,
     Text,
     Lua,
-    Canvas
+    Canvas,
+    Video
 }

@@ -110,14 +110,21 @@ same media abstraction because older or different clients may still use `VP80`.
 ## Managed Decoder Validation
 
 `external/VPDecoder` was added and validated against the extracted first
-`VP90` color and alpha frame packets from the local GMS sample above. It is
-currently pinned to:
+`VP90` color and alpha frame packets from the local GMS sample above. The
+initial memory-API validation used:
 
 ```text
 7342b124706175d6ae838ca9158b14830f0f93f5
 ```
 
-This revision exposes memory-first library APIs for WCX-style integration:
+The current pinned revision is:
+
+```text
+7e76fdeac6a9cef954ecda4d8d1031c70a890559
+```
+
+This revision preserves the memory-first library APIs needed for WCX-style
+integration and documents sequence semantics:
 
 - `DecodeFrame(ReadOnlySpan<byte>, ...)`
 - `DecodeFrame(ReadOnlyMemory<byte>, ...)`
@@ -170,8 +177,42 @@ when present, and merges alpha from the alpha frame red channel into BGRA8888
 output before optional RGBA conversion.
 
 This keeps WzLib limited to `MCV0` metadata/frame-table parsing. Core/App/CLI
-have not been wired to video decode yet, so resource inspection still reports
-Video payload decode as unsupported until a media-facing Core service is added.
+are now wired to the sequence path:
+
+- Core `ResourceVideoTargetService` selects a root Video IMG or a selected
+  `Canvas#Video` value through the same package/image target flow used by
+  Canvas.
+- Rendering `ResourceVideoSequenceService` loads the image payload stream,
+  decodes the full frame table, and returns a `ResourceVideoSequenceDocument`.
+- CLI `export --type video --out <directory> --value <property-path>` writes
+  `manifest.json` plus BGRA8888 `frame-0000.bgra` files when decode succeeds.
+- Avalonia Preview follows selected IMG Content video nodes and plays the
+  decoded sequence through `ResourceVideoPreviewViewModel`.
+
+`inspect --debug` still reports `wcx.payload.video.unsupported` as an info
+diagnostic because inspection itself remains metadata-only; actual frame decode
+is lazy and only happens through preview/export.
+
+## Current Real-Client Decode Boundary
+
+The App/CLI/Rendering surfaces are wired, but full real-client VP8/VP9 video
+coverage is still blocked by VPDecoder feature gaps:
+
+- `Data/UI/UI_000.wz`, selector `UIGachapon.img`, value
+  `royalStyle/openvideo/intro` reaches the decoder and fails at frame 0 with
+  `wcx.video.frame.decodeFailed` wrapping VPDecoder
+  `InternalDecodeFailure`: coefficient block count does not match block
+  geometry.
+- `Data/Packs/Mob_00002.ms`, selector
+  `Mob/BossPattern/BossFirstAdversary.img`, value `1069/003/effect/0` reaches
+  the decoder and fails at frame 1 with `wcx.video.frame.decodeFailed` wrapping
+  VPDecoder `UnsupportedInterFrameFeature`: non-display/reference state is not
+  supported yet.
+- `VP80` is recognized at the MCV metadata layer, but the managed VPDecoder
+  currently parses VP8 headers only and does not reconstruct VP8 pixels.
+
+Do not claim WC-compatible video playback/export until those decoder gaps are
+closed or a native libvpx backend is added behind the same Rendering interface.
 
 ## VP9 Sequence Semantics
 
@@ -190,6 +231,6 @@ The pinned VPDecoder revision documents cross-frame behavior:
 
 That means `WzImageVideoFrameDecoder` remains suitable for selected-frame or
 first-frame diagnostics when packets are independently decodable. The preferred
-playback/export path is now `WzImageVideoSequenceDecoder`, because it maintains
+playback/export path is `WzImageVideoSequenceDecoder`, because it maintains
 separate color and alpha decoder states and decodes packets in frame-table
-order. App/CLI still need user-facing surfaces for the decoded sequence.
+order.

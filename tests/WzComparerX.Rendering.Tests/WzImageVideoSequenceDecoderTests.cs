@@ -154,7 +154,8 @@ public sealed class WzImageVideoSequenceDecoderTests
         var result = service.DecodeSequence(new MemoryStream([1, 2]), video);
 
         Assert.False(result.Succeeded);
-        Assert.Equal("wcx.video.decoder.color", result.Diagnostic?.Code);
+        Assert.Equal("wcx.video.frame.decodeFailed", result.Diagnostic?.Code);
+        Assert.Contains("Video frame 0 failed with wcx.video.decoder.color", result.Diagnostic?.Message);
         Assert.Single(colorDecoder.Packets);
         Assert.Empty(alphaDecoder.Packets);
     }

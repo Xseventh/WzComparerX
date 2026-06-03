@@ -1301,7 +1301,7 @@ public class ResourceDocumentServiceTests
         Assert.Equal(ResourceDiagnosticSources.Parser, rawData.Source);
 
         Assert.Equal(ResourceDiagnosticSeverities.Info, video.Severity);
-        Assert.Equal("Video frame decoding is not implemented.", video.Message);
+        Assert.Equal("Video frame decoding is lazy; inspect reports metadata and preview/export decode frames on demand.", video.Message);
         Assert.Equal("clip", video.Path);
         Assert.Equal(ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported, video.Code);
         Assert.Equal(ResourceDiagnosticSources.Parser, video.Source);
@@ -1384,6 +1384,33 @@ public class ResourceDocumentServiceTests
             Assert.Equal("bgra8888", document.PixelFormat);
             Assert.Equal(8, document.Stride);
             Assert.Equal(pixels, document.Pixels);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task VideoTargetService_LoadsSelectedVideoValue()
+    {
+        var path = WriteTemporaryPkg1ImageFile(CreatePropertyImage(CreateVideoProperty()));
+        var service = new ResourceVideoTargetService();
+
+        try
+        {
+            await using var target = await service.LoadAsync(
+                path,
+                "Canvas.img",
+                "clip",
+                new ResourceInspectionOptions(WzStringEncryptionKind.None));
+
+            Assert.Equal(path, target.SourcePath);
+            Assert.Equal("Canvas.img", target.Selector);
+            Assert.Equal("clip", target.ValuePath);
+            Assert.NotNull(target.Value.Header);
+            Assert.Equal("VP80", target.Value.Header.FourCcText);
+            Assert.Equal(2, target.Value.Header.FrameCount);
         }
         finally
         {

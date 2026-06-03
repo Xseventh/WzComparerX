@@ -92,6 +92,20 @@ internal static class AppTestFixtures
                 payload)));
     }
 
+    public static byte[] CreateVideoPropertyImage(string propertyName = "clip")
+    {
+        var payload = CreateMcvVideoPayload();
+        return CreatePropertyImage(CreateObjectProperty(
+            propertyName,
+            CreateObjectValue(
+                "Canvas#Video",
+                0x00,
+                0x00,
+                5,
+                CreateCompressedInt32(payload.Length),
+                payload)));
+    }
+
     public static byte[] CreateUolToLinkedCanvasPropertyImage(
         string uolParentName,
         string uolPropertyName,
@@ -253,6 +267,35 @@ internal static class AppTestFixtures
         }
 
         return output.ToArray();
+    }
+
+    private static byte[] CreateMcvVideoPayload()
+    {
+        const uint fourCc = 0x30395056; // VP90 in little-endian FourCC order.
+        byte[] packet = [0x42];
+        var bytes = new List<byte>();
+        bytes.AddRange("MCV0"u8.ToArray());
+        bytes.AddRange(new byte[2]);
+        bytes.AddRange(BitConverter.GetBytes((ushort)36));
+        bytes.AddRange(BitConverter.GetBytes(fourCc ^ 0xa5a5a5a5u));
+        bytes.AddRange(BitConverter.GetBytes((ushort)1));
+        bytes.AddRange(BitConverter.GetBytes((ushort)1));
+        bytes.AddRange(BitConverter.GetBytes(1));
+        bytes.Add(0x00);
+        bytes.AddRange(new byte[3]);
+        bytes.AddRange(BitConverter.GetBytes(1000000L));
+        bytes.AddRange(BitConverter.GetBytes(33));
+        bytes.AddRange(BitConverter.GetBytes(0));
+        bytes.AddRange(BitConverter.GetBytes(packet.Length));
+        bytes.AddRange(packet);
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateCompressedInt32(int value)
+    {
+        var bytes = new List<byte>();
+        AddCompressedInt32(bytes, value);
+        return bytes.ToArray();
     }
 
     private static byte[] CreateObjectProperty(string name, byte[] objectValue)

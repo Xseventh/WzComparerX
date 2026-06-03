@@ -28,7 +28,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Info,
-            "Video frame decoding is not implemented.",
+            "Video frame decoding is lazy; inspect reports metadata and preview/export decode frames on demand.",
             path,
             ResourceDiagnosticCodes.VideoPayloadDecodingUnsupported,
             ResourceDiagnosticSources.Parser);
@@ -340,6 +340,46 @@ public static class ResourceInspectionDiagnostics
             $"Canvas preview value selector is ambiguous: {valueSelector}.",
             Combine(selector, valueSelector),
             ResourceDiagnosticCodes.CanvasPreviewValueAmbiguous,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic VideoPreviewValueRequired(string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Video preview requires a Canvas#Video value path: {selector}.",
+            selector,
+            ResourceDiagnosticCodes.VideoPreviewValueRequired,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic VideoPreviewValueNotFound(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Video preview value not found: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.VideoPreviewValueNotFound,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic VideoPreviewValueUnsupported(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Selected preview value is not a Canvas#Video value: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.VideoPreviewValueUnsupported,
+            ResourceDiagnosticSources.Viewer);
+    }
+
+    public static ResourceInspectionDiagnostic VideoPreviewValueAmbiguous(string valueSelector, string? selector)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Video preview value selector is ambiguous: {valueSelector}.",
+            Combine(selector, valueSelector),
+            ResourceDiagnosticCodes.VideoPreviewValueAmbiguous,
             ResourceDiagnosticSources.Viewer);
     }
 

@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WzComparerX.Core\WzComparerX.Core.csproj" />
+    <ProjectReference Include="..\WzComparerX.Rendering\WzComparerX.Rendering.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

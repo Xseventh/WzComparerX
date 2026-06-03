@@ -267,7 +267,9 @@ For each migrated feature, record:
   - Full Canvas pixel decode coverage is not implemented yet; WCX currently has
     a narrow direct-zlib slice used by export and the basic Avalonia preview.
   - RawData payload decoding is not implemented yet.
-  - Canvas#Video frame decoding/playback is not implemented yet.
+  - Canvas#Video frame decoding is not part of `inspect`; App Preview and CLI
+    video frame export are wired through Rendering, but full real-client VP9/VP8
+    coverage still depends on VPDecoder feature completion or a native backend.
   - Sound_DX8 audio payload decoding is not implemented yet.
   - Other nested IMG object payloads are still summarized by object type.
 - UI dependency removed or isolated:

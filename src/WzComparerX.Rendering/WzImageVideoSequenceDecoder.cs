@@ -59,7 +59,7 @@ public sealed class WzImageVideoSequenceDecoder
                 decodeOptions);
             if (!colorResult.Succeeded)
             {
-                return WzVideoSequenceDecodeResult.Fail(colorResult.Diagnostic!);
+                return WzVideoSequenceDecodeResult.Fail(WzVideoDecodeDiagnostic.FrameDecodeFailed(frame.Index, colorResult.Diagnostic!));
             }
 
             var rawFrame = colorResult.Frame!;
@@ -79,7 +79,7 @@ public sealed class WzImageVideoSequenceDecoder
                     decodeOptions);
                 if (!alphaResult.Succeeded)
                 {
-                    return WzVideoSequenceDecodeResult.Fail(alphaResult.Diagnostic!);
+                    return WzVideoSequenceDecodeResult.Fail(WzVideoDecodeDiagnostic.FrameDecodeFailed(frame.Index, alphaResult.Diagnostic!));
                 }
 
                 var merged = WzVideoFrameComposer.MergeBgraWithBgraAlpha(
