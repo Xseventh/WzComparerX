@@ -198,7 +198,11 @@ submodule revision exposes memory-first `ReadOnlySpan<byte>` /
 it has not yet been wired into Core/App/CLI decode surfaces.
 `WzComparerX.Rendering` now has `WzImageVideoFrameDecoder`, which reads selected
 color/alpha chunks from an image payload stream using `WzImageVideoInspection`
-metadata and delegates raw `VP90` decode to `Vp9RawVideoPacketDecoder`.
+metadata and delegates raw `VP90` decode to `Vp9RawVideoPacketDecoder`. The
+pinned VPDecoder revision documents VP9 sequence semantics: one decoder instance
+is one stream state; `DecodeFrameWithAlpha` is a single-frame convenience helper,
+not a full color+alpha sequence decoder. Future playback should maintain
+separate color and alpha decoder states.
 Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with

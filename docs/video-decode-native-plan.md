@@ -165,3 +165,24 @@ decode to `Vp9RawVideoPacketDecoder`.
 This keeps WzLib limited to `MCV0` metadata/frame-table parsing. Core/App/CLI
 have not been wired to video decode yet, so resource inspection still reports
 Video payload decode as unsupported until a media-facing Core service is added.
+
+## VP9 Sequence Semantics
+
+The pinned VPDecoder revision documents cross-frame behavior:
+
+- one `RawVp9Decoder` instance represents one VP9 stream state;
+- packets must be fed to that instance in display/decode order when inter-frame
+  references are required;
+- `Reset()` or a fresh decoder is required when switching streams, seeking to a
+  point without references, or replaying from the beginning;
+- returned pixel buffers are caller-owned and do not mutate decoder reference
+  slots;
+- `DecodeFrameWithAlpha` is a single-frame convenience API. It maintains color
+  state on the current decoder, but decodes alpha with a fresh internal decoder
+  for that call.
+
+That means the current `WzImageVideoFrameDecoder` is suitable for selected-frame
+or first-frame preview when packets are independently decodable. A future
+playback or full color+alpha sequence service should keep two decoder states:
+one for color and one for alpha, reset both together, decode both packet streams
+in order, and then merge the decoded frames.
