@@ -1,0 +1,3 @@
+[submodule "external/VPDecoder"]
+	path = external/VPDecoder
+	url = ssh://git@ssh.github.com:443/Xseventh/VPDecoder.git
