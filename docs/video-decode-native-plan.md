@@ -196,7 +196,7 @@ is lazy and only happens through preview/export.
 ## Current Real-Client Decode Boundary
 
 The App/CLI/Rendering surfaces are wired through one memory-first Rendering
-interface. `external/VPDecoder` is pinned at `0a6c7ee`; WCX routes `VP90` to
+interface. `external/VPDecoder` is pinned at `bcacbb3`; WCX routes `VP90` to
 the VP9 adapter, routes `VP80` to the VP8 adapter, and models successful
 no-display packets separately from failed packets.
 
@@ -207,11 +207,14 @@ codec factory, but its real-client coverage is bounded by the pinned VPDecoder
 key-frame subset and explicit unsupported diagnostics for broader VP8
 inter/reference cases.
 
-Full real-client video export should still be treated as a dedicated smoke
-slice. The current known GMS samples are large enough to write hundreds of MB to
-GB of BGRA frame dumps, so routine validation uses VPDecoder submodule tests,
-Rendering unit tests, CLI contract tests, and metadata-only local GMS inspection
-unless a slice explicitly needs to exercise complete frame output.
+Full real-client video export remains an optional dedicated smoke slice because
+representative GMS samples are large enough to write hundreds of MB to GB of
+BGRA frame dumps. The local GMS `Packs/Mob_00002.ms` /
+`Mob/BossPattern/BossFirstAdversary.img` / `1069/003/effect/0` smoke now
+completes and writes `97` `2656x1352` BGRA8888 frames plus `manifest.json`.
+Routine validation still uses VPDecoder submodule tests, Rendering unit tests,
+CLI contract tests, and metadata-only local GMS inspection unless a slice
+explicitly needs to exercise complete frame output.
 
 ## VP9 Sequence Semantics
 

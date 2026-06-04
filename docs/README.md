@@ -247,8 +247,10 @@ M4 完成后已经开始低风险架构整理：
   header metadata 和 lazy video decode surface。`Packs/Mob_00002.ms` /
   `BossFirstAdversary.img` 也验证了 `VP90`、尺寸、帧数、alpha-map 和 frame
   table offsets；Rendering 已通过 VPDecoder submodule 路由 `VP90` / `VP80`
-  并处理 VP9 no-display frame 语义，完整真实客户端 video export 仍作为单独
-  smoke slice 记录。
+  并处理 VP9 no-display frame 语义。完整真实客户端 video export 已通过同一
+  `BossFirstAdversary.img` 样本 smoke，写出 `97` 个 `2656x1352` BGRA8888
+  frame dump 和 `manifest.json`；该 smoke 输出约 GB 级本地文件，不提交客户端
+  数据或导出帧。
 - 本地 GMS Vector smoke 覆盖了 `Character/Character_000.wz` 的角色锚点
   Vector，以及 `Packs/Mob_00000.ms` 通过 MS image payload 路径解析出的
   Mob frame Vector。Convex2D smoke 覆盖了 `UI/UI_000.wz` / `RunnerGame.img`

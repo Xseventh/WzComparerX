@@ -191,7 +191,7 @@ RawData/Sound payload decoding is not implemented yet. Canvas#Video `MCV0`
 header/table parsing is implemented and exposes fourCC, dimensions, frame
 count, alpha/timing flags, and frame offset metadata through `inspect --debug`.
 `external/VPDecoder` is tracked as a submodule and currently points at
-`0a6c7ee`, which exposes memory-first `ReadOnlySpan<byte>` /
+`bcacbb3`, which exposes memory-first `ReadOnlySpan<byte>` /
 `ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, `Reset()`, VP9
 no-display result semantics, and a gated VP8 key-frame reconstruction path.
 `WzComparerX.Rendering` now has `WzImageVideoFrameDecoder` for selected-frame
@@ -207,12 +207,13 @@ color+alpha sequence decoder.
 Core `ResourceVideoTargetService`, Rendering `ResourceVideoSequenceService`,
 CLI `export --type video --out <directory>`, and Avalonia Preview are now wired
 to this sequence path. When decode succeeds, CLI writes `manifest.json` and
-BGRA8888 frame dumps. Current real-client video validation still treats full
-GMS sequence export as a follow-up smoke because representative samples can
-write hundreds of MB to GB of BGRA frame data. VP8 support is integrated through
-the same Rendering interface, but remains bounded by the VPDecoder-supported
-key-frame subset and explicit unsupported diagnostics for broader VP8
-inter/reference cases.
+BGRA8888 frame dumps. Local GMS Packs smoke for `BossFirstAdversary.img`
+`1069/003/effect/0` now completes a full `VP90` + alpha-map export with `97`
+`2656x1352` BGRA8888 frames plus `manifest.json`; keep that smoke optional
+because it writes roughly GB-scale local output. VP8 support is integrated
+through the same Rendering interface, but remains bounded by the
+VPDecoder-supported key-frame subset and explicit unsupported diagnostics for
+broader VP8 inter/reference cases.
 Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with
@@ -487,14 +488,11 @@ Local GMS smoke status:
 - Optional local GMS UI Canvas#Video smoke covers `UI/UI_000.wz` selector
   `UIGachapon.img`, path `royalStyle/openvideo/intro`, preserving video
   metadata, `MCV0` header metadata, identity value path, and the stable
-  `wcx.payload.video.unsupported` info diagnostic. The same sample now reaches
-  CLI video export but fails at frame 0 with `wcx.video.frame.decodeFailed`
-  while VPDecoder lacks the required coefficient geometry coverage. Optional
-  local Packs smoke also covers `Packs/Mob_00002.ms` selector
+  `wcx.payload.video.unsupported` info diagnostic. Optional local Packs smoke
+  also covers `Packs/Mob_00002.ms` selector
   `Mob/BossPattern/BossFirstAdversary.img`, path `1069/003/effect/0`, with
   `VP90`, dimensions, frame count, alpha-map, and frame offsets; sequence export
-  reaches frame 1 and then fails with `wcx.video.frame.decodeFailed` for the
-  current VPDecoder non-display/reference-state gap.
+  now completes and writes `97` BGRA8888 frames plus `manifest.json`.
 - Optional local GMS Vector smoke now covers
   `Character/Character_000.wz` selector `00002000.img`
   (`walk1/0/body/origin`, `walk1/0/arm/origin`) and

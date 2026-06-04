@@ -221,11 +221,13 @@ reports the stable `wcx.payload.video.unsupported` info diagnostic, while App
 Preview and CLI `export --type video` now try full sequence decode lazily. The
 Rendering backend now routes `VP90` and `VP80` to VPDecoder adapters and skips
 successful VP9 no-display packets after feeding decoder state. Full real-client
-video export smoke remains a dedicated follow-up because the representative GMS
+video export smoke is kept as an optional local check because representative GMS
 samples produce large BGRA frame dumps. A local Packs smoke also covers
 `Data/Packs/Mob_00002.ms` selector `Mob/BossPattern/BossFirstAdversary.img`:
 `1069/003/effect/0` reports `MCV0`, `VP90`, `2656x1352`, `97` frames, alpha-map
-data, and first-frame table offsets without committing client data.
+data, and frame table offsets; CLI `export --type video` now completes for that
+value and writes `97` BGRA8888 frame dumps plus `manifest.json` without
+committing client data or generated frame output.
 Vector smoke now covers two real-client paths without committing client data:
 `Data/Character/Character_000.wz` selector `00002000.img` exposes
 `walk1/0/body/origin` as `(19, 32)` and `walk1/0/arm/origin` as `(6, 8)`,
