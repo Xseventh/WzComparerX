@@ -191,9 +191,10 @@ RawData/Sound payload decoding is not implemented yet. Canvas#Video `MCV0`
 header/table parsing is implemented and exposes fourCC, dimensions, frame
 count, alpha/timing flags, and frame offset metadata through `inspect --debug`.
 `external/VPDecoder` is tracked as a submodule and currently points at
-`bcacbb3`, which exposes memory-first `ReadOnlySpan<byte>` /
+`3843330`, which exposes memory-first `ReadOnlySpan<byte>` /
 `ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, `Reset()`, VP9
-no-display result semantics, and a gated VP8 key-frame reconstruction path.
+no-display result semantics, libvpx-aligned VP9 reconstruction for the current
+validated sample shape, and a gated VP8 key-frame reconstruction path.
 `WzComparerX.Rendering` now has `WzImageVideoFrameDecoder` for selected-frame
 diagnostics and `WzImageVideoSequenceDecoder` for WC-style full frame-table
 decode. The sequence decoder reads color/alpha chunks from an image payload
@@ -403,9 +404,8 @@ Local GMS smoke status:
   `Map/Map/Map1/Map1.wz`, merged `Map1_000.wz` entries through the package group
   path, selected `100000000.img`, populated IMG Content, resolved
   `miniMap/_outlink` to the real Canvas preview, and covered large directory /
-  large Canvas auto-scaling behavior. Screenshots were saved under
-  `/private/tmp/wcx-gms-ui-smoke-2026-05-01/` during the run and are not
-  committed.
+  large Canvas auto-scaling behavior. Screenshots were saved as local-only
+  temporary artifacts during the run and are not committed.
 - M5 optional Core smoke tests now use a unified external-client entrypoint:
   `WCX_CLIENT_DATA_DIR` points at a client `Data` directory. The current tests
   validate whichever supported file families are discovered,

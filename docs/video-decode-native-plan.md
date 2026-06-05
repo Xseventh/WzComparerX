@@ -138,20 +138,11 @@ Validated commands:
 dotnet restore external/VPDecoder/VPDecoder.slnx
 dotnet build external/VPDecoder/VPDecoder.slnx --no-restore -m:1 -p:UseSharedCompilation=false
 dotnet test external/VPDecoder/VPDecoder.slnx --no-build -m:1
-dotnet run --no-build --project external/VPDecoder/src/VPDecoder.Cli/VPDecoder.Cli.csproj -- --input /tmp/vp9-main-frame-0.vp9 --width 2656 --height 1352 --out /tmp/vp9-main-frame-0.bgra
-dotnet run --no-build --project external/VPDecoder/src/VPDecoder.Cli/VPDecoder.Cli.csproj -- --input /tmp/vp9-alpha-frame-0.vp9 --width 2656 --height 1352 --out /tmp/vp9-alpha-frame-0.bgra
-dotnet run --no-build --project external/VPDecoder/src/VPDecoder.Cli/VPDecoder.Cli.csproj -- --input /tmp/vp9-main-frame-0.vp9 --alpha /tmp/vp9-alpha-frame-0.vp9 --width 2656 --height 1352 --out /tmp/vp9-merged-frame-0.bgra
 ```
 
 Observed results:
 
-- VPDecoder tests passed: 401 total, 0 failed.
-- Main frame decoded to `2656x1352` BGRA8888, 14,363,648 bytes,
-  SHA-256 `bd018f0c6eac5ae58945a2517c96c29a40f703b6c8c0a07c99debb9a8a864902`.
-- Alpha frame decoded to `2656x1352` BGRA8888, 14,363,648 bytes,
-  SHA-256 `de5f6cf32681237d0076b8e106c2d8803a54379f639d9f6e7d10a864ad1ff306`.
-- Color + alpha decoded to `2656x1352` BGRA8888, 14,363,648 bytes,
-  SHA-256 `c8095ee5e4b760a8a6f7c18d10b357b9f579c6864bb1cd815061d8d6e930a2ff`.
+- VPDecoder tests passed: 559 total, 0 failed.
 - Library tests cover `ReadOnlyMemory<byte>` input and alpha composition
   through `DecodeFrameWithAlpha`.
 - The VPDecoder CLI also exposes `--alpha` for smoke validation, but WCX should
@@ -196,9 +187,11 @@ is lazy and only happens through preview/export.
 ## Current Real-Client Decode Boundary
 
 The App/CLI/Rendering surfaces are wired through one memory-first Rendering
-interface. `external/VPDecoder` is pinned at `bcacbb3`; WCX routes `VP90` to
+interface. `external/VPDecoder` is pinned at `3843330`; WCX routes `VP90` to
 the VP9 adapter, routes `VP80` to the VP8 adapter, and models successful
-no-display packets separately from failed packets.
+no-display packets separately from failed packets. The current VP9 optional
+sample golden in WCX Rendering matches the pinned VPDecoder libvpx-aligned
+merged BGRA output.
 
 The previous VP9 non-display/reference-state blocker is no longer represented
 as a WCX failure path; no-display packets are fed into the raw decoder state and

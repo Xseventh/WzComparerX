@@ -8,7 +8,7 @@ public sealed class WzImageVideoFrameDecoderTests
 {
     private const string MainPacketPath = "/tmp/vp9-main-frame-0.vp9";
     private const string AlphaPacketPath = "/tmp/vp9-alpha-frame-0.vp9";
-    private const string MergedFrameHash = "c8095ee5e4b760a8a6f7c18d10b357b9f579c6864bb1cd815061d8d6e930a2ff";
+    private const string MergedFrameHash = "2936aa1e38d0ba9c69a66ea0e9cbc23fd6705295f4abc7ce13b1f06f48998426";
 
     [Fact]
     public void DecodeFrame_ReadsColorAndAlphaPacketsFromImagePayloadStream()
