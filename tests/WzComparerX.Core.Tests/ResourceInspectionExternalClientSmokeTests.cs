@@ -111,7 +111,8 @@ public class ResourceInspectionExternalClientSmokeTests
             Assert.Equal("ms", inspection.Format);
             Assert.Equal("package", inspection.Root.Kind);
             Assert.NotEmpty(inspection.Root.Children);
-            Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 2));
+            var version = Assert.Single(inspection.DebugMetadata ?? [], item => item.Name == "version").Value;
+            Assert.True(version is 2 or 4, $"Expected supported MS version 2 or 4, found {version}.");
             Assert.Contains(inspection.DebugMetadata ?? [], item => item.Name == "entryCount");
             AssertNoErrorDiagnostics(inspection);
         }
@@ -279,10 +280,7 @@ public class ResourceInspectionExternalClientSmokeTests
 
         Assert.NotNull(outlink);
         Assert.NotNull(outlink.Identity?.ResolvedLinkedTarget);
-        Assert.EndsWith(
-            Path.Combine("Effect", "_Canvas", "_Canvas_002.wz"),
-            outlink.Identity.ResolvedLinkedTarget.PackagePath,
-            StringComparison.Ordinal);
+        AssertCanvasPackagePath(outlink.Identity.ResolvedLinkedTarget.PackagePath, "Effect");
         Assert.Equal("BasicEff.img", outlink.Identity.ResolvedLinkedTarget.ImageSelector);
         Assert.Equal("scout/back/0", outlink.Identity.ResolvedLinkedTarget.ValuePath);
         AssertNoErrorDiagnostics(inspection);
@@ -304,10 +302,7 @@ public class ResourceInspectionExternalClientSmokeTests
             "scout/back/0/_outlink",
             new ResourceInspectionOptions(StringKey: null));
 
-        Assert.EndsWith(
-            Path.Combine("Effect", "_Canvas", "_Canvas_002.wz"),
-            document.SourcePath,
-            StringComparison.Ordinal);
+        AssertCanvasPackagePath(document.SourcePath, "Effect");
         Assert.Equal("BasicEff.img", document.Selector);
         Assert.Equal("scout/back/0", document.ValuePath);
         Assert.True(document.Width > 0);
@@ -486,12 +481,14 @@ public class ResourceInspectionExternalClientSmokeTests
 
         var rawData = AssertNode(inspection.Root, "ClassSelect/back/1/110/skeleton.skel", "rawData");
 
-        Assert.Equal("version=1, dataLength=58688, dataOffset=15358714", rawData.DisplayValue);
+        Assert.StartsWith("version=1, dataLength=", rawData.DisplayValue, StringComparison.Ordinal);
+        Assert.Contains(", dataOffset=", rawData.DisplayValue, StringComparison.Ordinal);
         Assert.Equal("Login.img", rawData.Identity?.ImageSelector);
         Assert.Equal("ClassSelect/back/1/110/skeleton.skel", rawData.Identity?.ValuePath);
         Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "valueType" && Equals(item.Value, "rawData"));
         Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "version" && Equals(item.Value, 1));
-        Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "dataLength" && Equals(item.Value, 58688));
+        Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "dataLength" && item.Value is int length && length > 0);
+        Assert.Contains(rawData.DebugMetadata ?? [], item => item.Name == "dataOffset" && IsPositiveNumber(item.Value));
         Assert.Contains(rawData.Diagnostics ?? [], diagnostic =>
             diagnostic.Code == ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported &&
             diagnostic.Severity == ResourceDiagnosticSeverities.Info &&
@@ -678,6 +675,31 @@ public class ResourceInspectionExternalClientSmokeTests
         Assert.NotNull(node);
         Assert.Equal(kind, node.Kind);
         return node;
+    }
+
+    private static void AssertCanvasPackagePath(string? packagePath, string packageFamily)
+    {
+        Assert.NotNull(packagePath);
+        var directory = Path.GetDirectoryName(packagePath);
+        Assert.NotNull(directory);
+        Assert.EndsWith(
+            Path.Combine(packageFamily, "_Canvas"),
+            directory,
+            StringComparison.OrdinalIgnoreCase);
+
+        var fileName = Path.GetFileName(packagePath);
+        Assert.StartsWith("_Canvas", fileName, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith(".wz", fileName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPositiveNumber(object? value)
+    {
+        return value switch
+        {
+            int intValue => intValue > 0,
+            long longValue => longValue > 0,
+            _ => false
+        };
     }
 
     private static void AssertNoErrorDiagnostics(ResourceInspectionDocument document)

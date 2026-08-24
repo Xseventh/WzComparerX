@@ -411,11 +411,14 @@ Local GMS smoke status:
   validate whichever supported file families are discovered,
   including representative package roots, `Map1.wz` package-group image
   identity, and `Map1_000.wz/100000000.img` `miniMap/_outlink` resolved target
-  identity for the local GMS layout. The original GMS smoke run is recorded in
-  `docs/logs/2026-05-02-gms-core-smoke-tests.md`.
+  identity. The original GMS smoke run is recorded in
+  `docs/logs/2026-05-02-gms-core-smoke-tests.md`; local CMS v227.7 smoke is
+  recorded in `docs/logs/2026-08-24-cms-v227-client-smoke.md`.
   The `.ms` container extension is recorded in
   `docs/logs/2026-05-03-ms-container-directory-inspection.md`; the optional
-  smoke now also validates local `Data/Packs/*.ms` directory tables.
+  smoke now also validates local `Data/Packs/*.ms` directory tables and image
+  payload extraction across supported MS v2/v4 samples without assuming a
+  single service region layout.
 - A local GMS M5 inventory found 780 `.wz` files, all PKG1 by `headers` scan;
   no local `List.wz`, `.mn`, or PKG2 WZ sample was found, but 10
   `Data/Packs/*.ms` files exist. `.ms` / `.mn` v2/Snow and v4/ChaCha20

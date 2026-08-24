@@ -336,7 +336,10 @@ App 层应调用 Core service，不应重新实现 WZ / IMG parser。
 - 外部客户端 smoke 只使用统一入口 `WCX_CLIENT_DATA_DIR`。
   `ResourceInspectionExternalClientSmokeTests` 会按目录中实际存在的文件能力运行
   代表性 WZ package、Map package group/link identity、`Data/Packs/*.ms`
-  directory-table 和代表性 image payload inspection。
+  directory-table 和代表性 image payload inspection。断言应保持跨客户端可用，
+  不写死 GMS 特定 shard 编号、MS 容器版本或 payload offset；本地 CMS v227.7
+  smoke 已验证 PKG1 split package、MS v4 directory/image payload、RawData
+  metadata 和 Canvas link resolution。
 - TODO：等完整 KMS 客户端可用后，在同一个 external client smoke harness 里
   继续通过 `WCX_CLIENT_DATA_DIR` 补 KMS 覆盖；届时增加 modern PKG2 header
   variant、root IMG directory table、选中 IMG payload extraction，以及更多 KMS
