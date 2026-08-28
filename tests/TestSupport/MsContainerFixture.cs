@@ -261,6 +261,35 @@ internal static class MsContainerFixture
             CreateCanvasObjectValue(pixels, width, height, format)));
     }
 
+    public static byte[] CreateSpinePropertyImage(
+        string propertyName,
+        string spineName,
+        string atlasText,
+        byte[] skeleton,
+        params (string Name, byte[] Pixels, int Width, int Height)[] pages)
+    {
+        var children = new List<byte[]>
+        {
+            CreateStringProperty($"{spineName}.atlas", atlasText)
+        };
+        children.AddRange(pages.Select(page =>
+            CreateObjectProperty(
+                page.Name,
+                CreateCanvasObjectValue(page.Pixels, page.Width, page.Height, format: 2))));
+        children.Add(CreateRawDataProperty($"{spineName}.skel", skeleton));
+        children.Add(CreateStringProperty("spine", spineName));
+
+        return CreatePropertyImage(
+            CreateObjectProperty(
+                propertyName,
+                CreateObjectValue(
+                    "Property",
+                    0x00,
+                    0x00,
+                    children.Count,
+                    children.SelectMany(static child => child).ToArray())));
+    }
+
     public static byte[] CreateLinkedCanvasPropertyImage(
         string propertyName,
         string linkName,
@@ -350,6 +379,26 @@ internal static class MsContainerFixture
         return bytes.ToArray();
     }
 
+    private static byte[] CreateStringProperty(string name, string value)
+    {
+        var bytes = new List<byte>();
+        bytes.AddRange(CreateImageString(name));
+        bytes.Add(0x08);
+        bytes.AddRange(CreateImageString(value));
+        return bytes.ToArray();
+    }
+
+    private static byte[] CreateRawDataProperty(string name, byte[] payload)
+    {
+        return CreateObjectProperty(
+            name,
+            CreateObjectValue(
+                "RawData",
+                0x00,
+                CreateCompressedInt32(payload.Length),
+                payload));
+    }
+
     private static byte[] CreateLinkedCanvasProperty(string name, string linkName, string linkValue)
     {
         byte[] pixels = [0x00, 0x00, 0x00, 0x00];
@@ -419,6 +468,13 @@ internal static class MsContainerFixture
         }
 
         return output.ToArray();
+    }
+
+    private static byte[] CreateCompressedInt32(int value)
+    {
+        return value is >= sbyte.MinValue and <= sbyte.MaxValue
+            ? [(byte)value]
+            : [0x80, .. BitConverter.GetBytes(value)];
     }
 
     private static void AddPayloadParts(List<byte> bytes, params object[] payloadParts)

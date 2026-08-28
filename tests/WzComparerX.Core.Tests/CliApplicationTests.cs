@@ -663,7 +663,9 @@ public class CliApplicationTests
             Assert.Equal(string.Empty, result.Error);
             Assert.Contains("raw [rawData]", output);
             Assert.Contains("valueType: rawData", output);
-            Assert.Contains("info [wcx.payload.rawData.unsupported]: RawData payload decoding is not implemented. (raw)", output);
+            Assert.Contains(
+                "info [wcx.payload.rawData.unsupported]: RawData semantic decoding is not implemented; specialized export workflows can copy raw bytes on demand. (raw)",
+                output);
             Assert.Contains("clip [video]", output);
             Assert.Contains("valueType: video", output);
             Assert.Contains("unknown: 5", output);
@@ -1131,6 +1133,73 @@ public class CliApplicationTests
         {
             File.Delete(path);
             File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
+    public async Task ExportSpineWithOut_WritesOfflineRuntimeFiles()
+    {
+        const string atlas = """
+            hero.png
+            size:1,1
+            filter:Linear,Linear
+            body
+            bounds:0,0,1,1
+            """;
+        byte[] skeleton =
+        [
+            0x57, 0xe6, 0x4e, 0xcf, 0x25, 0xd0, 0xb4, 0x59,
+            0x07, (byte)'4', (byte)'.', (byte)'1', (byte)'.', (byte)'2', (byte)'4'
+        ];
+        var imageBytes = MsContainerFixture.CreateSpinePropertyImage(
+            "asset",
+            "hero",
+            atlas,
+            skeleton,
+            ("hero.png", new byte[] { 0x10, 0x20, 0x30, 0xff }, 1, 1));
+        var path = Path.Combine(Path.GetTempPath(), $"Spine_00000-{Guid.NewGuid():N}.ms");
+        await File.WriteAllBytesAsync(
+            path,
+            MsContainerFixture.CreateV4(
+                Path.GetFileName(path),
+                new MsContainerFixture.Entry(
+                    "Map/Test.img",
+                    0,
+                    imageBytes.Length,
+                    1024,
+                    Payload: imageBytes)));
+        var outputPath = Path.Combine(Path.GetTempPath(), $"wcx-spine-{Guid.NewGuid():N}");
+
+        try
+        {
+            var result = await RunCliAsync(
+                "export",
+                "--type",
+                "spine",
+                "--out",
+                outputPath,
+                "--value",
+                "asset",
+                "--key",
+                "none",
+                path,
+                "Map/Test.img");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(string.Empty, result.Output);
+            Assert.Equal(string.Empty, result.Error);
+            Assert.Equal(skeleton, await File.ReadAllBytesAsync(Path.Combine(outputPath, "hero.skel")));
+            Assert.Equal(atlas, await File.ReadAllTextAsync(Path.Combine(outputPath, "hero.atlas")));
+            var png = await File.ReadAllBytesAsync(Path.Combine(outputPath, "hero.png"));
+            Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, png[..8]);
+        }
+        finally
+        {
+            File.Delete(path);
+            if (Directory.Exists(outputPath))
+            {
+                Directory.Delete(outputPath, recursive: true);
+            }
         }
     }
 

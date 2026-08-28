@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using WzComparerX.Core;
 using WzComparerX.Tests;
 
@@ -5,6 +6,58 @@ namespace WzComparerX.Core.Tests;
 
 public class ResourceInspectionExternalClientSmokeTests
 {
+    [Fact]
+    public async Task ExportOptionalExternalClientMapObjectSpine_WritesLinkedTextureBundle()
+    {
+        var path = ExternalClientSmokeData.FindFirstFile("Map", "Obj", "Obj.wz");
+        if (path is null || !await HasImageAsync(path, "BossBaldrix.img"))
+        {
+            return;
+        }
+
+        var document = await new ResourceSpineExportService().LoadAsync(
+            path,
+            "BossBaldrix.img",
+            "1phaseBaldrix/obj/0",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.Equal("Baldrix_D_01_Mg", document.SpineName);
+        Assert.Equal("4.1.24", document.SpineVersion);
+        Assert.Equal(852, AssertFile(document, "Baldrix_D_01_Mg.skel").Content.Length);
+        Assert.Equal(
+            [new ResourceSpineExportPage("Baldrix_D_01_Mg.png", 1962, 2022)],
+            document.Pages);
+        AssertPng(AssertFile(document, "Baldrix_D_01_Mg.png").Content, 1962, 2022);
+    }
+
+    [Fact]
+    public async Task ExportOptionalExternalClientMapBackSpine_WritesEveryAtlasPage()
+    {
+        var path = ExternalClientSmokeData.FindFirstFile("Map", "Back", "Back.wz");
+        if (path is null || !await HasImageAsync(path, "BossBaldrix.img"))
+        {
+            return;
+        }
+
+        var document = await new ResourceSpineExportService().LoadAsync(
+            path,
+            "BossBaldrix.img",
+            "spine/2",
+            new ResourceInspectionOptions(StringKey: null));
+
+        Assert.Equal("Baldrix_D_01_Bg", document.SpineName);
+        Assert.Equal("4.1.24", document.SpineVersion);
+        Assert.Equal(970, AssertFile(document, "Baldrix_D_01_Bg.skel").Content.Length);
+        Assert.Equal(
+            [
+                new ResourceSpineExportPage("Baldrix_D_01_Bg.png", 1973, 1900),
+                new ResourceSpineExportPage("Baldrix_D_01_Bg_2.png", 1726, 1879)
+            ],
+            document.Pages);
+        AssertPng(AssertFile(document, "Baldrix_D_01_Bg.png").Content, 1973, 1900);
+        AssertPng(AssertFile(document, "Baldrix_D_01_Bg_2.png").Content, 1726, 1879);
+    }
+
     [Fact]
     public async Task InspectOptionalExternalClientPackageRoots_ReadsRepresentativePackageFamilies()
     {
@@ -690,6 +743,28 @@ public class ResourceInspectionExternalClientSmokeTests
         var fileName = Path.GetFileName(packagePath);
         Assert.StartsWith("_Canvas", fileName, StringComparison.OrdinalIgnoreCase);
         Assert.EndsWith(".wz", fileName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<bool> HasImageAsync(string packagePath, string imageName)
+    {
+        var inspection = await new ResourceInspectionService().InspectAsync(
+            packagePath,
+            selector: null,
+            new ResourceInspectionOptions(StringKey: null));
+        return Flatten(inspection.Root).Any(node =>
+            node.Kind == "image" && string.Equals(node.Name, imageName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static ResourceExportFile AssertFile(ResourceSpineExportDocument document, string name)
+    {
+        return Assert.Single(document.Files, file => file.RelativePath == name);
+    }
+
+    private static void AssertPng(byte[] bytes, int width, int height)
+    {
+        Assert.Equal(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }, bytes[..8]);
+        Assert.Equal(width, BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(16, 4)));
+        Assert.Equal(height, BinaryPrimitives.ReadInt32BigEndian(bytes.AsSpan(20, 4)));
     }
 
     private static bool IsPositiveNumber(object? value)

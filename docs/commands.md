@@ -135,9 +135,10 @@ Sound payload offsets and lengths.
 Canvas metadata includes payload compression kind and expected uncompressed byte
 length when the texture format is known. Canvas bitmap decoding lives in WzLib
 and converts supported direct-zlib texture formats to BGRA8888 bytes for both
-Preview and CLI export. PNG export and non-direct-zlib Canvas payloads are still
-later steps. Lua image entries (`*.lua`) report script length and a short UTF-8
-snippet. WC text-format IMG streams are also recognized when their payload
+Preview and CLI export. General-purpose Canvas PNG export and non-direct-zlib
+Canvas payloads are still later steps. Lua image entries (`*.lua`) report
+script length and a short UTF-8 snippet. WC text-format IMG streams are also
+recognized when their payload
 starts with `#Property` or `Root <Property>` and are inspected as bounded
 `Property` trees.
 
@@ -150,6 +151,7 @@ dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --key a
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type lua --out script.lua --key auto path/to/UI.wz SomeScript.lua
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type canvas --out canvas.raw --value icon --key auto path/to/Base_000.wz SomeCanvas.img
 dotnet run --project src/WzComparerX.Cli --no-build -- export --type video --out video-frames --value path/to/video --key auto path/to/UI_000.wz UIGachapon.img
+dotnet run --project src/WzComparerX.Cli --no-build -- export --type spine --out spine-out --value path/to/spine-object --key auto path/to/Obj.wz SomeObject.img
 ```
 
 `export --type metadata` writes the same stable inspection JSON shape used by
@@ -172,6 +174,14 @@ and so on. Each frame is BGRA8888. This is a frame dump contract, not a packaged
 movie container export. The Rendering backend currently routes `VP90` and
 `VP80` through the VPDecoder submodule; unsupported decoder features are reported
 as stable `wcx.video.*` diagnostics instead of partial frame output.
+`export --type spine` writes an offline Spine bundle to the required `--out`
+directory. It preserves the original `.atlas` and binary `.skel` or JSON
+skeleton bytes, discovers every texture page named by the atlas, resolves
+placeholder Canvas links through the normal Core resource resolver, and writes
+each texture as a standard RGBA PNG with the atlas file name. The first slice
+supports binary skeletons stored as `RawData` and JSON skeleton strings. It
+reports the detected skeleton version in the Core export document but does not
+parse or render Spine animation semantics.
 
 Committed synthetic hex fixtures can be materialized for local CLI smoke tests:
 

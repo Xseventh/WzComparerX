@@ -18,7 +18,7 @@ public static class ResourceInspectionDiagnostics
     {
         return new ResourceInspectionDiagnostic(
             ResourceDiagnosticSeverities.Info,
-            "RawData payload decoding is not implemented.",
+            "RawData semantic decoding is not implemented; specialized export workflows can copy raw bytes on demand.",
             path,
             ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported,
             ResourceDiagnosticSources.Parser);
@@ -181,6 +181,29 @@ public static class ResourceInspectionDiagnostics
             "Canvas export failed to decode payload.",
             selector,
             ResourceDiagnosticCodes.ExportCanvasDecodeFailed,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportSpineAssetInvalid(string? path, string message)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            message,
+            path,
+            ResourceDiagnosticCodes.ExportSpineAssetInvalid,
+            ResourceDiagnosticSources.Export);
+    }
+
+    public static ResourceInspectionDiagnostic ExportSpineTextureFailed(
+        string texturePath,
+        string? valueSelector,
+        string detail)
+    {
+        return new ResourceInspectionDiagnostic(
+            ResourceDiagnosticSeverities.Error,
+            $"Spine texture export failed for {texturePath}: {detail}",
+            valueSelector,
+            ResourceDiagnosticCodes.ExportSpineTextureFailed,
             ResourceDiagnosticSources.Export);
     }
 

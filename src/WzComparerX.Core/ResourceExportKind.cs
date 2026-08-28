@@ -6,5 +6,6 @@ public enum ResourceExportKind
     Text,
     Lua,
     Canvas,
-    Video
+    Video,
+    Spine
 }

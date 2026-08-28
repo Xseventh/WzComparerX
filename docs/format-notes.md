@@ -319,6 +319,28 @@ fixture family is covered through WzLib reader tests and through CLI
 `inspect --debug` output so the supported scalar surface is observable before
 future compare/search work depends on it.
 
+## CMS Spine Offline Export
+
+CMS v227.7 provides representative Spine 4 resource objects under Map Object
+and Back packages. WCX keeps the binary parser primitives in WzLib and performs
+cross-package bundle assembly in Core.
+
+- `Data/Map/Obj/Obj.wz`, `BossBaldrix.img`, value
+  `1phaseBaldrix/obj/0` exports `Baldrix_D_01_Mg.atlas`, an 852-byte
+  `Baldrix_D_01_Mg.skel`, and `Baldrix_D_01_Mg.png`. The skeleton reports
+  Spine `4.1.24`. The visible 1x1 Canvas is a placeholder whose link resolves
+  to the real 1962x2022 texture.
+- `Data/Map/Back/Back.wz`, `BossBaldrix.img`, value `spine/2` exports
+  `Baldrix_D_01_Bg.atlas`, a 970-byte `Baldrix_D_01_Bg.skel`, and both atlas
+  pages: `Baldrix_D_01_Bg.png` at 1973x1900 and
+  `Baldrix_D_01_Bg_2.png` at 1726x1879.
+
+The exporter preserves atlas and skeleton content, uses atlas page names as the
+output contract, validates declared page dimensions against decoded linked
+Canvas values, and writes standard RGBA PNG files. The resulting directory no
+longer depends on WZ access and is intended for a matching Spine 4.1 runtime.
+WCX does not yet parse Spine animation semantics or provide a Spine player.
+
 ## Milestone 2 Parser Coverage
 
 M2 accepted the following migrated behavior as complete:

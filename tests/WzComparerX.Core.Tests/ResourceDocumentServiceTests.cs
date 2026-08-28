@@ -1295,7 +1295,9 @@ public class ResourceDocumentServiceTests
         var audio = ResourceInspectionDiagnostics.AudioPayloadDecodingUnsupported("sound");
 
         Assert.Equal(ResourceDiagnosticSeverities.Info, rawData.Severity);
-        Assert.Equal("RawData payload decoding is not implemented.", rawData.Message);
+        Assert.Equal(
+            "RawData semantic decoding is not implemented; specialized export workflows can copy raw bytes on demand.",
+            rawData.Message);
         Assert.Equal("raw", rawData.Path);
         Assert.Equal(ResourceDiagnosticCodes.RawDataPayloadDecodingUnsupported, rawData.Code);
         Assert.Equal(ResourceDiagnosticSources.Parser, rawData.Source);

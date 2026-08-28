@@ -181,13 +181,23 @@ and CLI Canvas export. It converts direct-zlib `ARGB4444` (`1`), `ARGB1555`
 `RGBA1010102` (`2562`), `DXT3` (`1026`), `DXT5` (`2050`), `DXT1` (`4097`),
 `BC7` (`4098`), and `RGBA32Float` (`4100`) Canvas payloads to BGRA8888 bytes.
 `RGB565` also handles WC's `scale=4` / `ActualScale=16` path by repeating each
-source pixel into a 16x16 block. PNG export and non-direct-zlib Canvas payloads
-remain later work.
+source pixel into a 16x16 block. General-purpose Canvas PNG export and
+non-direct-zlib Canvas payloads remain later work.
 Canvas selection and Canvas link resolution now also share one Core service
 between Avalonia Preview and CLI Canvas export, so `.ms` / `.mn` payloads,
 package-group selectors, `_inlink` / `_outlink` / `source` links, and UOL-linked
 Canvas values use the same resolver in both surfaces.
-RawData/Sound payload decoding is not implemented yet. Canvas#Video `MCV0`
+RawData semantic decoding and Sound payload decoding are not implemented yet;
+specialized Core exporters can copy exact RawData payload bytes on demand.
+`export --type spine --out <directory>` now uses that path to preserve binary
+`.skel` bytes, preserves atlas text, resolves each atlas page through the shared
+Canvas link service, and writes standard PNG textures under the exact atlas
+names. The first slice supports RawData binary skeletons and JSON string
+skeletons, including multi-page atlases. CMS v227.7 Map Object and Back samples
+validate Spine 4.1.24 bundles, 1x1 placeholder links to full-size textures, and
+two-page export. Spine runtime parsing, playback, and rendered animation export
+remain out of scope.
+Canvas#Video `MCV0`
 header/table parsing is implemented and exposes fourCC, dimensions, frame
 count, alpha/timing flags, and frame offset metadata through `inspect --debug`.
 `external/VPDecoder` is tracked as a submodule and currently points at

@@ -4,10 +4,10 @@ namespace WzComparerX.Core;
 
 public sealed class ResourceVideoTarget : IAsyncDisposable
 {
-    private readonly CanvasImageInspectionContext context;
+    private readonly ResourceImageInspectionContext context;
 
     internal ResourceVideoTarget(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImageVideoInspection value,
         string? valuePath)
     {

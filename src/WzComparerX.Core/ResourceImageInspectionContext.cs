@@ -2,9 +2,9 @@ using WzComparerX.WzLib;
 
 namespace WzComparerX.Core;
 
-internal sealed class CanvasImageInspectionContext : IAsyncDisposable
+internal sealed class ResourceImageInspectionContext : IAsyncDisposable
 {
-    private CanvasImageInspectionContext(
+    private ResourceImageInspectionContext(
         string sourcePath,
         WzImageInspection imageInspection,
         Stream sourceStream)
@@ -20,7 +20,7 @@ internal sealed class CanvasImageInspectionContext : IAsyncDisposable
 
     public Stream SourceStream { get; }
 
-    public static async Task<CanvasImageInspectionContext> LoadAsync(
+    public static async Task<ResourceImageInspectionContext> LoadAsync(
         string path,
         string selector,
         ResourceInspectionOptions options,
@@ -34,7 +34,7 @@ internal sealed class CanvasImageInspectionContext : IAsyncDisposable
                 options.StringKey,
                 options.MaxPropertyDepth,
                 cancellationToken);
-            return new CanvasImageInspectionContext(
+            return new ResourceImageInspectionContext(
                 msContext.ContainerInspection.Header.SourcePath,
                 msContext.ImageInspection,
                 msContext.PayloadStream);
@@ -46,7 +46,7 @@ internal sealed class CanvasImageInspectionContext : IAsyncDisposable
             options.StringKey,
             options.MaxPropertyDepth,
             cancellationToken);
-        return new CanvasImageInspectionContext(
+        return new ResourceImageInspectionContext(
             context.DirectoryInspection.Header.SourcePath,
             context.ImageInspection,
             File.OpenRead(context.DirectoryInspection.Header.SourcePath));

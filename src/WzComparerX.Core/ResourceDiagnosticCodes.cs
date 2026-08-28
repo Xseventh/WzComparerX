@@ -25,6 +25,8 @@ public static class ResourceDiagnosticCodes
     public const string ExportValueUnsupported = "wcx.export.value.unsupported";
     public const string ExportValueAmbiguous = "wcx.export.value.ambiguous";
     public const string ExportValueLinkUnresolved = "wcx.export.value.linkUnresolved";
+    public const string ExportSpineAssetInvalid = "wcx.export.spine.assetInvalid";
+    public const string ExportSpineTextureFailed = "wcx.export.spine.textureFailed";
     public const string CanvasPreviewCompressionUnsupported = "wcx.viewer.canvas.compressionUnsupported";
     public const string CanvasPreviewFormatUnsupported = "wcx.viewer.canvas.formatUnsupported";
     public const string CanvasPreviewScaleUnsupported = "wcx.viewer.canvas.scaleUnsupported";

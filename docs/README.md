@@ -26,7 +26,7 @@ codex/wcx-modernization
 
 ## 当前进度
 
-截至 2026-05-03：
+截至 2026-08-29：
 
 - Milestone 0：项目启动，已完成。
 - Milestone 1：Headless Resource Browser，已完成。
@@ -59,8 +59,8 @@ WCX 已经能在没有 UI 的情况下完成资源浏览和自动化检查：
 - 用 `inspect` 输出统一的 resource inspection tree。
 - 用 `inspect --debug` 输出底层解析元数据和稳定 diagnostics。
 - 用 `export` 导出 metadata、WC text-format IMG、Lua IMG、direct-zlib Canvas
-  BGRA8888 bytes，以及当前 decoder 可覆盖的 Canvas#Video BGRA8888 frame
-  dumps。
+  BGRA8888 bytes、可离线加载的 Spine bundle，以及当前 decoder 可覆盖的
+  Canvas#Video BGRA8888 frame dumps。
 
 当前支持的主要命令见 `docs/commands.md`。
 
@@ -93,11 +93,13 @@ Milestone 3 已经收口：
   - metadata JSON；
   - WC text-format IMG stream；
   - Lua IMG script；
-  - direct-zlib Canvas BGRA8888 bytes。
+  - direct-zlib Canvas BGRA8888 bytes；
+  - Spine `.atlas + .skel/.json + PNG` 离线资源包，包括链接 Canvas 和多纹理页。
 - Canvas export 使用 `--value <property-path>` 明确选择 IMG 内部 Canvas 值，
   并与 Avalonia Preview 共用 Core Canvas selector / link-resolution 路径。
 - diagnostics 具有稳定的 severity、source、code、path、CLI text formatting 和文档。
-- PNG export、完整 Canvas pixel matrix、音视频 payload decode、完整 PKG2 directory parsing、XML dump 都是后续工作。
+- 通用 Canvas PNG export、Spine runtime 预览/语义解析、音频 payload decode、
+  更广的音视频与 PKG2 profile 覆盖、XML dump 都是后续工作。
 
 Canvas 相关设计见：
 

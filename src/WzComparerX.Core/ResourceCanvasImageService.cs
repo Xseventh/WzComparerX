@@ -70,7 +70,7 @@ public sealed class ResourceCanvasImageService
         ArgumentException.ThrowIfNullOrWhiteSpace(selector);
 
         options ??= new ResourceInspectionOptions();
-        await using var context = await CanvasImageInspectionContext.LoadAsync(
+        await using var context = await ResourceImageInspectionContext.LoadAsync(
             path,
             selector,
             options,
@@ -137,7 +137,7 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget> SelectCanvasAsync(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         string? selector,
         string? valueSelector,
         bool useFirstCanvasFallback,
@@ -263,7 +263,7 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget?> ResolveCanvasLinkAsync(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImagePropertyInspectionEntry linkProperty,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken)
@@ -279,7 +279,7 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget?> ResolveCanvasLinkAsync(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImagePropertyInspectionEntry linkProperty,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken,
@@ -333,7 +333,7 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget?> ResolveCanvasTargetAsync(
-        CanvasImageInspectionContext currentContext,
+        ResourceImageInspectionContext currentContext,
         ResourceInspectionResolvedLinkTarget resolvedTarget,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken,
@@ -354,7 +354,7 @@ public sealed class ResourceCanvasImageService
                 currentContextIsOwned);
         }
 
-        var linkedContext = await CanvasImageInspectionContext.LoadAsync(
+        var linkedContext = await ResourceImageInspectionContext.LoadAsync(
             resolvedTarget.PackagePath,
             resolvedTarget.ImageSelector,
             options,
@@ -386,7 +386,7 @@ public sealed class ResourceCanvasImageService
     }
 
     private static async Task<CanvasImageTarget?> ResolveCanvasInContextAsync(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         string? valuePath,
         ResourceInspectionOptions options,
         CancellationToken cancellationToken,

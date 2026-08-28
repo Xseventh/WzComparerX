@@ -73,6 +73,8 @@ Current examples:
 - `wcx.export.value.unsupported`
 - `wcx.export.value.ambiguous`
 - `wcx.export.value.linkUnresolved`
+- `wcx.export.spine.assetInvalid`
+- `wcx.export.spine.textureFailed`
 - `wcx.viewer.canvas.compressionUnsupported`
 - `wcx.viewer.canvas.formatUnsupported`
 - `wcx.viewer.canvas.decodeFailed`

@@ -4,10 +4,10 @@ namespace WzComparerX.Core;
 
 internal sealed class CanvasImageTarget : IAsyncDisposable
 {
-    private readonly CanvasImageInspectionContext? ownedContext;
+    private readonly ResourceImageInspectionContext? ownedContext;
 
     private CanvasImageTarget(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImageCanvasInspection value,
         string? path,
         bool ownsContext)
@@ -28,10 +28,10 @@ internal sealed class CanvasImageTarget : IAsyncDisposable
 
     public string? Path { get; }
 
-    private CanvasImageInspectionContext Context { get; }
+    private ResourceImageInspectionContext Context { get; }
 
     public static CanvasImageTarget Local(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImageCanvasInspection value,
         string? path)
     {
@@ -39,7 +39,7 @@ internal sealed class CanvasImageTarget : IAsyncDisposable
     }
 
     public static CanvasImageTarget Linked(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImageCanvasInspection value,
         string? path)
     {
@@ -47,7 +47,7 @@ internal sealed class CanvasImageTarget : IAsyncDisposable
     }
 
     public static CanvasImageTarget Create(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         WzImageCanvasInspection value,
         string? path,
         bool ownsContext)
@@ -55,7 +55,7 @@ internal sealed class CanvasImageTarget : IAsyncDisposable
         return new CanvasImageTarget(context, value, path, ownsContext);
     }
 
-    public bool UsesContext(CanvasImageInspectionContext context)
+    public bool UsesContext(ResourceImageInspectionContext context)
     {
         return ReferenceEquals(Context, context);
     }

@@ -15,7 +15,7 @@ public sealed class ResourceVideoTargetService
         ArgumentException.ThrowIfNullOrWhiteSpace(selector);
 
         options ??= new ResourceInspectionOptions();
-        CanvasImageInspectionContext? context = await CanvasImageInspectionContext.LoadAsync(
+        ResourceImageInspectionContext? context = await ResourceImageInspectionContext.LoadAsync(
             path,
             selector,
             options,
@@ -37,7 +37,7 @@ public sealed class ResourceVideoTargetService
     }
 
     private static ResourceVideoTarget SelectVideo(
-        CanvasImageInspectionContext context,
+        ResourceImageInspectionContext context,
         string selector,
         string? valueSelector)
     {
