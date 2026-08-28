@@ -27,6 +27,7 @@ upstream Kagamia/WzComparerX
 Recent commits:
 
 ```text
+2da4a95 Add offline Spine resource export
 65a8674 Split Canvas image context helpers
 5c4b080 Align Canvas export with preview service
 63c5681 Resolve UOL canvas preview links
