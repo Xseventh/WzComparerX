@@ -202,10 +202,11 @@ Canvas#Video `MCV0`
 header/table parsing is implemented and exposes fourCC, dimensions, frame
 count, alpha/timing flags, and frame offset metadata through `inspect --debug`.
 `external/VPDecoder` is tracked as a submodule and currently points at
-`3843330`, which exposes memory-first `ReadOnlySpan<byte>` /
+`4cb3719`, which exposes memory-first `ReadOnlySpan<byte>` /
 `ReadOnlyMemory<byte>` decode APIs, `DecodeFrameWithAlpha`, `Reset()`, VP9
-no-display result semantics, libvpx-aligned VP9 reconstruction for the current
-validated sample shape, and a gated VP8 key-frame reconstruction path.
+no-display result semantics, libvpx-aligned VP9 reconstruction including coded
+plane padding for non-MI-aligned visible dimensions, and a gated VP8 key-frame
+reconstruction path.
 `WzComparerX.Rendering` now has `WzImageVideoFrameDecoder` for selected-frame
 diagnostics and `WzImageVideoSequenceDecoder` for WC-style full frame-table
 decode. The sequence decoder reads color/alpha chunks from an image payload
@@ -213,9 +214,10 @@ stream using `WzImageVideoInspection`, keeps separate color and alpha raw VP9
 decoder states, routes `VP90` through `Vp9RawVideoPacketDecoder`, routes `VP80`
 through `Vp8RawVideoPacketDecoder`, and skips successful no-display packets
 after feeding them into the raw decoder state. The pinned VPDecoder revision
-documents VP9 sequence semantics: one decoder instance is one stream state;
-`DecodeFrameWithAlpha` is a single-frame convenience helper, not a full
-color+alpha sequence decoder.
+documents VP9 sequence semantics: one decoder instance owns one color stream
+state, and `DecodeFrameWithAlpha` additionally owns persistent internal alpha
+state. WCX deliberately keeps separate color and alpha decoder instances so
+each raw stream has explicit lifetime and reset behavior.
 Core `ResourceVideoTargetService`, Rendering `ResourceVideoSequenceService`,
 CLI `export --type video --out <directory>`, and Avalonia Preview are now wired
 to this sequence path. When decode succeeds, CLI writes `manifest.json` and
@@ -226,6 +228,12 @@ because it writes roughly GB-scale local output. VP8 support is integrated
 through the same Rendering interface, but remains bounded by the
 VPDecoder-supported key-frame subset and explicit unsupported diagnostics for
 broader VP8 inter/reference cases.
+Local CMS v227.7 smoke also covers `BossBaldrix.img` resources under
+`1045/002` and `1050/003`: their `screen/video` and `screen2/video` values are
+`1710x1040` VP90 + AlphaMap sequences with 45 and 41 frames. The two path pairs
+contain two distinct packet sequences; both color and alpha YUV420 outputs are
+bitwise equal to libvpx 1.16.0, and CLI export writes complete BGRA8888 frame
+sets without the former chroma loop-filter edge overrun.
 Lua image entries report script length and a short UTF-8 snippet; `export --type lua`
 writes the full decoded script for supported Lua IMG blocks. Text-format IMG streams starting with `#Property` or
 `Root <Property>` inspect as bounded `Property` trees and can be exported with

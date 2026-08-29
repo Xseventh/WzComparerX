@@ -252,7 +252,10 @@ M4 完成后已经开始低风险架构整理：
   并处理 VP9 no-display frame 语义。完整真实客户端 video export 已通过同一
   `BossFirstAdversary.img` 样本 smoke，写出 `97` 个 `2656x1352` BGRA8888
   frame dump 和 `manifest.json`；该 smoke 输出约 GB 级本地文件，不提交客户端
-  数据或导出帧。
+  数据或导出帧。CMS v227.7 `BossBaldrix.img` 的 `1045/002`、`1050/003`
+  `screen/video` / `screen2/video` 也已完成 VP90 + AlphaMap 序列验证；两套独立
+  `1710x1040` 码流分别为 45/41 帧，color 与 alpha 的 YUV420 输出逐字节对齐
+  libvpx 1.16.0，CLI 可完整导出 BGRA8888。
 - 本地 GMS Vector smoke 覆盖了 `Character/Character_000.wz` 的角色锚点
   Vector，以及 `Packs/Mob_00000.ms` 通过 MS image payload 路径解析出的
   Mob frame Vector。Convex2D smoke 覆盖了 `UI/UI_000.wz` / `RunnerGame.img`
